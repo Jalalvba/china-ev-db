@@ -23,6 +23,7 @@ const PRICE_RANGE_SCHEMA = new Schema(
     currency_local: { type: String, default: "CNY" },
     min_usd: Number,
     max_usd: Number,
+    unverified: { type: Boolean, default: false },
   },
   { _id: false }
 );

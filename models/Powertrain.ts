@@ -35,6 +35,7 @@ const ElectricMotorDetailsSchema = new Schema(
     motor_torque_nm: Number,
     motor_count: { type: String, enum: MOTOR_COUNTS },
     drive_type: { type: String, enum: DRIVE_TYPES },
+    note: String,
   },
   { _id: false }
 );
@@ -65,6 +66,7 @@ const PowertrainSchema = new Schema<PowertrainDoc>(
     gearbox: { type: String, enum: GEARBOX_TYPES },
     gearbox_gears: { type: Number },
     combined_range_km: { type: Number },
+    combined_range_note: { type: String },
     accel_0_100_kmh_s: { type: Number },
     top_speed_kmh: { type: Number },
     unverified: { type: Boolean, default: false },

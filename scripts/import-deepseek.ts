@@ -79,6 +79,8 @@ interface RawVariant {
     torque_nm?: number;
     count?: number;
     drive?: string;
+    /** Free-text caveat, e.g. "reported as system power, not motor-only". Passed through verbatim. */
+    note?: string;
   }) | null;
   battery?: (RawDetailBlock & {
     chemistry?: string;
@@ -90,6 +92,8 @@ interface RawVariant {
     ev_range_km?: number;
     ev_range_standard?: string;
     combined_range_km?: unknown;
+    /** Free-text caveat about combined_range_km, e.g. a suspected source mislabeling of the test standard. */
+    combined_range_note?: string;
   }) | null;
   transmission?: { type?: string; gears?: number | string };
   performance?: { accel_0_100_s?: number; top_speed_kmh?: number };
@@ -104,6 +108,8 @@ interface RawVariantEntry {
   segment?: string;
   body?: string;
   price_rmb_range?: string;
+  /** Explicit override to flag price_range.unverified even when parsePriceRange succeeds. */
+  price_unverified?: boolean;
   production_status?: string;
   variants: RawVariant[];
 }
@@ -140,6 +146,7 @@ function normalizeVariant(v: RawVariant) {
         motor_torque_nm: num(v.motor.torque_nm),
         motor_count: motorCountFromNumber(v.motor.count),
         drive_type: v.motor.drive,
+        note: v.motor.note,
       }
     : undefined;
 
@@ -175,6 +182,7 @@ function normalizeVariant(v: RawVariant) {
     gearbox,
     gearbox_gears,
     combined_range_km: parseCombinedRange(v.battery?.combined_range_km),
+    combined_range_note: v.battery?.combined_range_note,
     accel_0_100_kmh_s: num(v.performance?.accel_0_100_s),
     top_speed_kmh: num(v.performance?.top_speed_kmh),
     unverified: isUnverified,
@@ -215,6 +223,7 @@ async function runVariantImport(entries: RawVariantEntry[], filePath: string) {
     const englishModelName = resolveModelName(entry.model, entry.model_en);
     const segment = assertValidSegment(guessSegment(entry.segment, entry.body));
     const price_range = parsePriceRange(entry.price_rmb_range);
+    if (price_range && entry.price_unverified) price_range.unverified = true;
 
     const modelFields = stripUndefined({
       generation: entry.generation,

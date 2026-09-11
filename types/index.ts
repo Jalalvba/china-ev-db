@@ -50,6 +50,7 @@ export interface IPriceRange {
   currency_local: string;
   min_usd?: number;
   max_usd?: number;
+  unverified?: boolean;
 }
 
 export interface IModel {
@@ -79,6 +80,8 @@ export interface IElectricMotorDetails {
   motor_torque_nm?: number;
   motor_count?: MotorCount;
   drive_type?: DriveType;
+  /** Free-text caveat, e.g. when power/torque figures are reported as system-level rather than motor-only. */
+  note?: string;
 }
 
 export interface IBatteryDetails {
@@ -104,6 +107,8 @@ export interface IPowertrain {
   gearbox?: GearboxType;
   gearbox_gears?: number;
   combined_range_km?: number;
+  /** Free-text caveat about combined_range_km, e.g. a suspected source mislabeling of the test standard. */
+  combined_range_note?: string;
   accel_0_100_kmh_s?: number;
   top_speed_kmh?: number;
   unverified?: boolean;

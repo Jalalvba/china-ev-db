@@ -63,6 +63,9 @@ export default async function ModelPage({ params }: { params: Promise<{ id: stri
           {model.price_range.max_local?.toLocaleString()} {model.price_range.currency_local}
           {model.price_range.min_usd &&
             ` (~$${model.price_range.min_usd.toLocaleString()}–$${model.price_range.max_usd?.toLocaleString()})`}
+          {model.price_range.unverified && (
+            <span className="ml-2 px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 text-xs">unverified</span>
+          )}
         </p>
       )}
 
@@ -107,9 +110,15 @@ export default async function ModelPage({ params }: { params: Promise<{ id: stri
                 label="Motor Power / Torque"
                 values={powertrains.map((p) =>
                   p.electric_motor_details
-                    ? `${p.electric_motor_details.motor_power_kw ?? "?"} kW / ${p.electric_motor_details.motor_torque_nm ?? "?"} Nm`
+                    ? `${p.electric_motor_details.motor_power_kw ?? "?"} kW / ${p.electric_motor_details.motor_torque_nm ?? "?"} Nm${
+                        p.electric_motor_details.note ? " ⚠" : ""
+                      }`
                     : undefined
                 )}
+              />
+              <Row
+                label="Motor Note"
+                values={powertrains.map((p) => p.electric_motor_details?.note)}
               />
               <Row
                 label="Battery"
@@ -145,7 +154,13 @@ export default async function ModelPage({ params }: { params: Promise<{ id: stri
               />
               <Row
                 label="Combined Range"
-                values={powertrains.map((p) => (p.combined_range_km ? `${p.combined_range_km} km` : undefined))}
+                values={powertrains.map((p) =>
+                  p.combined_range_km ? `${p.combined_range_km} km${p.combined_range_note ? " ⚠" : ""}` : undefined
+                )}
+              />
+              <Row
+                label="Combined Range Note"
+                values={powertrains.map((p) => p.combined_range_note)}
               />
               <Row
                 label="0–100 km/h"

@@ -1,0 +1,611 @@
+[
+  {
+    "brand": "领克",
+    "brand_en": "Lynk & Co",
+    "model": "领克03",
+    "generation": "第三代 2026款",
+    "segment": "紧凑型轿车",
+    "body": "4门5座三厢车",
+    "price_rmb_range": "12.18-15.68万",
+    "variants": [
+      {
+        "trim": "2026款 1.5TD Pro",
+        "powertrain": "ICE",
+        "engine": {
+          "displacement_l": 1.5,
+          "cylinders": 4,
+          "induction": "涡轮增压",
+          "max_power_kw": 133,
+          "max_power_hp": 181,
+          "max_torque_nm": 290,
+          "confidence": "confirmed"
+        },
+        "motor": null,
+        "battery": null,
+        "transmission": { "type": "7挡湿式双离合", "gears": 7, "confidence": "confirmed" },
+        "performance": { "accel_0_100_s": null, "top_speed_kmh": null, "confidence": "unconfirmed" },
+        "source": "汽车之家 config/series/4402 / chejiahao.autohome.com.cn/info/23483847",
+        "confidence": "unconfirmed"
+      },
+      {
+        "trim": "2026款 2.0TD 自动 Ultra",
+        "powertrain": "ICE",
+        "engine": {
+          "displacement_l": 2.0,
+          "cylinders": 4,
+          "induction": "涡轮增压",
+          "max_power_kw": 200,
+          "max_power_hp": 272,
+          "max_torque_nm": 400,
+          "confidence": "confirmed"
+        },
+        "motor": null,
+        "battery": null,
+        "transmission": { "type": "8挡手自一体", "gears": 8, "confidence": "confirmed" },
+        "performance": { "accel_0_100_s": 6.5, "top_speed_kmh": null, "confidence": "confirmed" },
+        "source": "汽车之家 autohome.com.cn/spec/74175 / chejiahao.m.autohome.com.cn/info/23483847",
+        "confidence": "unconfirmed"
+      }
+    ]
+  },
+  {
+    "brand": "领克",
+    "brand_en": "Lynk & Co",
+    "model": "领克03+",
+    "generation": "2026款",
+    "segment": "紧凑型性能轿车",
+    "body": "4门5座三厢车",
+    "price_rmb_range": "18.98-21.98万（估计，需核实）",
+    "price_unverified": true,
+    "variants": [
+      {
+        "trim": "2026款 03+ 2.0TD Racing版/TCR版",
+        "powertrain": "ICE",
+        "engine": {
+          "displacement_l": 2.0,
+          "cylinders": 4,
+          "induction": "机械增压+涡轮增压 双增压",
+          "engine_code": "B4204L43",
+          "max_power_kw": 257,
+          "max_power_hp": 350,
+          "max_torque_nm": 450,
+          "torque_rpm_range": "3000-5000",
+          "confidence": "confirmed"
+        },
+        "motor": null,
+        "battery": null,
+        "transmission": { "type": "8挡手自一体", "gears": 8, "confidence": "confirmed" },
+        "performance": { "accel_0_100_s": 5.41, "top_speed_kmh": 250, "confidence": "confirmed" },
+        "source": "汽车之家 autohome.com.cn/config/spec/75342 / sina.cn 深度解读",
+        "confidence": "unconfirmed"
+      }
+    ]
+  },
+  {
+    "brand": "领克",
+    "brand_en": "Lynk & Co",
+    "model": "领克06",
+    "generation": "2026款",
+    "segment": "紧凑型SUV",
+    "body": "5门5座SUV",
+    "price_rmb_range": "10.76-11.96万（限时权益价，官方指导价约12.96万起）",
+    "variants": [
+      {
+        "trim": "2026款 Relive 1.5T Ultra",
+        "powertrain": "ICE",
+        "engine": {
+          "displacement_l": 1.5,
+          "cylinders": 4,
+          "induction": "涡轮增压",
+          "max_power_kw": 133,
+          "max_power_hp": 181,
+          "max_torque_nm": 290,
+          "confidence": "confirmed"
+        },
+        "motor": null,
+        "battery": null,
+        "transmission": { "type": "7挡湿式双离合", "gears": 7, "confidence": "confirmed" },
+        "performance": { "accel_0_100_s": null, "top_speed_kmh": 195, "confidence": "confirmed" },
+        "source": "汽车之家 car.autohome.com.cn/config/spec/74023 / chejiahao.autohome.com.cn/info/21364635",
+        "confidence": "unconfirmed"
+      }
+    ]
+  },
+  {
+    "brand": "领克",
+    "brand_en": "Lynk & Co",
+    "model": "领克06 EM-P",
+    "generation": "2026款",
+    "segment": "紧凑型SUV",
+    "body": "5门5座SUV",
+    "price_rmb_range": "13.68-15.68万",
+    "variants": [
+      {
+        "trim": "56标准续航Pro",
+        "powertrain": "PHEV",
+        "engine": {
+          "displacement_l": 1.5,
+          "cylinders": null,
+          "induction": null,
+          "max_power_kw": null,
+          "max_power_hp": null,
+          "max_torque_nm": null,
+          "confidence": "unconfirmed"
+        },
+        "motor": {
+          "type": "永磁同步电机",
+          "power_kw": null,
+          "torque_nm": null,
+          "count": 1,
+          "drive": "FWD",
+          "confidence": "unconfirmed"
+        },
+        "battery": {
+          "chemistry": "磷酸铁锂",
+          "capacity_total_kwh": 9.11,
+          "capacity_usable_kwh": null,
+          "supplier": "蜂巢能源",
+          "dc_charge_kw": 32,
+          "ac_charge_kw": null,
+          "ev_range_km": 56,
+          "ev_range_standard": "工信部",
+          "combined_range_km": null,
+          "confidence": "unconfirmed"
+        },
+        "transmission": { "type": "DHT Pro 3挡电驱变速器", "gears": 3, "confidence": "confirmed" },
+        "performance": { "accel_0_100_s": null, "top_speed_kmh": null, "confidence": "unconfirmed" },
+        "source": "太平洋号 pcauto.com.cn/hj/article/2260326 / mandianev.com/news/storys_170727",
+        "confidence": "unconfirmed"
+      },
+      {
+        "trim": "126长续航 Halo",
+        "powertrain": "PHEV",
+        "engine": {
+          "displacement_l": 1.5,
+          "cylinders": null,
+          "induction": null,
+          "max_power_kw": null,
+          "max_power_hp": null,
+          "max_torque_nm": null,
+          "confidence": "unconfirmed"
+        },
+        "motor": {
+          "type": "永磁同步电机",
+          "power_kw": null,
+          "torque_nm": null,
+          "count": 1,
+          "drive": "FWD",
+          "confidence": "unconfirmed"
+        },
+        "battery": {
+          "chemistry": "磷酸铁锂",
+          "capacity_total_kwh": 19.09,
+          "capacity_usable_kwh": null,
+          "supplier": "蜂巢能源",
+          "dc_charge_kw": 32,
+          "ac_charge_kw": null,
+          "ev_range_km": 126,
+          "ev_range_standard": "工信部",
+          "combined_range_km": 1280,
+          "combined_range_note": "Source reported this as 'WLTC综合续航' (WLTC combined range) — combined/blended range is not normally WLTC-rated in this market; likely a source mislabeling of what is probably a CLTC or NEDC figure. Treat as unverified.",
+          "confidence": "unconfirmed"
+        },
+        "transmission": { "type": "DHT Pro 3挡电驱变速器", "gears": 3, "confidence": "confirmed" },
+        "performance": { "accel_0_100_s": 5.9, "top_speed_kmh": null, "confidence": "confirmed" },
+        "source": "太平洋号 pcauto.com.cn/hj/article/2260326 / diandong.com/news/164063",
+        "confidence": "unconfirmed"
+      }
+    ]
+  },
+  {
+    "brand": "领克",
+    "brand_en": "Lynk & Co",
+    "model": "领克07 EM-P",
+    "generation": "2026款",
+    "segment": "中型轿车",
+    "body": "4门5座三厢车",
+    "price_rmb_range": "15.58-17.58万",
+    "variants": [
+      {
+        "trim": "126长续航 Max",
+        "powertrain": "PHEV",
+        "engine": {
+          "displacement_l": 1.5,
+          "cylinders": 4,
+          "induction": "涡轮增压",
+          "max_power_hp": 163,
+          "max_power_kw": null,
+          "max_torque_nm": null,
+          "confidence": "confirmed"
+        },
+        "motor": {
+          "type": "永磁同步电机",
+          "power_kw": null,
+          "power_hp": 245,
+          "torque_nm": null,
+          "count": 1,
+          "drive": "FWD",
+          "confidence": "confirmed"
+        },
+        "battery": {
+          "chemistry": "磷酸铁锂",
+          "capacity_total_kwh": null,
+          "capacity_usable_kwh": null,
+          "supplier": null,
+          "dc_charge_kw": null,
+          "dc_charge_time_note": "0.3小时 30%-80%",
+          "ac_charge_kw": null,
+          "ev_range_km": 126,
+          "ev_range_standard": "CLTC",
+          "ev_range_km_wltc": 103,
+          "combined_range_km": null,
+          "confidence": "confirmed"
+        },
+        "system_max_power_kw": 300,
+        "system_max_torque_nm": 615,
+        "transmission": { "type": "3挡DHT", "gears": 3, "confidence": "confirmed" },
+        "performance": { "accel_0_100_s": null, "top_speed_kmh": 190, "confidence": "confirmed" },
+        "source": "ZOL detail.zol.com.cn/2144/2143204/param / 汽车之家 car.autohome.com.cn/config/spec/73833",
+        "confidence": "unconfirmed"
+      },
+      {
+        "trim": "126长续航 Ultra H7",
+        "powertrain": "PHEV",
+        "engine": {
+          "displacement_l": 1.5,
+          "cylinders": 4,
+          "induction": "涡轮增压",
+          "max_power_hp": 163,
+          "max_power_kw": null,
+          "max_torque_nm": null,
+          "confidence": "confirmed"
+        },
+        "motor": {
+          "type": "永磁同步电机",
+          "power_kw": null,
+          "power_hp": 245,
+          "torque_nm": null,
+          "count": 1,
+          "drive": "FWD",
+          "confidence": "confirmed"
+        },
+        "battery": {
+          "chemistry": "磷酸铁锂",
+          "capacity_total_kwh": null,
+          "capacity_usable_kwh": null,
+          "supplier": null,
+          "dc_charge_kw": null,
+          "ac_charge_kw": null,
+          "ev_range_km": 126,
+          "ev_range_standard": "CLTC",
+          "combined_range_km": null,
+          "confidence": "confirmed"
+        },
+        "system_max_power_kw": 300,
+        "system_max_torque_nm": 615,
+        "transmission": { "type": "3挡DHT", "gears": 3, "confidence": "confirmed" },
+        "performance": { "accel_0_100_s": null, "top_speed_kmh": 190, "confidence": "confirmed" },
+        "source": "汽车之家 autohome.com.cn/spec/73833",
+        "confidence": "unconfirmed"
+      }
+    ]
+  },
+  {
+    "brand": "领克",
+    "brand_en": "Lynk & Co",
+    "model": "领克08 EM-P",
+    "generation": "2026款",
+    "segment": "中型SUV",
+    "body": "5门5座SUV",
+    "price_rmb_range": "15.98-20.58万",
+    "variants": [
+      {
+        "trim": "160长续航 Max（单电机前驱）",
+        "powertrain": "PHEV",
+        "engine": {
+          "displacement_l": 1.5,
+          "cylinders": 4,
+          "induction": "涡轮增压",
+          "max_power_kw": null,
+          "max_power_hp": null,
+          "max_torque_nm": null,
+          "confidence": "unconfirmed"
+        },
+        "motor": {
+          "type": "永磁同步电机",
+          "power_kw": 280,
+          "torque_nm": 615,
+          "count": 1,
+          "drive": "FWD",
+          "confidence": "unconfirmed",
+          "note": "280kW/615N·m reported as system power for single-motor FWD variant, not confirmed motor-only figures"
+        },
+        "battery": {
+          "chemistry": "磷酸铁锂",
+          "capacity_total_kwh": 21.2,
+          "capacity_usable_kwh": null,
+          "supplier": "宁德时代/蜂巢能源",
+          "dc_charge_kw": null,
+          "ac_charge_kw": null,
+          "ev_range_km": 160,
+          "ev_range_standard": "CLTC",
+          "combined_range_km": 1400,
+          "confidence": "unconfirmed"
+        },
+        "transmission": { "type": "3挡DHT", "gears": 3, "confidence": "confirmed" },
+        "performance": { "accel_0_100_s": null, "top_speed_kmh": null, "confidence": "unconfirmed" },
+        "source": "汽车之家 chejiahao.autohome.com.cn/info/24659038 / 24675499, yiche.com/zhai/1409334",
+        "confidence": "unconfirmed"
+      },
+      {
+        "trim": "230超长续航 Ultra（三电机四驱）",
+        "powertrain": "PHEV",
+        "engine": {
+          "displacement_l": 1.5,
+          "cylinders": 4,
+          "induction": "涡轮增压",
+          "max_power_kw": null,
+          "max_power_hp": null,
+          "max_torque_nm": null,
+          "confidence": "unconfirmed"
+        },
+        "motor": {
+          "type": "永磁同步电机 三电机",
+          "power_kw": 436,
+          "torque_nm": 905,
+          "count": 3,
+          "drive": "AWD",
+          "confidence": "unconfirmed",
+          "note": "436kW/905N·m is reported system power/torque for the tri-motor AWD variant, not confirmed motor-only figures"
+        },
+        "battery": {
+          "chemistry": "三元锂电池 + 磷酸铁锂 混装",
+          "capacity_total_kwh": 39.8,
+          "capacity_usable_kwh": null,
+          "supplier": "宁德时代/蜂巢能源",
+          "dc_charge_kw": null,
+          "ac_charge_kw": null,
+          "ev_range_km": 230,
+          "ev_range_standard": "CLTC",
+          "combined_range_km": null,
+          "confidence": "unconfirmed"
+        },
+        "transmission": { "type": "3挡DHT", "gears": 3, "confidence": "confirmed" },
+        "performance": { "accel_0_100_s": null, "top_speed_kmh": null, "confidence": "unconfirmed" },
+        "source": "汽车之家 chejiahao.autohome.com.cn/info/24675499 / 易车 yiche.com/zhai/1409334",
+        "confidence": "unconfirmed"
+      }
+    ]
+  },
+  {
+    "brand": "领克",
+    "brand_en": "Lynk & Co",
+    "model": "领克09",
+    "generation": "2026款",
+    "segment": "大型SUV",
+    "body": "5门6/7座SUV",
+    "price_rmb_range": "19.88-24.88万",
+    "variants": [
+      {
+        "trim": "2026款 2.0T 四驱探索版 Max/Ultra",
+        "powertrain": "MHEV",
+        "engine": {
+          "displacement_l": 2.0,
+          "cylinders": 4,
+          "induction": "涡轮增压",
+          "max_power_kw": 187,
+          "max_power_hp": 254,
+          "max_torque_nm": 350,
+          "mhev_note": "48V轻混系统",
+          "confidence": "confirmed"
+        },
+        "motor": {
+          "type": "48V BSG电机（轻混）",
+          "power_kw": null,
+          "torque_nm": null,
+          "count": 1,
+          "drive": "AWD",
+          "confidence": "unconfirmed"
+        },
+        "battery": null,
+        "transmission": { "type": "8挡手自一体", "gears": 8, "confidence": "confirmed" },
+        "performance": { "accel_0_100_s": null, "top_speed_kmh": null, "confidence": "unconfirmed" },
+        "source": "汽车之家 car.autohome.com.cn/config/spec/74882 / 75399, 凤凰网 auto.ifeng.com/c/8nglHQ8qDno",
+        "confidence": "unconfirmed"
+      }
+    ]
+  },
+  {
+    "brand": "领克",
+    "brand_en": "Lynk & Co",
+    "model": "领克900",
+    "generation": "2026款",
+    "segment": "大型SUV",
+    "body": "5门6座SUV",
+    "price_rmb_range": "28.99-39.69万",
+    "variants": [
+      {
+        "trim": "1.5T Halo 5座",
+        "powertrain": "PHEV",
+        "engine": {
+          "displacement_l": 1.5,
+          "cylinders": 4,
+          "induction": "涡轮增压",
+          "max_power_kw": null,
+          "max_power_hp": null,
+          "max_torque_nm": null,
+          "confidence": "unconfirmed"
+        },
+        "motor": {
+          "type": "永磁同步电机 双电机",
+          "power_kw": 530,
+          "power_hp": 530,
+          "torque_nm": 1000,
+          "count": 2,
+          "drive": "AWD",
+          "confidence": "unconfirmed",
+          "note": "530kW system power reported alongside '530Ps electric motor' phrasing in source — figures likely system-level, needs verification"
+        },
+        "battery": {
+          "chemistry": "磷酸铁锂（骁遥电池）",
+          "battery_variant": "CATL Shenyao (3C)",
+          "capacity_total_kwh": 45,
+          "capacity_usable_kwh": null,
+          "supplier": "宁德时代",
+          "dc_charge_kw": null,
+          "dc_charge_time_note": "0.43小时快充",
+          "ac_charge_kw": null,
+          "ev_range_km": 220,
+          "ev_range_standard": "CLTC",
+          "combined_range_km": 1400,
+          "confidence": "unconfirmed"
+        },
+        "transmission": { "type": "3挡DHT", "gears": 3, "confidence": "unconfirmed" },
+        "performance": { "accel_0_100_s": null, "top_speed_kmh": null, "confidence": "unconfirmed" },
+        "source": "中关村在线/汽车经纬 qichejingwei.com/brand/product-22452 / evlook.com/lingke900/peizhi",
+        "confidence": "unconfirmed"
+      },
+      {
+        "trim": "2.0T Ultra 5座",
+        "powertrain": "PHEV",
+        "engine": {
+          "displacement_l": 2.0,
+          "cylinders": 4,
+          "induction": "涡轮增压",
+          "max_power_kw": null,
+          "max_power_hp": null,
+          "max_torque_nm": null,
+          "confidence": "unconfirmed"
+        },
+        "motor": {
+          "type": "永磁同步电机 三电机",
+          "power_kw": 540,
+          "power_hp": 480,
+          "torque_nm": 1038,
+          "count": 3,
+          "drive": "AWD",
+          "confidence": "unconfirmed",
+          "note": "540kW/1038N·m reported as system power/torque for the top tri-motor trim, not confirmed motor-only figures"
+        },
+        "battery": {
+          "chemistry": "磷酸铁锂（骁遥电池）",
+          "battery_variant": "CATL Shenyao (3C)",
+          "capacity_total_kwh": 52.38,
+          "capacity_usable_kwh": null,
+          "supplier": "宁德时代",
+          "dc_charge_kw": null,
+          "dc_charge_time_note": "0.28小时快充",
+          "ac_charge_kw": null,
+          "ev_range_km": 280,
+          "ev_range_standard": "CLTC",
+          "combined_range_km": 1400,
+          "confidence": "unconfirmed"
+        },
+        "transmission": { "type": "3挡DHT", "gears": 3, "confidence": "unconfirmed" },
+        "performance": { "accel_0_100_s": null, "top_speed_kmh": null, "confidence": "unconfirmed" },
+        "source": "中关村在线/汽车经纬 qichejingwei.com/brand/product-22454",
+        "confidence": "unconfirmed"
+      }
+    ]
+  },
+  {
+    "brand": "领克",
+    "brand_en": "Lynk & Co",
+    "model": "领克Z10",
+    "generation": "2026款",
+    "segment": "中大型纯电轿车",
+    "body": "4门5座三厢车",
+    "price_rmb_range": "19.68-29.98万",
+    "variants": [
+      {
+        "trim": "后驱版 77.17kWh",
+        "powertrain": "BEV",
+        "engine": null,
+        "motor": {
+          "type": "永磁同步电机",
+          "power_kw": 200,
+          "torque_nm": 343,
+          "count": 1,
+          "drive": "RWD",
+          "confidence": "unconfirmed"
+        },
+        "battery": {
+          "chemistry": null,
+          "capacity_total_kwh": 77.17,
+          "capacity_usable_kwh": null,
+          "supplier": null,
+          "dc_charge_kw": 460,
+          "dc_charge_rate_note": "最高4.5C充电倍率",
+          "ac_charge_kw": null,
+          "ev_range_km": 701,
+          "ev_range_standard": "CLTC",
+          "combined_range_km": null,
+          "confidence": "unconfirmed"
+        },
+        "transmission": { "type": "单速减速器", "gears": 1, "confidence": "confirmed" },
+        "performance": { "accel_0_100_s": null, "top_speed_kmh": null, "confidence": "unconfirmed" },
+        "source": "搜狐 db.auto.sohu.com/model_7465 / EV视界 evlook.com/lingkez10",
+        "confidence": "unconfirmed"
+      },
+      {
+        "trim": "后驱长续航版 95kWh",
+        "powertrain": "BEV",
+        "engine": null,
+        "motor": {
+          "type": "永磁同步电机",
+          "power_kw": 310,
+          "torque_nm": 440,
+          "count": 1,
+          "drive": "RWD",
+          "confidence": "unconfirmed"
+        },
+        "battery": {
+          "chemistry": "三元锂电池",
+          "capacity_total_kwh": 95,
+          "capacity_usable_kwh": null,
+          "supplier": null,
+          "dc_charge_kw": 460,
+          "dc_charge_rate_note": "最高4.5C充电倍率，15分钟补能573km",
+          "ac_charge_kw": null,
+          "ev_range_km": 816,
+          "ev_range_standard": "CLTC",
+          "combined_range_km": null,
+          "confidence": "unconfirmed"
+        },
+        "transmission": { "type": "单速减速器", "gears": 1, "confidence": "confirmed" },
+        "performance": { "accel_0_100_s": null, "top_speed_kmh": null, "confidence": "unconfirmed" },
+        "source": "新浪 k.sina.com.cn/article_7857141524 / EV视界",
+        "confidence": "unconfirmed"
+      },
+      {
+        "trim": "四驱高性能版",
+        "powertrain": "BEV",
+        "engine": null,
+        "motor": {
+          "type": "永磁同步电机 双电机",
+          "power_kw": 580,
+          "torque_nm": 810,
+          "count": 2,
+          "drive": "AWD",
+          "confidence": "confirmed"
+        },
+        "battery": {
+          "chemistry": "三元锂电池",
+          "capacity_total_kwh": 95,
+          "capacity_usable_kwh": null,
+          "supplier": null,
+          "dc_charge_kw": 460,
+          "ac_charge_kw": null,
+          "ev_range_km": null,
+          "ev_range_standard": "CLTC",
+          "combined_range_km": null,
+          "confidence": "unconfirmed"
+        },
+        "transmission": { "type": "单速减速器", "gears": 1, "confidence": "confirmed" },
+        "performance": { "accel_0_100_s": 3.5, "top_speed_kmh": null, "confidence": "confirmed" },
+        "source": "新浪 k.sina.com.cn/article_7857141524 (最大续航806km 3.5秒破百)",
+        "confidence": "unconfirmed"
+      }
+    ]
+  }
+]

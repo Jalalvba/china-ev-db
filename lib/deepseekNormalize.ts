@@ -142,6 +142,7 @@ const BATTERY_VARIANT_TERMS: Record<string, string> = {
   "麒麟电池": "Qilin",
   "麒麟": "Qilin",
   "金砖电池": "Zeekr Golden Brick",
+  "骁遥电池": "CATL Shenyao",
   "神盾电池": "Shield Battery",
 };
 
@@ -224,6 +225,7 @@ const MOTOR_TYPE_TERMS: Record<string, string> = {
   "感应电机": "Induction",
   "异步电机": "Induction",
   "SiC油冷电驱": "PMSM (SiC oil-cooled)",
+  "48V BSG电机（轻混）": "48V BSG (mild hybrid)",
 };
 
 /** Resolve a raw (possibly Chinese) motor-type description to a normalized label, defaulting to PMSM. */
@@ -242,6 +244,7 @@ export function resolveMotorType(raw: string | null | undefined): string {
 const INDUCTION_TERMS: Record<string, string> = {
   "自然吸气": "naturally aspirated",
   "涡轮增压": "turbo",
+  "机械增压+涡轮增压 双增压": "twin-charged (supercharger + turbo)",
 };
 
 /** Translate a raw (possibly Chinese) induction description, passing through unmapped ASCII text and warning otherwise. */
@@ -321,6 +324,16 @@ export const KNOWN_MODELS: Record<string, string> = {
   "极氪MIX": "MIX",
   "极氪9X": "9X",
   "极氪8X": "8X",
+  // Lynk & Co (领克) lineup
+  "领克03": "03",
+  "领克03+": "03+",
+  "领克06": "06",
+  "领克06 EM-P": "06 EM-P",
+  "领克07 EM-P": "07 EM-P",
+  "领克08 EM-P": "08 EM-P",
+  "领克09": "09",
+  "领克900": "900",
+  "领克Z10": "Z10",
 };
 
 const RANGE_STANDARD_CORRECTIONS: Record<string, string> = {
@@ -401,7 +414,7 @@ export function resolveModelName(raw: string, explicitEnglish?: string): string 
 
 /** Parse a "7.98–9.98万" / "22.98万起" / "100.8万" style RMB price string into numeric CNY. */
 export function parsePriceRange(str: string | null | undefined):
-  | { min_local: number; max_local: number; currency_local: string; min_usd: number; max_usd: number }
+  | { min_local: number; max_local: number; currency_local: string; min_usd: number; max_usd: number; unverified?: boolean }
   | undefined {
   if (!str) return undefined;
   const cleaned = str.replace(/,/g, "");
@@ -473,8 +486,11 @@ export function correctGearbox(v: unknown): string | undefined {
   // "电动车单速变速箱" or "E-DHT智能无级11合1混动电驱".
   if (/单速/.test(s) || (s.includes("电动车") && s.includes("变速箱"))) return "single-speed reducer";
   if (/DHT/i.test(s)) return "multi-speed EV transmission";
+  if (/双离合/.test(s)) return "DCT";
   if (/CVT/i.test(s)) return "CVT";
   if (/AMT/i.test(s)) return "AMT";
+  if (/手自一体|自动挡/.test(s)) return "AT";
+  if (/手动挡/.test(s)) return "MT";
 
   console.warn(`[import] Unknown gearbox type "${v}" — keeping as-is; verify against schema enum.`);
   return s;
