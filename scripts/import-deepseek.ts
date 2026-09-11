@@ -45,6 +45,7 @@ import {
   resolveInduction,
   translateBatteryTerms,
   normalizeEnergyType,
+  parseBatteryChemistry,
 } from "../lib/deepseekNormalize";
 
 const MONGODB_URI = process.env.MONGODB_URI;
@@ -142,12 +143,15 @@ function normalizeVariant(v: RawVariant) {
       }
     : undefined;
 
+  const chemParsed = parseBatteryChemistry(v.battery?.chemistry);
+
   const battery = v.battery
     ? {
-        battery_chemistry: translateBatteryTerms(v.battery.chemistry),
+        battery_chemistry: chemParsed.chemistry,
+        battery_variant: chemParsed.battery_variant,
         battery_capacity_total_kwh: num(v.battery.capacity_total_kwh),
         battery_capacity_usable_kwh: num(v.battery.capacity_usable_kwh),
-        battery_supplier: translateBatteryTerms(v.battery.supplier),
+        battery_supplier: translateBatteryTerms(v.battery.supplier) ?? chemParsed.supplier_hint,
         charging_speed_dc_kw: parseDcKw(v.battery.dc_charge_kw),
         charging_speed_ac_kw: parseDcKw(v.battery.ac_charge_kw),
         electric_range_km: num(v.battery.ev_range_km),

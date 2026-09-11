@@ -42,6 +42,7 @@ const ElectricMotorDetailsSchema = new Schema(
 const BatteryDetailsSchema = new Schema(
   {
     battery_chemistry: String,
+    battery_variant: String,
     battery_capacity_total_kwh: Number,
     battery_capacity_usable_kwh: Number,
     battery_supplier: String,

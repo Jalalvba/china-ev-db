@@ -1,0 +1,961 @@
+[
+  {
+    "brand": "极氪",
+    "brand_en": "Zeekr",
+    "model": "极氪001",
+    "generation": "2026款",
+    "segment": "中大型纯电猎装轿跑",
+    "body": "5门5座掀背车",
+    "price_rmb_range": "26.98-36.50万",
+    "variants": [
+      {
+        "trim": "103kWh 后驱Max版",
+        "powertrain": "BEV",
+        "engine": null,
+        "motor": {
+          "type": "永磁同步电机",
+          "power_kw": 370,
+          "torque_nm": null,
+          "count": 1,
+          "drive": "RWD",
+          "confidence": "confirmed"
+        },
+        "battery": {
+          "chemistry": "三元锂电池（103kWh麒麟电池）",
+          "capacity_total_kwh": 103,
+          "capacity_usable_kwh": null,
+          "supplier": null,
+          "dc_charge_kw": "900V碳化硅高压平台，95度电池版10%-80%快充7分钟",
+          "ac_charge_kw": null,
+          "ev_range_km": 810,
+          "ev_range_standard": "CLTC",
+          "combined_range_km": null,
+          "confidence": "confirmed"
+        },
+        "transmission": { "type": "电动车单速变速箱", "gears": 1, "confidence": "confirmed" },
+        "performance": { "accel_0_100_s": null, "top_speed_kmh": null, "confidence": "unconfirmed" },
+        "source": "易车/中关村在线",
+        "confidence": "unconfirmed"
+      },
+      {
+        "trim": "103kWh 四驱Ultra版",
+        "powertrain": "BEV",
+        "engine": null,
+        "motor": {
+          "type": "前感应/异步 + 后永磁/同步",
+          "power_kw": 680,
+          "torque_nm": 913,
+          "count": 2,
+          "drive": "AWD",
+          "confidence": "confirmed"
+        },
+        "battery": {
+          "chemistry": "三元锂电池（103kWh麒麟电池）",
+          "capacity_total_kwh": 103,
+          "capacity_usable_kwh": null,
+          "supplier": null,
+          "dc_charge_kw": "900V碳化硅高压平台，支持1.32兆瓦闪充",
+          "ac_charge_kw": null,
+          "ev_range_km": 762,
+          "ev_range_standard": "CLTC",
+          "combined_range_km": null,
+          "confidence": "confirmed"
+        },
+        "transmission": { "type": "电动车单速变速箱", "gears": 1, "confidence": "confirmed" },
+        "performance": { "accel_0_100_s": 2.83, "top_speed_kmh": null, "confidence": "confirmed" },
+        "source": "易车/中关村在线",
+        "confidence": "unconfirmed"
+      },
+      {
+        "trim": "103kWh 四驱Ultra+版",
+        "powertrain": "BEV",
+        "engine": null,
+        "motor": {
+          "type": "前感应/异步 + 后永磁/同步",
+          "power_kw": 680,
+          "torque_nm": 913,
+          "count": 2,
+          "drive": "AWD",
+          "confidence": "confirmed"
+        },
+        "battery": {
+          "chemistry": "三元锂电池（103kWh麒麟电池）",
+          "capacity_total_kwh": 103,
+          "capacity_usable_kwh": null,
+          "supplier": null,
+          "dc_charge_kw": "900V碳化硅高压平台",
+          "ac_charge_kw": null,
+          "ev_range_km": 730,
+          "ev_range_standard": "CLTC",
+          "combined_range_km": null,
+          "confidence": "confirmed"
+        },
+        "transmission": { "type": "电动车单速变速箱", "gears": 1, "confidence": "confirmed" },
+        "performance": { "accel_0_100_s": 2.91, "top_speed_kmh": 280, "confidence": "confirmed" },
+        "source": "中关村在线",
+        "confidence": "unconfirmed"
+      },
+      {
+        "trim": "五周年纪念版",
+        "powertrain": "BEV",
+        "engine": null,
+        "motor": {
+          "type": "前感应/异步 + 后永磁/同步",
+          "power_kw": null,
+          "torque_nm": null,
+          "count": 2,
+          "drive": "AWD",
+          "confidence": "unconfirmed"
+        },
+        "battery": {
+          "chemistry": "三元锂电池",
+          "capacity_total_kwh": null,
+          "capacity_usable_kwh": null,
+          "supplier": null,
+          "dc_charge_kw": null,
+          "ac_charge_kw": null,
+          "ev_range_km": 680,
+          "ev_range_standard": "CLTC",
+          "combined_range_km": null,
+          "confidence": "unconfirmed"
+        },
+        "transmission": { "type": "电动车单速变速箱", "gears": 1, "confidence": "unconfirmed" },
+        "performance": { "accel_0_100_s": null, "top_speed_kmh": null, "confidence": "unconfirmed" },
+        "source": "易车",
+        "confidence": "unconfirmed"
+      }
+    ]
+  },
+  {
+    "brand": "极氪",
+    "model": "极氪007",
+    "generation": "2026款",
+    "segment": "中型纯电轿车",
+    "body": "4门5座三厢车",
+    "price_rmb_range": "20.39-24.39万（限时权益价19.39-23.39万）",
+    "variants": [
+      {
+        "trim": "后驱Max版 75kWh",
+        "powertrain": "BEV",
+        "engine": null,
+        "motor": {
+          "type": "永磁同步电机",
+          "power_kw": 370,
+          "torque_nm": null,
+          "count": 1,
+          "drive": "RWD",
+          "confidence": "confirmed"
+        },
+        "battery": {
+          "chemistry": "磷酸铁锂",
+          "capacity_total_kwh": 75,
+          "capacity_usable_kwh": null,
+          "supplier": null,
+          "dc_charge_kw": "900V平台，10%-80%快充10分钟",
+          "ac_charge_kw": null,
+          "ev_range_km": 715,
+          "ev_range_standard": "CLTC",
+          "combined_range_km": null,
+          "confidence": "confirmed"
+        },
+        "transmission": { "type": "电动车单速变速箱", "gears": 1, "confidence": "confirmed" },
+        "performance": { "accel_0_100_s": null, "top_speed_kmh": null, "confidence": "unconfirmed" },
+        "source": "易车/汽车经纬",
+        "confidence": "unconfirmed"
+      },
+      {
+        "trim": "后驱Max版 103kWh",
+        "powertrain": "BEV",
+        "engine": null,
+        "motor": {
+          "type": "永磁同步电机",
+          "power_kw": 370,
+          "torque_nm": null,
+          "count": 1,
+          "drive": "RWD",
+          "confidence": "confirmed"
+        },
+        "battery": {
+          "chemistry": "三元锂电池（麒麟电池）",
+          "capacity_total_kwh": 103,
+          "capacity_usable_kwh": null,
+          "supplier": null,
+          "dc_charge_kw": "900V平台",
+          "ac_charge_kw": null,
+          "ev_range_km": 905,
+          "ev_range_standard": "CLTC",
+          "combined_range_km": null,
+          "confidence": "confirmed"
+        },
+        "transmission": { "type": "电动车单速变速箱", "gears": 1, "confidence": "confirmed" },
+        "performance": { "accel_0_100_s": null, "top_speed_kmh": null, "confidence": "unconfirmed" },
+        "source": "易车/汽车经纬",
+        "confidence": "unconfirmed"
+      },
+      {
+        "trim": "四驱Ultra版 103kWh",
+        "powertrain": "BEV",
+        "engine": null,
+        "motor": {
+          "type": "前感应/异步 + 后永磁/同步",
+          "power_kw": 585,
+          "torque_nm": 812,
+          "count": 2,
+          "drive": "AWD",
+          "confidence": "confirmed"
+        },
+        "battery": {
+          "chemistry": "三元锂电池（麒麟电池）",
+          "capacity_total_kwh": 103,
+          "capacity_usable_kwh": null,
+          "supplier": null,
+          "dc_charge_kw": "900V平台，10%-80%快充10分钟",
+          "ac_charge_kw": null,
+          "ev_range_km": 800,
+          "ev_range_standard": "CLTC",
+          "combined_range_km": null,
+          "confidence": "confirmed"
+        },
+        "transmission": { "type": "电动车单速变速箱", "gears": 1, "confidence": "confirmed" },
+        "performance": { "accel_0_100_s": 2.73, "top_speed_kmh": 240, "confidence": "confirmed" },
+        "source": "中关村在线/易车",
+        "confidence": "unconfirmed"
+      }
+    ]
+  },
+  {
+    "brand": "极氪",
+    "model": "极氪007GT",
+    "generation": "2026款",
+    "segment": "中型纯电猎装轿跑",
+    "body": "5门5座旅行车",
+    "price_rmb_range": "20.39-24.39万（限时权益价19.39-23.39万）",
+    "variants": [
+      {
+        "trim": "后驱Max版 75kWh",
+        "powertrain": "BEV",
+        "engine": null,
+        "motor": {
+          "type": "永磁同步电机",
+          "power_kw": 370,
+          "torque_nm": null,
+          "count": 1,
+          "drive": "RWD",
+          "confidence": "confirmed"
+        },
+        "battery": {
+          "chemistry": "磷酸铁锂",
+          "capacity_total_kwh": 75,
+          "capacity_usable_kwh": null,
+          "supplier": null,
+          "dc_charge_kw": "900V平台",
+          "ac_charge_kw": null,
+          "ev_range_km": 702,
+          "ev_range_standard": "CLTC",
+          "combined_range_km": null,
+          "confidence": "confirmed"
+        },
+        "transmission": { "type": "电动车单速变速箱", "gears": 1, "confidence": "confirmed" },
+        "performance": { "accel_0_100_s": 4.8, "top_speed_kmh": null, "confidence": "confirmed" },
+        "source": "汽车经纬/易车",
+        "confidence": "unconfirmed"
+      },
+      {
+        "trim": "后驱Max版 103kWh",
+        "powertrain": "BEV",
+        "engine": null,
+        "motor": {
+          "type": "永磁同步电机",
+          "power_kw": 370,
+          "torque_nm": null,
+          "count": 1,
+          "drive": "RWD",
+          "confidence": "confirmed"
+        },
+        "battery": {
+          "chemistry": "三元锂电池（麒麟电池）",
+          "capacity_total_kwh": 103,
+          "capacity_usable_kwh": null,
+          "supplier": null,
+          "dc_charge_kw": "900V平台，10%-80%快充10分钟",
+          "ac_charge_kw": null,
+          "ev_range_km": 880,
+          "ev_range_standard": "CLTC",
+          "combined_range_km": null,
+          "confidence": "confirmed"
+        },
+        "transmission": { "type": "电动车单速变速箱", "gears": 1, "confidence": "confirmed" },
+        "performance": { "accel_0_100_s": 4.8, "top_speed_kmh": null, "confidence": "confirmed" },
+        "source": "易车/汽车经纬",
+        "confidence": "unconfirmed"
+      },
+      {
+        "trim": "四驱Ultra版 103kWh",
+        "powertrain": "BEV",
+        "engine": null,
+        "motor": {
+          "type": "前感应/异步 + 后永磁/同步",
+          "power_kw": 585,
+          "torque_nm": 812,
+          "count": 2,
+          "drive": "AWD",
+          "confidence": "confirmed"
+        },
+        "battery": {
+          "chemistry": "三元锂电池（麒麟电池）",
+          "capacity_total_kwh": 103,
+          "capacity_usable_kwh": null,
+          "supplier": null,
+          "dc_charge_kw": "900V平台，10%-80%快充10分钟",
+          "ac_charge_kw": null,
+          "ev_range_km": 760,
+          "ev_range_standard": "CLTC",
+          "combined_range_km": null,
+          "confidence": "confirmed"
+        },
+        "transmission": { "type": "电动车单速变速箱", "gears": 1, "confidence": "confirmed" },
+        "performance": { "accel_0_100_s": 2.85, "top_speed_kmh": 240, "confidence": "confirmed" },
+        "source": "中关村在线/易车",
+        "confidence": "unconfirmed"
+      }
+    ]
+  },
+  {
+    "brand": "极氪",
+    "model": "极氪X",
+    "generation": "2026款",
+    "segment": "紧凑型纯电SUV",
+    "body": "5门5座SUV",
+    "price_rmb_range": "15.58-17.58万（限时权益价14.58-16.58万）",
+    "variants": [
+      {
+        "trim": "Max五座版",
+        "powertrain": "BEV",
+        "engine": null,
+        "motor": {
+          "type": "永磁同步电机",
+          "power_kw": 250,
+          "torque_nm": 373,
+          "count": 1,
+          "drive": "RWD",
+          "confidence": "confirmed"
+        },
+        "battery": {
+          "chemistry": "磷酸铁锂（61.47kWh金砖电池）",
+          "capacity_total_kwh": 61.47,
+          "capacity_usable_kwh": null,
+          "supplier": null,
+          "dc_charge_kw": null,
+          "ac_charge_kw": null,
+          "ev_range_km": 530,
+          "ev_range_standard": "CLTC",
+          "combined_range_km": null,
+          "confidence": "confirmed"
+        },
+        "transmission": { "type": "电动车单速变速箱", "gears": 1, "confidence": "confirmed" },
+        "performance": { "accel_0_100_s": 5.6, "top_speed_kmh": null, "confidence": "confirmed" },
+        "source": "易车/汽车经纬",
+        "confidence": "unconfirmed"
+      },
+      {
+        "trim": "Max四座版",
+        "powertrain": "BEV",
+        "engine": null,
+        "motor": {
+          "type": "永磁同步电机",
+          "power_kw": 250,
+          "torque_nm": 373,
+          "count": 1,
+          "drive": "RWD",
+          "confidence": "confirmed"
+        },
+        "battery": {
+          "chemistry": "磷酸铁锂（61.47kWh金砖电池）",
+          "capacity_total_kwh": 61.47,
+          "capacity_usable_kwh": null,
+          "supplier": null,
+          "dc_charge_kw": null,
+          "ac_charge_kw": null,
+          "ev_range_km": 530,
+          "ev_range_standard": "CLTC",
+          "combined_range_km": null,
+          "confidence": "confirmed"
+        },
+        "transmission": { "type": "电动车单速变速箱", "gears": 1, "confidence": "confirmed" },
+        "performance": { "accel_0_100_s": 5.6, "top_speed_kmh": null, "confidence": "confirmed" },
+        "source": "易车/汽车经纬",
+        "confidence": "unconfirmed"
+      },
+      {
+        "trim": "Ultra五座性能版",
+        "powertrain": "BEV",
+        "engine": null,
+        "motor": {
+          "type": "前永磁/同步 + 后永磁/同步",
+          "power_kw": 365,
+          "torque_nm": 573,
+          "count": 2,
+          "drive": "AWD",
+          "confidence": "confirmed"
+        },
+        "battery": {
+          "chemistry": "三元锂电池",
+          "capacity_total_kwh": 66,
+          "capacity_usable_kwh": null,
+          "supplier": null,
+          "dc_charge_kw": "快充0.5小时",
+          "ac_charge_kw": null,
+          "ev_range_km": 512,
+          "ev_range_standard": "CLTC",
+          "combined_range_km": null,
+          "confidence": "confirmed"
+        },
+        "transmission": { "type": "电动车单速变速箱", "gears": 1, "confidence": "confirmed" },
+        "performance": { "accel_0_100_s": 3.69, "top_speed_kmh": null, "confidence": "confirmed" },
+        "source": "易车/中关村在线",
+        "confidence": "unconfirmed"
+      }
+    ]
+  },
+  {
+    "brand": "极氪",
+    "model": "极氪7X",
+    "generation": "2026款",
+    "segment": "中型纯电SUV",
+    "body": "5门5座SUV",
+    "price_rmb_range": "22.98-26.98万",
+    "variants": [
+      {
+        "trim": "75kWh 后驱Max版",
+        "powertrain": "BEV",
+        "engine": null,
+        "motor": {
+          "type": "永磁同步电机",
+          "power_kw": 370,
+          "torque_nm": null,
+          "count": 1,
+          "drive": "RWD",
+          "confidence": "confirmed"
+        },
+        "battery": {
+          "chemistry": "磷酸铁锂",
+          "capacity_total_kwh": 75,
+          "capacity_usable_kwh": null,
+          "supplier": null,
+          "dc_charge_kw": "800V高压架构",
+          "ac_charge_kw": null,
+          "ev_range_km": 620,
+          "ev_range_standard": "CLTC",
+          "combined_range_km": null,
+          "confidence": "confirmed"
+        },
+        "transmission": { "type": "电动车单速变速箱", "gears": 1, "confidence": "confirmed" },
+        "performance": { "accel_0_100_s": 5.4, "top_speed_kmh": null, "confidence": "confirmed" },
+        "source": "CNMO科技/太平洋汽车",
+        "confidence": "unconfirmed"
+      },
+      {
+        "trim": "103kWh 后驱Max版",
+        "powertrain": "BEV",
+        "engine": null,
+        "motor": {
+          "type": "永磁同步电机",
+          "power_kw": 370,
+          "torque_nm": null,
+          "count": 1,
+          "drive": "RWD",
+          "confidence": "confirmed"
+        },
+        "battery": {
+          "chemistry": "三元锂电池",
+          "capacity_total_kwh": 103,
+          "capacity_usable_kwh": null,
+          "supplier": null,
+          "dc_charge_kw": "900V架构，快充0.17小时",
+          "ac_charge_kw": null,
+          "ev_range_km": 802,
+          "ev_range_standard": "CLTC",
+          "combined_range_km": null,
+          "confidence": "confirmed"
+        },
+        "transmission": { "type": "电动车单速变速箱", "gears": 1, "confidence": "confirmed" },
+        "performance": { "accel_0_100_s": null, "top_speed_kmh": null, "confidence": "unconfirmed" },
+        "source": "太平洋汽车/CNMO科技",
+        "confidence": "unconfirmed"
+      },
+      {
+        "trim": "103kWh 四驱Ultra版",
+        "powertrain": "BEV",
+        "engine": null,
+        "motor": {
+          "type": "前感应/异步 + 后永磁/同步",
+          "power_kw": 585,
+          "torque_nm": 812,
+          "count": 2,
+          "drive": "AWD",
+          "confidence": "confirmed"
+        },
+        "battery": {
+          "chemistry": "三元锂电池",
+          "capacity_total_kwh": 103,
+          "capacity_usable_kwh": null,
+          "supplier": null,
+          "dc_charge_kw": "900V架构",
+          "ac_charge_kw": null,
+          "ev_range_km": 715,
+          "ev_range_standard": "CLTC",
+          "combined_range_km": null,
+          "confidence": "confirmed"
+        },
+        "transmission": { "type": "电动车单速变速箱", "gears": 1, "confidence": "confirmed" },
+        "performance": { "accel_0_100_s": 2.98, "top_speed_kmh": 255, "confidence": "confirmed" },
+        "source": "中关村在线/CNMO科技",
+        "confidence": "unconfirmed"
+      }
+    ]
+  },
+  {
+    "brand": "极氪",
+    "model": "极氪009",
+    "generation": "2026款",
+    "segment": "中大型纯电MPV",
+    "body": "5门MPV",
+    "price_rmb_range": "43.98-46.98万（限时权益价41.38-44.38万）",
+    "variants": [
+      {
+        "trim": "七座Ultra版",
+        "powertrain": "BEV",
+        "engine": null,
+        "motor": {
+          "type": "永磁同步电机",
+          "power_kw": 310,
+          "torque_nm": 440,
+          "count": 1,
+          "drive": "RWD",
+          "confidence": "confirmed"
+        },
+        "battery": {
+          "chemistry": "三元锂电池（115kWh宁德时代6C麒麟电池）",
+          "capacity_total_kwh": 115,
+          "capacity_usable_kwh": null,
+          "supplier": "宁德时代",
+          "dc_charge_kw": "900V高压架构，充电10分钟补能510公里",
+          "ac_charge_kw": null,
+          "ev_range_km": 740,
+          "ev_range_standard": "CLTC",
+          "combined_range_km": null,
+          "confidence": "confirmed"
+        },
+        "transmission": { "type": "电动车单速变速箱", "gears": 1, "confidence": "confirmed" },
+        "performance": { "accel_0_100_s": null, "top_speed_kmh": null, "confidence": "unconfirmed" },
+        "source": "中关村在线/中国江苏网",
+        "confidence": "unconfirmed"
+      },
+      {
+        "trim": "七座Ultra+齐家版",
+        "powertrain": "BEV",
+        "engine": null,
+        "motor": {
+          "type": "前感应/异步 + 后永磁/同步",
+          "power_kw": 680,
+          "torque_nm": 913,
+          "count": 2,
+          "drive": "AWD",
+          "confidence": "confirmed"
+        },
+        "battery": {
+          "chemistry": "三元锂电池（115kWh宁德时代6C麒麟电池）",
+          "capacity_total_kwh": 115,
+          "capacity_usable_kwh": null,
+          "supplier": "宁德时代",
+          "dc_charge_kw": "900V高压架构，充电10分钟补能510公里",
+          "ac_charge_kw": null,
+          "ev_range_km": 720,
+          "ev_range_standard": "CLTC",
+          "combined_range_km": null,
+          "confidence": "confirmed"
+        },
+        "transmission": { "type": "电动车单速变速箱", "gears": 1, "confidence": "confirmed" },
+        "performance": { "accel_0_100_s": 3.9, "top_speed_kmh": null, "confidence": "confirmed" },
+        "source": "车质网/中国江苏网",
+        "confidence": "unconfirmed"
+      },
+      {
+        "trim": "六座Ultra+行政版",
+        "powertrain": "BEV",
+        "engine": null,
+        "motor": {
+          "type": "前感应/异步 + 后永磁/同步",
+          "power_kw": 680,
+          "torque_nm": 913,
+          "count": 2,
+          "drive": "AWD",
+          "confidence": "confirmed"
+        },
+        "battery": {
+          "chemistry": "三元锂电池（115kWh宁德时代6C麒麟电池）",
+          "capacity_total_kwh": 115,
+          "capacity_usable_kwh": null,
+          "supplier": "宁德时代",
+          "dc_charge_kw": "900V高压架构，充电10分钟补能510公里",
+          "ac_charge_kw": null,
+          "ev_range_km": 720,
+          "ev_range_standard": "CLTC",
+          "combined_range_km": null,
+          "confidence": "confirmed"
+        },
+        "transmission": { "type": "电动车单速变速箱", "gears": 1, "confidence": "confirmed" },
+        "performance": { "accel_0_100_s": 3.9, "top_speed_kmh": null, "confidence": "confirmed" },
+        "source": "车质网/中国江苏网",
+        "confidence": "unconfirmed"
+      }
+    ]
+  },
+  {
+    "brand": "极氪",
+    "model": "极氪MIX",
+    "generation": "2026款",
+    "segment": "中型纯电MPV",
+    "body": "5门5座MPV",
+    "price_rmb_range": "27.99-29.99万",
+    "variants": [
+      {
+        "trim": "智驾版",
+        "powertrain": "BEV",
+        "engine": null,
+        "motor": {
+          "type": "永磁同步电机",
+          "power_kw": 310,
+          "torque_nm": 440,
+          "count": 1,
+          "drive": "RWD",
+          "confidence": "confirmed"
+        },
+        "battery": {
+          "chemistry": "磷酸铁锂（76kWh）",
+          "capacity_total_kwh": 76,
+          "capacity_usable_kwh": null,
+          "supplier": null,
+          "dc_charge_kw": "800V高压平台，10%-80%快充10.8分钟",
+          "ac_charge_kw": null,
+          "ev_range_km": 550,
+          "ev_range_standard": "CLTC",
+          "combined_range_km": null,
+          "confidence": "confirmed"
+        },
+        "transmission": { "type": "电动车单速变速箱", "gears": 1, "confidence": "confirmed" },
+        "performance": { "accel_0_100_s": 6.8, "top_speed_kmh": 190, "confidence": "confirmed" },
+        "source": "汽车之家/易车",
+        "confidence": "unconfirmed"
+      },
+      {
+        "trim": "长续航智驾版",
+        "powertrain": "BEV",
+        "engine": null,
+        "motor": {
+          "type": "永磁同步电机",
+          "power_kw": 310,
+          "torque_nm": 440,
+          "count": 1,
+          "drive": "RWD",
+          "confidence": "confirmed"
+        },
+        "battery": {
+          "chemistry": "三元锂电池（102kWh）",
+          "capacity_total_kwh": 102,
+          "capacity_usable_kwh": null,
+          "supplier": null,
+          "dc_charge_kw": "800V高压平台",
+          "ac_charge_kw": null,
+          "ev_range_km": 702,
+          "ev_range_standard": "CLTC",
+          "combined_range_km": null,
+          "confidence": "confirmed"
+        },
+        "transmission": { "type": "电动车单速变速箱", "gears": 1, "confidence": "confirmed" },
+        "performance": { "accel_0_100_s": 6.8, "top_speed_kmh": 190, "confidence": "confirmed" },
+        "source": "汽车之家/易车",
+        "confidence": "unconfirmed"
+      }
+    ]
+  },
+  {
+    "brand": "极氪",
+    "model": "极氪9X",
+    "generation": "2026款",
+    "segment": "大型插混SUV",
+    "body": "5门5座SUV",
+    "price_rmb_range": "47.19-58.59万（限时权益价45.19-56.59万）",
+    "variants": [
+      {
+        "trim": "Ultra版 55kWh 五座",
+        "powertrain": "PHEV",
+        "engine": {
+          "displacement_l": 2.0,
+          "cylinders": 4,
+          "induction": "涡轮增压",
+          "max_power_kw": 205,
+          "max_power_hp": 279,
+          "max_torque_nm": null,
+          "confidence": "confirmed"
+        },
+        "motor": {
+          "type": "永磁同步电机",
+          "power_kw": 660,
+          "torque_nm": null,
+          "count": 2,
+          "drive": "AWD",
+          "confidence": "confirmed"
+        },
+        "battery": {
+          "chemistry": "磷酸铁锂",
+          "capacity_total_kwh": 55,
+          "capacity_usable_kwh": null,
+          "supplier": null,
+          "dc_charge_kw": "900V高压平台，20%-80%快充9分钟",
+          "ac_charge_kw": null,
+          "ev_range_km": 288,
+          "ev_range_standard": "CLTC",
+          "combined_range_km": 1160,
+          "confidence": "confirmed"
+        },
+        "transmission": { "type": "1挡DHT", "gears": 1, "confidence": "confirmed" },
+        "performance": { "accel_0_100_s": null, "top_speed_kmh": null, "confidence": "unconfirmed" },
+        "source": "网通社/易车",
+        "confidence": "unconfirmed"
+      },
+      {
+        "trim": "Ultra版 70kWh 五座",
+        "powertrain": "PHEV",
+        "engine": {
+          "displacement_l": 2.0,
+          "cylinders": 4,
+          "induction": "涡轮增压",
+          "max_power_kw": 205,
+          "max_power_hp": 279,
+          "max_torque_nm": null,
+          "confidence": "confirmed"
+        },
+        "motor": {
+          "type": "永磁同步电机",
+          "power_kw": 660,
+          "torque_nm": null,
+          "count": 2,
+          "drive": "AWD",
+          "confidence": "confirmed"
+        },
+        "battery": {
+          "chemistry": "磷酸铁锂",
+          "capacity_total_kwh": 70,
+          "capacity_usable_kwh": null,
+          "supplier": null,
+          "dc_charge_kw": "900V高压平台，20%-80%快充9分钟",
+          "ac_charge_kw": null,
+          "ev_range_km": 380,
+          "ev_range_standard": "CLTC",
+          "combined_range_km": 1250,
+          "confidence": "confirmed"
+        },
+        "transmission": { "type": "1挡DHT", "gears": 1, "confidence": "confirmed" },
+        "performance": { "accel_0_100_s": null, "top_speed_kmh": null, "confidence": "unconfirmed" },
+        "source": "网通社/易车",
+        "confidence": "unconfirmed"
+      },
+      {
+        "trim": "Hyper版 70kWh 五座",
+        "powertrain": "PHEV",
+        "engine": {
+          "displacement_l": 2.0,
+          "cylinders": 4,
+          "induction": "涡轮增压",
+          "max_power_kw": 205,
+          "max_power_hp": 279,
+          "max_torque_nm": null,
+          "confidence": "confirmed"
+        },
+        "motor": {
+          "type": "永磁同步电机",
+          "power_kw": 1030,
+          "torque_nm": 1410,
+          "count": 3,
+          "drive": "AWD",
+          "confidence": "confirmed"
+        },
+        "battery": {
+          "chemistry": "磷酸铁锂",
+          "capacity_total_kwh": 70,
+          "capacity_usable_kwh": null,
+          "supplier": null,
+          "dc_charge_kw": "900V高压平台，20%-80%快充9分钟",
+          "ac_charge_kw": null,
+          "ev_range_km": 355,
+          "ev_range_standard": "CLTC",
+          "combined_range_km": 1250,
+          "confidence": "confirmed"
+        },
+        "transmission": { "type": "1挡DHT", "gears": 1, "confidence": "confirmed" },
+        "performance": { "accel_0_100_s": 3.1, "top_speed_kmh": 240, "confidence": "confirmed" },
+        "source": "中关村在线/网通社",
+        "confidence": "unconfirmed"
+      },
+      {
+        "trim": "曜黑版 70kWh 五座",
+        "powertrain": "PHEV",
+        "engine": {
+          "displacement_l": 2.0,
+          "cylinders": 4,
+          "induction": "涡轮增压",
+          "max_power_kw": 205,
+          "max_power_hp": 279,
+          "max_torque_nm": null,
+          "confidence": "confirmed"
+        },
+        "motor": {
+          "type": "永磁同步电机",
+          "power_kw": 1030,
+          "torque_nm": 1410,
+          "count": 3,
+          "drive": "AWD",
+          "confidence": "confirmed"
+        },
+        "battery": {
+          "chemistry": "磷酸铁锂",
+          "capacity_total_kwh": 70,
+          "capacity_usable_kwh": null,
+          "supplier": null,
+          "dc_charge_kw": "900V高压平台，20%-80%快充9分钟",
+          "ac_charge_kw": null,
+          "ev_range_km": 355,
+          "ev_range_standard": "CLTC",
+          "combined_range_km": 1250,
+          "confidence": "confirmed"
+        },
+        "transmission": { "type": "1挡DHT", "gears": 1, "confidence": "confirmed" },
+        "performance": { "accel_0_100_s": 3.1, "top_speed_kmh": 240, "confidence": "confirmed" },
+        "source": "网通社",
+        "confidence": "unconfirmed"
+      }
+    ]
+  },
+  {
+    "brand": "极氪",
+    "model": "极氪8X",
+    "generation": "2026款",
+    "segment": "中大型插混SUV",
+    "body": "5门5座SUV",
+    "price_rmb_range": "35.68-42.68万（限时权益价32.98-39.98万）",
+    "variants": [
+      {
+        "trim": "Max版 70kWh",
+        "powertrain": "PHEV",
+        "engine": {
+          "displacement_l": 2.0,
+          "cylinders": 4,
+          "induction": "涡轮增压",
+          "max_power_kw": 205,
+          "max_power_hp": 279,
+          "max_torque_nm": 410,
+          "confidence": "confirmed"
+        },
+        "motor": {
+          "type": "永磁同步电机",
+          "power_kw": 660,
+          "torque_nm": 935,
+          "count": 2,
+          "drive": "AWD",
+          "confidence": "confirmed"
+        },
+        "battery": {
+          "chemistry": "磷酸铁锂",
+          "capacity_total_kwh": 70,
+          "capacity_usable_kwh": null,
+          "supplier": null,
+          "dc_charge_kw": null,
+          "ac_charge_kw": null,
+          "ev_range_km": 410,
+          "ev_range_standard": "CLTC",
+          "combined_range_km": null,
+          "confidence": "confirmed"
+        },
+        "transmission": { "type": "1挡DHT", "gears": 1, "confidence": "confirmed" },
+        "performance": { "accel_0_100_s": 3.7, "top_speed_kmh": 220, "confidence": "confirmed" },
+        "source": "中关村在线/网通社",
+        "confidence": "unconfirmed"
+      },
+      {
+        "trim": "Ultra版 70kWh",
+        "powertrain": "PHEV",
+        "engine": {
+          "displacement_l": 2.0,
+          "cylinders": 4,
+          "induction": "涡轮增压",
+          "max_power_kw": 205,
+          "max_power_hp": 279,
+          "max_torque_nm": 410,
+          "confidence": "confirmed"
+        },
+        "motor": {
+          "type": "永磁同步电机",
+          "power_kw": 660,
+          "torque_nm": 935,
+          "count": 2,
+          "drive": "AWD",
+          "confidence": "confirmed"
+        },
+        "battery": {
+          "chemistry": "磷酸铁锂",
+          "capacity_total_kwh": 70,
+          "capacity_usable_kwh": null,
+          "supplier": null,
+          "dc_charge_kw": null,
+          "ac_charge_kw": null,
+          "ev_range_km": 410,
+          "ev_range_standard": "CLTC",
+          "combined_range_km": null,
+          "confidence": "confirmed"
+        },
+        "transmission": { "type": "1挡DHT", "gears": 1, "confidence": "confirmed" },
+        "performance": { "accel_0_100_s": 3.7, "top_speed_kmh": 220, "confidence": "confirmed" },
+        "source": "中关村在线/网通社",
+        "confidence": "unconfirmed"
+      },
+      {
+        "trim": "Ultra+版 70kWh",
+        "powertrain": "PHEV",
+        "engine": {
+          "displacement_l": 2.0,
+          "cylinders": 4,
+          "induction": "涡轮增压",
+          "max_power_kw": 205,
+          "max_power_hp": 279,
+          "max_torque_nm": 410,
+          "confidence": "confirmed"
+        },
+        "motor": {
+          "type": "永磁同步电机",
+          "power_kw": 660,
+          "torque_nm": 935,
+          "count": 2,
+          "drive": "AWD",
+          "confidence": "confirmed"
+        },
+        "battery": {
+          "chemistry": "磷酸铁锂",
+          "capacity_total_kwh": 70,
+          "capacity_usable_kwh": null,
+          "supplier": null,
+          "dc_charge_kw": null,
+          "ac_charge_kw": null,
+          "ev_range_km": 410,
+          "ev_range_standard": "CLTC",
+          "combined_range_km": null,
+          "confidence": "confirmed"
+        },
+        "transmission": { "type": "1挡DHT", "gears": 1, "confidence": "confirmed" },
+        "performance": { "accel_0_100_s": 3.7, "top_speed_kmh": 220, "confidence": "confirmed" },
+        "source": "中关村在线/网通社",
+        "confidence": "unconfirmed"
+      }
+    ]
+  }
+]

@@ -58,7 +58,9 @@ export default function ComparePage() {
       label: "Battery",
       get: (p) =>
         p?.battery_details
-          ? `${p.battery_details.battery_capacity_total_kwh ?? "?"} kWh ${p.battery_details.battery_chemistry ?? ""}`
+          ? `${p.battery_details.battery_capacity_total_kwh ?? "?"} kWh ${p.battery_details.battery_chemistry ?? ""}${
+              p.battery_details.battery_variant ? ` (${p.battery_details.battery_variant})` : ""
+            }`
           : "—",
     },
     {

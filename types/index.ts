@@ -83,6 +83,7 @@ export interface IElectricMotorDetails {
 
 export interface IBatteryDetails {
   battery_chemistry?: string;
+  battery_variant?: string;
   battery_capacity_total_kwh?: number;
   battery_capacity_usable_kwh?: number;
   battery_supplier?: string;

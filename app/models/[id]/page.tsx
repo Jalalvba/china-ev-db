@@ -115,7 +115,9 @@ export default async function ModelPage({ params }: { params: Promise<{ id: stri
                 label="Battery"
                 values={powertrains.map((p) =>
                   p.battery_details
-                    ? `${p.battery_details.battery_capacity_total_kwh ?? "?"} kWh ${p.battery_details.battery_chemistry ?? ""} (${p.battery_details.battery_supplier ?? "?"})`
+                    ? `${p.battery_details.battery_capacity_total_kwh ?? "?"} kWh ${p.battery_details.battery_chemistry ?? ""}${
+                        p.battery_details.battery_variant ? ` (${p.battery_details.battery_variant})` : ""
+                      } (${p.battery_details.battery_supplier ?? "?"})`
                     : undefined
                 )}
               />

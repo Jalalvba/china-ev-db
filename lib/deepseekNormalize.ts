@@ -128,8 +128,98 @@ export function translateBatteryTerms(text: string | null | undefined): string |
   return normalizePunctuation(translateTerms(text, BATTERY_TERMS));
 }
 
+/** Chinese base chemistry-family terms -> the schema's chemistry family label. */
+const BASE_CHEMISTRY_TERMS: Record<string, string> = {
+  "磷酸铁锂电池": "LFP",
+  "磷酸铁锂": "LFP",
+  "三元锂电池": "NMC",
+  "三元锂": "NMC",
+  "钠离子": "Sodium-ion",
+};
+
+/** Chinese proprietary battery-product names -> English label, for the battery_variant field. */
+const BATTERY_VARIANT_TERMS: Record<string, string> = {
+  "麒麟电池": "Qilin",
+  "麒麟": "Qilin",
+  "金砖电池": "Zeekr Golden Brick",
+  "神盾电池": "Shield Battery",
+};
+
+export interface ParsedBatteryChemistry {
+  chemistry?: string;
+  battery_variant?: string;
+  /** Supplier name mentioned inline (e.g. "宁德时代") — only set when explicitly stated, never guessed. */
+  supplier_hint?: string;
+}
+
+/**
+ * Split a richer chemistry string like "三元锂电池（103kWh麒麟电池）" or
+ * "三元锂电池（115kWh宁德时代6C麒麟电池）" into the base chemistry family
+ * (NMC/LFP), a proprietary battery-product name for battery_variant (e.g.
+ * "CATL Qilin (6C)"), and — only when explicitly named in the text, never
+ * inferred — a supplier hint.
+ */
+export function parseBatteryChemistry(raw: string | null | undefined): ParsedBatteryChemistry {
+  if (!raw) return {};
+
+  const m = raw.match(/^(.*?)[（(]([^)）]*)[)）]\s*$/);
+  const basePart = (m ? m[1] : raw).trim();
+  const parenPart = m ? m[2].trim() : "";
+
+  let chemistry: string | undefined;
+  for (const term of Object.keys(BASE_CHEMISTRY_TERMS).sort((a, b) => b.length - a.length)) {
+    if (basePart.includes(term)) {
+      chemistry = BASE_CHEMISTRY_TERMS[term];
+      break;
+    }
+  }
+  if (!chemistry) {
+    if (isAscii(basePart) && basePart) {
+      chemistry = basePart;
+    } else if (basePart) {
+      console.warn(`[import] No English mapping for battery chemistry "${basePart}" — keeping original. Add it to BASE_CHEMISTRY_TERMS in lib/deepseekNormalize.ts.`);
+      chemistry = basePart;
+    }
+  }
+
+  if (!parenPart) return { chemistry };
+
+  let remainder = parenPart.replace(/[\d.]+\s*kWh/gi, "").trim();
+  let supplier_hint: string | undefined;
+  if (remainder.includes("宁德时代")) {
+    supplier_hint = "CATL";
+    remainder = remainder.replace("宁德时代", "").trim();
+  }
+
+  const fastChargeMatch = remainder.match(/(\d+C)\b/i);
+
+  let battery_variant: string | undefined;
+  for (const term of Object.keys(BATTERY_VARIANT_TERMS).sort((a, b) => b.length - a.length)) {
+    if (remainder.includes(term)) {
+      const label = BATTERY_VARIANT_TERMS[term];
+      battery_variant = supplier_hint && !label.includes(supplier_hint) ? `${supplier_hint} ${label}` : label;
+      break;
+    }
+  }
+  if (battery_variant && fastChargeMatch) {
+    battery_variant += ` (${fastChargeMatch[1]})`;
+  }
+  if (!battery_variant) {
+    const leftover = remainder.replace(/[（）()]/g, "").trim();
+    if (leftover && !isAscii(leftover)) {
+      console.warn(`[import] Unrecognized battery variant detail "${leftover}" (from "${raw}") — dropping. Add it to BATTERY_VARIANT_TERMS if useful.`);
+    } else if (leftover) {
+      battery_variant = leftover;
+    }
+  }
+
+  return { chemistry, battery_variant, supplier_hint };
+}
+
 /** Chinese motor-type descriptions -> normalized English label. */
 const MOTOR_TYPE_TERMS: Record<string, string> = {
+  "前感应/异步 + 后永磁/同步": "Front Induction + Rear PMSM",
+  "前永磁/同步 + 后永磁/同步": "Dual PMSM",
   "永磁同步电机": "PMSM",
   "感应电机": "Induction",
   "异步电机": "Induction",
@@ -221,6 +311,16 @@ export const KNOWN_MODELS: Record<string, string> = {
   "银河TT": "Galaxy TT",
   "银河战舰700": "Galaxy Warship 700",
   "银河星耀8": "Galaxy Starlight 8",
+  // Zeekr (极氪) lineup
+  "极氪001": "001",
+  "极氪007": "007",
+  "极氪007GT": "007 GT",
+  "极氪X": "X",
+  "极氪7X": "7X",
+  "极氪009": "009",
+  "极氪MIX": "MIX",
+  "极氪9X": "9X",
+  "极氪8X": "8X",
 };
 
 const RANGE_STANDARD_CORRECTIONS: Record<string, string> = {
