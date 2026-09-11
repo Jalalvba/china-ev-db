@@ -30,6 +30,7 @@ import Powertrain from "../models/Powertrain";
 import {
   resolveBrandName,
   resolveModelName,
+  isModelNameResolvable,
   parsePriceRange,
   parseDcKw,
   parseCombinedRange,
@@ -521,6 +522,35 @@ function loadRaw(filePath: string): unknown {
   return JSON.parse(fs.readFileSync(abs, "utf8"));
 }
 
+/**
+ * Scan a variant-spec file for model names that resolveModelName would fall
+ * back on (unmapped, non-ASCII, no model_en override) and abort before any
+ * DB connection or write happens. This is the whole point: every import so
+ * far that skipped this check wrote stray Chinese-named model docs on a
+ * first failed pass, requiring manual cleanup before a clean re-run. Failing
+ * fast here means KNOWN_MODELS entries get added once, up front, instead of
+ * insert-then-cleanup-then-retry.
+ */
+function preflightCheckModelNames(entries: RawVariantEntry[]): void {
+  const unmapped = new Map<string, string>(); // raw name -> example model_en if any nearby entry has one
+
+  for (const entry of entries) {
+    if (!isModelNameResolvable(entry.model, entry.model_en)) {
+      unmapped.set(entry.model, entry.model_en ?? "");
+    }
+  }
+
+  if (unmapped.size === 0) return;
+
+  console.error(`\n[preflight] Aborting: ${unmapped.size} model name(s) have no KNOWN_MODELS mapping and are not plain ASCII.`);
+  console.error("[preflight] Add these to KNOWN_MODELS in lib/deepseekNormalize.ts, then re-run:\n");
+  for (const [raw] of unmapped) {
+    console.error(`  "${raw}": "",`);
+  }
+  console.error("\n[preflight] No brand, model, or powertrain documents were written.");
+  process.exit(1);
+}
+
 async function run() {
   const filePath = process.argv[2];
   if (!filePath) {
@@ -529,6 +559,11 @@ async function run() {
   }
 
   const raw = loadRaw(filePath);
+
+  if (Array.isArray(raw)) {
+    preflightCheckModelNames(raw as RawVariantEntry[]);
+  }
+
   await mongoose.connect(MONGODB_URI as string);
   console.log("Connected to MongoDB.");
 

@@ -412,6 +412,11 @@ export function resolveModelName(raw: string, explicitEnglish?: string): string 
   return raw;
 }
 
+/** True if resolveModelName would resolve this without falling back to a warned-and-passed-through raw name. */
+export function isModelNameResolvable(raw: string, explicitEnglish?: string): boolean {
+  return Boolean(explicitEnglish) || Boolean(KNOWN_MODELS[raw]) || isAscii(raw);
+}
+
 /** Parse a "7.98–9.98万" / "22.98万起" / "100.8万" style RMB price string into numeric CNY. */
 export function parsePriceRange(str: string | null | undefined):
   | { min_local: number; max_local: number; currency_local: string; min_usd: number; max_usd: number; unverified?: boolean }
