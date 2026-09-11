@@ -32,10 +32,24 @@ export interface BrandGroup {
  */
 export function groupBrands(brands: IBrand[]): { groups: BrandGroup[]; standalone: IBrand[] } {
   const names = new Set(brands.map((b) => b.name));
+  const byName = new Map(brands.map((b) => [b.name, b]));
 
-  const keyFor = (b: IBrand): string | undefined => {
+  // parent_group can point at another brand that itself belongs to a bigger
+  // group (e.g. Foton Pickup -> "Foton" -> "BAIC") rather than a terminal
+  // conglomerate label directly — walk the chain instead of stopping one
+  // level up, with a depth cap as a defensive measure against any cycle.
+  const keyFor = (b: IBrand, depth = 0): string | undefined => {
     if (b.tech_partner) return TECH_ECOSYSTEM_LABEL[b.tech_partner] ?? `${b.tech_partner} Ecosystem`;
-    if (b.parent_group) return b.parent_group;
+    if (b.parent_group) {
+      if (depth < 5) {
+        const parentBrand = byName.get(b.parent_group);
+        if (parentBrand && parentBrand.name !== b.name) {
+          const upstream = keyFor(parentBrand, depth + 1);
+          if (upstream) return upstream;
+        }
+      }
+      return b.parent_group;
+    }
     if (ANCHOR_BRAND_TO_GROUP[b.name]) return ANCHOR_BRAND_TO_GROUP[b.name];
     return undefined;
   };
