@@ -31,6 +31,7 @@ import {
   resolveBrandName,
   resolveModelName,
   isModelNameResolvable,
+  isBrandNameResolvable,
   parsePriceRange,
   parseDcKw,
   parseCombinedRange,
@@ -471,8 +472,7 @@ function flattenDeltaReport(report: DeltaReport): PendingBrand[] {
   return pending;
 }
 
-async function runDeltaImport(report: DeltaReport, filePath: string) {
-  const pending = flattenDeltaReport(report);
+async function runDeltaImport(pending: PendingBrand[], filePath: string) {
   console.log(`Importing ${pending.length} brand entries (delta-report shape) from ${filePath}`);
 
   let created = 0;
@@ -551,6 +551,32 @@ function preflightCheckModelNames(entries: RawVariantEntry[]): void {
   process.exit(1);
 }
 
+/**
+ * Same idea as preflightCheckModelNames, but for brand names: scans for raw
+ * brand names that resolveBrandName would silently fall back on (unmapped,
+ * non-ASCII, no explicit English override) and aborts before any DB
+ * connection or write, instead of quietly creating a Chinese-named Brand doc.
+ */
+function preflightCheckBrandNames(inputs: { raw: string; explicitEnglish?: string }[]): void {
+  const unmapped = new Map<string, string>();
+
+  for (const { raw, explicitEnglish } of inputs) {
+    if (!isBrandNameResolvable(raw, explicitEnglish)) {
+      unmapped.set(raw, explicitEnglish ?? "");
+    }
+  }
+
+  if (unmapped.size === 0) return;
+
+  console.error(`\n[preflight] Aborting: ${unmapped.size} brand name(s) have no KNOWN_BRANDS mapping and are not plain ASCII.`);
+  console.error("[preflight] Add these to KNOWN_BRANDS in lib/deepseekNormalize.ts, then re-run:\n");
+  for (const [raw] of unmapped) {
+    console.error(`  "${raw}": { name: "" },`);
+  }
+  console.error("\n[preflight] No brand, model, or powertrain documents were written.");
+  process.exit(1);
+}
+
 async function run() {
   const filePath = process.argv[2];
   if (!filePath) {
@@ -560,8 +586,15 @@ async function run() {
 
   const raw = loadRaw(filePath);
 
+  let pendingDelta: PendingBrand[] | undefined;
+
   if (Array.isArray(raw)) {
-    preflightCheckModelNames(raw as RawVariantEntry[]);
+    const entries = raw as RawVariantEntry[];
+    preflightCheckModelNames(entries);
+    preflightCheckBrandNames(entries.map((e) => ({ raw: e.brand })));
+  } else if (isDeltaReport(raw)) {
+    pendingDelta = flattenDeltaReport(raw);
+    preflightCheckBrandNames(pendingDelta.map((p) => ({ raw: p.brand_cn, explicitEnglish: p.brand_en })));
   }
 
   await mongoose.connect(MONGODB_URI as string);
@@ -569,8 +602,8 @@ async function run() {
 
   if (Array.isArray(raw)) {
     await runVariantImport(raw as RawVariantEntry[], filePath);
-  } else if (isDeltaReport(raw)) {
-    await runDeltaImport(raw, filePath);
+  } else if (pendingDelta) {
+    await runDeltaImport(pendingDelta, filePath);
   } else {
     throw new Error(
       "Unrecognized input shape: expected either an array of model entries or a delta-report object with a '1_missing_brands_entirely' section."

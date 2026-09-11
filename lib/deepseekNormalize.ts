@@ -402,6 +402,11 @@ export function resolveBrandName(
   return { name: raw };
 }
 
+/** True if resolveBrandName would resolve this without falling back to a warned-and-passed-through raw name. */
+export function isBrandNameResolvable(raw: string, explicitEnglish?: string): boolean {
+  return Boolean(KNOWN_BRANDS[raw]) || Boolean(explicitEnglish) || isAscii(raw);
+}
+
 /** Resolve a raw (possibly Chinese) model name to English, warning if unmapped. */
 export function resolveModelName(raw: string, explicitEnglish?: string): string {
   if (explicitEnglish) return explicitEnglish;
