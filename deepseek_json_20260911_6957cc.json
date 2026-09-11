@@ -1,0 +1,1025 @@
+[
+  {
+    "brand": "BYD",
+    "model": "秦PLUS",
+    "generation": "2026",
+    "segment": "B-segment compact sedan",
+    "body": "4-door sedan",
+    "price_rmb_range": "7.98–9.98万",
+    "variants": [
+      {
+        "trim": "DM-i 128KM 进取型",
+        "powertrain": "PHEV",
+        "engine": {
+          "displacement_l": 1.5,
+          "cylinders": 4,
+          "induction": "naturally aspirated",
+          "max_power_kw": 74,
+          "max_power_hp": 101,
+          "max_torque_nm": null,
+          "confidence": "unconfirmed"
+        },
+        "motor": {
+          "type": "permanent magnet synchronous",
+          "power_kw": 120,
+          "torque_nm": null,
+          "count": 1,
+          "drive": "FWD",
+          "confidence": "unconfirmed"
+        },
+        "battery": {
+          "chemistry": "LFP (Blade)",
+          "capacity_total_kwh": 15.87,
+          "capacity_usable_kwh": null,
+          "supplier": "BYD FinDreams",
+          "dc_charge_kw": null,
+          "ac_charge_kw": null,
+          "ev_range_km": 128,
+          "ev_range_standard": "CLTC",
+          "combined_range_km": ">1000",
+          "confidence": "unconfirmed"
+        },
+        "transmission": { "type": "E-CVT", "gears": "single-speed", "confidence": "unconfirmed" },
+        "performance": { "accel_0_100_s": null, "top_speed_kmh": null, "confidence": "unconfirmed" },
+        "source": "Autohome / Dongchedi search results",
+        "confidence": "unconfirmed"
+      },
+      {
+        "trim": "DM-i 210KM 进取型",
+        "powertrain": "PHEV",
+        "engine": {
+          "displacement_l": 1.5,
+          "cylinders": 4,
+          "induction": "naturally aspirated",
+          "max_power_kw": 74,
+          "max_power_hp": 101,
+          "max_torque_nm": null,
+          "confidence": "unconfirmed"
+        },
+        "motor": {
+          "type": "permanent magnet synchronous",
+          "power_kw": 120,
+          "torque_nm": null,
+          "count": 1,
+          "drive": "FWD",
+          "confidence": "unconfirmed"
+        },
+        "battery": {
+          "chemistry": "LFP (Blade)",
+          "capacity_total_kwh": 25.28,
+          "capacity_usable_kwh": null,
+          "supplier": "BYD FinDreams",
+          "dc_charge_kw": null,
+          "ac_charge_kw": null,
+          "ev_range_km": 210,
+          "ev_range_standard": "CLTC",
+          "combined_range_km": null,
+          "confidence": "unconfirmed"
+        },
+        "transmission": { "type": "E-CVT", "gears": "single-speed", "confidence": "unconfirmed" },
+        "performance": { "accel_0_100_s": null, "top_speed_kmh": null, "confidence": "unconfirmed" },
+        "source": "Autohome / Dongchedi search results",
+        "confidence": "unconfirmed"
+      }
+    ]
+  },
+  {
+    "brand": "BYD",
+    "model": "宋Ultra EV",
+    "generation": "2026",
+    "segment": "C-segment mid-size SUV",
+    "body": "5-door SUV",
+    "price_rmb_range": "15.19–17.99万",
+    "variants": [
+      {
+        "trim": "605KM 领先型",
+        "powertrain": "BEV",
+        "engine": null,
+        "motor": {
+          "type": "permanent magnet synchronous",
+          "power_kw": 240,
+          "torque_nm": null,
+          "count": 1,
+          "drive": "FWD",
+          "confidence": "unconfirmed"
+        },
+        "battery": {
+          "chemistry": "LFP (Blade, 2nd gen)",
+          "capacity_total_kwh": 75.616,
+          "capacity_usable_kwh": null,
+          "supplier": "BYD FinDreams",
+          "dc_charge_kw": "megawatt flash charging (5 min 10-70%)",
+          "ac_charge_kw": null,
+          "ev_range_km": 620,
+          "ev_range_standard": "CLTC",
+          "combined_range_km": null,
+          "confidence": "unconfirmed"
+        },
+        "transmission": { "type": "single-speed reducer", "gears": 1, "confidence": "unconfirmed" },
+        "performance": { "accel_0_100_s": 6.8, "top_speed_kmh": 210, "confidence": "unconfirmed" },
+        "source": "央广网 / Autohome[reference:0]",
+        "confidence": "unconfirmed"
+      },
+      {
+        "trim": "710KM 卓越型",
+        "powertrain": "BEV",
+        "engine": null,
+        "motor": {
+          "type": "permanent magnet synchronous",
+          "power_kw": 270,
+          "torque_nm": 305,
+          "count": 1,
+          "drive": "FWD",
+          "confidence": "unconfirmed"
+        },
+        "battery": {
+          "chemistry": "LFP (Blade, 2nd gen)",
+          "capacity_total_kwh": 82.732,
+          "capacity_usable_kwh": null,
+          "supplier": "BYD FinDreams",
+          "dc_charge_kw": "megawatt flash charging",
+          "ac_charge_kw": null,
+          "ev_range_km": 710,
+          "ev_range_standard": "CLTC",
+          "combined_range_km": null,
+          "confidence": "unconfirmed"
+        },
+        "transmission": { "type": "single-speed reducer", "gears": 1, "confidence": "unconfirmed" },
+        "performance": { "accel_0_100_s": 6.8, "top_speed_kmh": 210, "confidence": "unconfirmed" },
+        "source": "央广网 / Autohome[reference:1]",
+        "confidence": "unconfirmed"
+      }
+    ]
+  },
+  {
+    "brand": "BYD",
+    "model": "宋Ultra DM-i",
+    "generation": "2026",
+    "segment": "C-segment mid-size SUV",
+    "body": "5-door SUV",
+    "price_rmb_range": "12.99–15.99万",
+    "variants": [
+      {
+        "trim": "205KM 领先型",
+        "powertrain": "PHEV",
+        "engine": {
+          "displacement_l": 1.5,
+          "cylinders": 4,
+          "induction": "naturally aspirated",
+          "max_power_kw": 74,
+          "max_power_hp": 101,
+          "max_torque_nm": null,
+          "confidence": "unconfirmed"
+        },
+        "motor": {
+          "type": "permanent magnet synchronous",
+          "power_kw": 175,
+          "torque_nm": null,
+          "count": 1,
+          "drive": "FWD",
+          "confidence": "unconfirmed"
+        },
+        "battery": {
+          "chemistry": "LFP (Blade)",
+          "capacity_total_kwh": null,
+          "capacity_usable_kwh": null,
+          "supplier": "BYD FinDreams",
+          "dc_charge_kw": null,
+          "ac_charge_kw": null,
+          "ev_range_km": 205,
+          "ev_range_standard": "CLTC",
+          "combined_range_km": 1845,
+          "confidence": "unconfirmed"
+        },
+        "transmission": { "type": "E-CVT", "gears": "single-speed", "confidence": "unconfirmed" },
+        "performance": { "accel_0_100_s": null, "top_speed_kmh": null, "confidence": "unconfirmed" },
+        "source": "网通社 / 汽车之家[reference:2]",
+        "confidence": "unconfirmed"
+      },
+      {
+        "trim": "310KM 卓越型",
+        "powertrain": "PHEV",
+        "engine": {
+          "displacement_l": 1.5,
+          "cylinders": 4,
+          "induction": "naturally aspirated",
+          "max_power_kw": 74,
+          "max_power_hp": 101,
+          "max_torque_nm": null,
+          "confidence": "unconfirmed"
+        },
+        "motor": {
+          "type": "permanent magnet synchronous",
+          "power_kw": 175,
+          "torque_nm": null,
+          "count": 1,
+          "drive": "FWD",
+          "confidence": "unconfirmed"
+        },
+        "battery": {
+          "chemistry": "LFP (Blade)",
+          "capacity_total_kwh": null,
+          "capacity_usable_kwh": null,
+          "supplier": "BYD FinDreams",
+          "dc_charge_kw": null,
+          "ac_charge_kw": null,
+          "ev_range_km": 310,
+          "ev_range_standard": "CLTC",
+          "combined_range_km": 1845,
+          "confidence": "unconfirmed"
+        },
+        "transmission": { "type": "E-CVT", "gears": "single-speed", "confidence": "unconfirmed" },
+        "performance": { "accel_0_100_s": null, "top_speed_kmh": null, "confidence": "unconfirmed" },
+        "source": "网通社 / 汽车之家[reference:3]",
+        "confidence": "unconfirmed"
+      }
+    ]
+  },
+  {
+    "brand": "BYD",
+    "model": "汉 EV",
+    "generation": "2026",
+    "segment": "D-segment large sedan",
+    "body": "4-door sedan",
+    "price_rmb_range": "17.98–18.78万",
+    "variants": [
+      {
+        "trim": "705KM 闪充尊贵型",
+        "powertrain": "BEV",
+        "engine": null,
+        "motor": {
+          "type": "permanent magnet synchronous",
+          "power_kw": 240,
+          "torque_nm": 305,
+          "count": 1,
+          "drive": "FWD",
+          "confidence": "unconfirmed"
+        },
+        "battery": {
+          "chemistry": "LFP (Blade, 2nd gen)",
+          "capacity_total_kwh": 69.07,
+          "capacity_usable_kwh": null,
+          "supplier": "BYD FinDreams",
+          "dc_charge_kw": "flash charging (5 min 10-70%)",
+          "ac_charge_kw": null,
+          "ev_range_km": 705,
+          "ev_range_standard": "CLTC",
+          "combined_range_km": null,
+          "confidence": "unconfirmed"
+        },
+        "transmission": { "type": "single-speed reducer", "gears": 1, "confidence": "unconfirmed" },
+        "performance": { "accel_0_100_s": 6.5, "top_speed_kmh": null, "confidence": "unconfirmed" },
+        "source": "易车 / 百度百科[reference:4]",
+        "confidence": "unconfirmed"
+      }
+    ]
+  },
+  {
+    "brand": "BYD",
+    "model": "汉L EV",
+    "generation": "2026",
+    "segment": "D-segment large sedan",
+    "body": "4-door sedan",
+    "price_rmb_range": "20.98–27.98万",
+    "variants": [
+      {
+        "trim": "701KM 激光雷达尊享型",
+        "powertrain": "BEV",
+        "engine": null,
+        "motor": {
+          "type": "permanent magnet synchronous",
+          "power_kw": null,
+          "torque_nm": null,
+          "count": 1,
+          "drive": "RWD",
+          "confidence": "unconfirmed"
+        },
+        "battery": {
+          "chemistry": "LFP (Blade)",
+          "capacity_total_kwh": null,
+          "capacity_usable_kwh": null,
+          "supplier": "BYD FinDreams",
+          "dc_charge_kw": "1000kW (dual-gun)",
+          "ac_charge_kw": null,
+          "ev_range_km": 701,
+          "ev_range_standard": "CLTC",
+          "combined_range_km": null,
+          "confidence": "unconfirmed"
+        },
+        "transmission": { "type": "single-speed reducer", "gears": 1, "confidence": "unconfirmed" },
+        "performance": { "accel_0_100_s": 2.7, "top_speed_kmh": null, "confidence": "unconfirmed" },
+        "source": "易车 / Autohome[reference:5]",
+        "confidence": "unconfirmed"
+      },
+      {
+        "trim": "四驱激光雷达旗舰型",
+        "powertrain": "BEV",
+        "engine": null,
+        "motor": {
+          "type": "permanent magnet synchronous",
+          "power_kw": null,
+          "torque_nm": null,
+          "count": 2,
+          "drive": "AWD",
+          "confidence": "unconfirmed"
+        },
+        "battery": {
+          "chemistry": "LFP (Blade)",
+          "capacity_total_kwh": null,
+          "capacity_usable_kwh": null,
+          "supplier": "BYD FinDreams",
+          "dc_charge_kw": "1000kW (dual-gun)",
+          "ac_charge_kw": null,
+          "ev_range_km": null,
+          "ev_range_standard": "CLTC",
+          "combined_range_km": null,
+          "confidence": "unconfirmed"
+        },
+        "transmission": { "type": "single-speed reducer", "gears": 1, "confidence": "unconfirmed" },
+        "performance": { "accel_0_100_s": 2.7, "top_speed_kmh": null, "confidence": "unconfirmed" },
+        "source": "易车 / Autohome[reference:6]",
+        "confidence": "unconfirmed"
+      }
+    ]
+  },
+  {
+    "brand": "BYD",
+    "model": "唐L EV",
+    "generation": "2026",
+    "segment": "C+ segment mid-large SUV",
+    "body": "5-door SUV",
+    "price_rmb_range": "22.98万起",
+    "variants": [
+      {
+        "trim": "670KM 激光雷达尊享型",
+        "powertrain": "BEV",
+        "engine": null,
+        "motor": {
+          "type": "permanent magnet synchronous",
+          "power_kw": 580,
+          "torque_nm": null,
+          "count": 1,
+          "drive": "RWD",
+          "confidence": "unconfirmed"
+        },
+        "battery": {
+          "chemistry": "LFP (Blade)",
+          "capacity_total_kwh": 100.531,
+          "capacity_usable_kwh": null,
+          "supplier": "BYD FinDreams",
+          "dc_charge_kw": "1000kW (megawatt flash charging)",
+          "ac_charge_kw": null,
+          "ev_range_km": 670,
+          "ev_range_standard": "CLTC",
+          "combined_range_km": null,
+          "confidence": "unconfirmed"
+        },
+        "transmission": { "type": "single-speed reducer", "gears": 1, "confidence": "unconfirmed" },
+        "performance": { "accel_0_100_s": null, "top_speed_kmh": null, "confidence": "unconfirmed" },
+        "source": "易车 / Autohome[reference:7]",
+        "confidence": "unconfirmed"
+      },
+      {
+        "trim": "四驱激光雷达旗舰型",
+        "powertrain": "BEV",
+        "engine": null,
+        "motor": {
+          "type": "permanent magnet synchronous",
+          "power_kw": null,
+          "torque_nm": null,
+          "count": 2,
+          "drive": "AWD",
+          "confidence": "unconfirmed"
+        },
+        "battery": {
+          "chemistry": "LFP (Blade)",
+          "capacity_total_kwh": 100.531,
+          "capacity_usable_kwh": null,
+          "supplier": "BYD FinDreams",
+          "dc_charge_kw": "1000kW",
+          "ac_charge_kw": null,
+          "ev_range_km": 600,
+          "ev_range_standard": "CLTC",
+          "combined_range_km": null,
+          "confidence": "unconfirmed"
+        },
+        "transmission": { "type": "single-speed reducer", "gears": 1, "confidence": "unconfirmed" },
+        "performance": { "accel_0_100_s": 3.6, "top_speed_kmh": 287, "confidence": "unconfirmed" },
+        "source": "易车 / 网易[reference:8][reference:9]",
+        "confidence": "unconfirmed"
+      }
+    ]
+  },
+  {
+    "brand": "BYD",
+    "model": "海鸥",
+    "generation": "2026",
+    "segment": "A00-segment city car",
+    "body": "5-door hatchback",
+    "price_rmb_range": "6.99–8.59万",
+    "variants": [
+      {
+        "trim": "305km 自由版",
+        "powertrain": "BEV",
+        "engine": null,
+        "motor": {
+          "type": "permanent magnet synchronous",
+          "power_kw": 55,
+          "torque_nm": 135,
+          "count": 1,
+          "drive": "FWD",
+          "confidence": "unconfirmed"
+        },
+        "battery": {
+          "chemistry": "LFP (Blade)",
+          "capacity_total_kwh": 30.08,
+          "capacity_usable_kwh": null,
+          "supplier": "BYD FinDreams",
+          "dc_charge_kw": null,
+          "ac_charge_kw": null,
+          "ev_range_km": 305,
+          "ev_range_standard": "CLTC",
+          "combined_range_km": null,
+          "confidence": "unconfirmed"
+        },
+        "transmission": { "type": "single-speed reducer", "gears": 1, "confidence": "unconfirmed" },
+        "performance": { "accel_0_100_s": null, "top_speed_kmh": null, "confidence": "unconfirmed" },
+        "source": "易车 / 网通社[reference:10]",
+        "confidence": "unconfirmed"
+      },
+      {
+        "trim": "405km 飞翔版",
+        "powertrain": "BEV",
+        "engine": null,
+        "motor": {
+          "type": "permanent magnet synchronous",
+          "power_kw": 55,
+          "torque_nm": 135,
+          "count": 1,
+          "drive": "FWD",
+          "confidence": "unconfirmed"
+        },
+        "battery": {
+          "chemistry": "LFP (Blade)",
+          "capacity_total_kwh": 38.88,
+          "capacity_usable_kwh": null,
+          "supplier": "BYD FinDreams",
+          "dc_charge_kw": null,
+          "ac_charge_kw": null,
+          "ev_range_km": 405,
+          "ev_range_standard": "CLTC",
+          "combined_range_km": null,
+          "confidence": "unconfirmed"
+        },
+        "transmission": { "type": "single-speed reducer", "gears": 1, "confidence": "unconfirmed" },
+        "performance": { "accel_0_100_s": null, "top_speed_kmh": null, "confidence": "unconfirmed" },
+        "source": "易车 / 网通社[reference:11]",
+        "confidence": "unconfirmed"
+      }
+    ]
+  },
+  {
+    "brand": "BYD",
+    "model": "海豚",
+    "generation": "2026",
+    "segment": "A-segment compact hatchback",
+    "body": "5-door hatchback",
+    "price_rmb_range": "9.98–10.98万",
+    "variants": [
+      {
+        "trim": "420KM 自由版",
+        "powertrain": "BEV",
+        "engine": null,
+        "motor": {
+          "type": "permanent magnet synchronous",
+          "power_kw": 70,
+          "torque_nm": null,
+          "count": 1,
+          "drive": "FWD",
+          "confidence": "unconfirmed"
+        },
+        "battery": {
+          "chemistry": "LFP (Blade)",
+          "capacity_total_kwh": 45.12,
+          "capacity_usable_kwh": null,
+          "supplier": "BYD FinDreams",
+          "dc_charge_kw": "80kW",
+          "ac_charge_kw": null,
+          "ev_range_km": 420,
+          "ev_range_standard": "CLTC",
+          "combined_range_km": null,
+          "confidence": "unconfirmed"
+        },
+        "transmission": { "type": "single-speed reducer", "gears": 1, "confidence": "unconfirmed" },
+        "performance": { "accel_0_100_s": null, "top_speed_kmh": null, "confidence": "unconfirmed" },
+        "source": "易车[reference:12]",
+        "confidence": "unconfirmed"
+      },
+      {
+        "trim": "410KM 时尚版",
+        "powertrain": "BEV",
+        "engine": null,
+        "motor": {
+          "type": "permanent magnet synchronous",
+          "power_kw": 130,
+          "torque_nm": null,
+          "count": 1,
+          "drive": "FWD",
+          "confidence": "unconfirmed"
+        },
+        "battery": {
+          "chemistry": "LFP (Blade)",
+          "capacity_total_kwh": null,
+          "capacity_usable_kwh": null,
+          "supplier": "BYD FinDreams",
+          "dc_charge_kw": null,
+          "ac_charge_kw": null,
+          "ev_range_km": 410,
+          "ev_range_standard": "CLTC",
+          "combined_range_km": null,
+          "confidence": "unconfirmed"
+        },
+        "transmission": { "type": "single-speed reducer", "gears": 1, "confidence": "unconfirmed" },
+        "performance": { "accel_0_100_s": null, "top_speed_kmh": null, "confidence": "unconfirmed" },
+        "source": "易车[reference:13]",
+        "confidence": "unconfirmed"
+      }
+    ]
+  },
+  {
+    "brand": "BYD",
+    "model": "元PLUS",
+    "generation": "2026 (3rd gen)",
+    "segment": "B-segment compact SUV",
+    "body": "5-door SUV",
+    "price_rmb_range": "11.99–14.99万",
+    "variants": [
+      {
+        "trim": "540KM 领先型",
+        "powertrain": "BEV",
+        "engine": null,
+        "motor": {
+          "type": "permanent magnet synchronous",
+          "power_kw": 200,
+          "torque_nm": null,
+          "count": 1,
+          "drive": "RWD",
+          "confidence": "unconfirmed"
+        },
+        "battery": {
+          "chemistry": "LFP (Blade, 2nd gen)",
+          "capacity_total_kwh": 57.5,
+          "capacity_usable_kwh": null,
+          "supplier": "BYD FinDreams",
+          "dc_charge_kw": "flash charging",
+          "ac_charge_kw": null,
+          "ev_range_km": 540,
+          "ev_range_standard": "CLTC",
+          "combined_range_km": null,
+          "confidence": "unconfirmed"
+        },
+        "transmission": { "type": "single-speed reducer", "gears": 1, "confidence": "unconfirmed" },
+        "performance": { "accel_0_100_s": 6.6, "top_speed_kmh": 190, "confidence": "unconfirmed" },
+        "source": "易车 / Autohome / 中关村在线[reference:14]",
+        "confidence": "unconfirmed"
+      },
+      {
+        "trim": "630KM 旗舰型",
+        "powertrain": "BEV",
+        "engine": null,
+        "motor": {
+          "type": "permanent magnet synchronous",
+          "power_kw": 240,
+          "torque_nm": null,
+          "count": 1,
+          "drive": "RWD",
+          "confidence": "unconfirmed"
+        },
+        "battery": {
+          "chemistry": "LFP (Blade, 2nd gen)",
+          "capacity_total_kwh": 68.5,
+          "capacity_usable_kwh": null,
+          "supplier": "BYD FinDreams",
+          "dc_charge_kw": "flash charging",
+          "ac_charge_kw": null,
+          "ev_range_km": 630,
+          "ev_range_standard": "CLTC",
+          "combined_range_km": null,
+          "confidence": "unconfirmed"
+        },
+        "transmission": { "type": "single-speed reducer", "gears": 1, "confidence": "unconfirmed" },
+        "performance": { "accel_0_100_s": null, "top_speed_kmh": null, "confidence": "unconfirmed" },
+        "source": "易车 / Autohome[reference:15]",
+        "confidence": "unconfirmed"
+      }
+    ]
+  },
+  {
+    "brand": "BYD",
+    "model": "海豹06GT",
+    "generation": "2026",
+    "segment": "B-segment sporty hatchback",
+    "body": "5-door hatchback",
+    "price_rmb_range": "12.89–16.99万",
+    "variants": [
+      {
+        "trim": "520km 海浪版",
+        "powertrain": "BEV",
+        "engine": null,
+        "motor": {
+          "type": "permanent magnet synchronous",
+          "power_kw": null,
+          "torque_nm": null,
+          "count": 1,
+          "drive": "FWD",
+          "confidence": "unconfirmed"
+        },
+        "battery": {
+          "chemistry": "LFP (Blade, 2nd gen)",
+          "capacity_total_kwh": null,
+          "capacity_usable_kwh": null,
+          "supplier": "BYD FinDreams",
+          "dc_charge_kw": "flash charging",
+          "ac_charge_kw": null,
+          "ev_range_km": 520,
+          "ev_range_standard": "CLTC",
+          "combined_range_km": null,
+          "confidence": "unconfirmed"
+        },
+        "transmission": { "type": "single-speed reducer", "gears": 1, "confidence": "unconfirmed" },
+        "performance": { "accel_0_100_s": null, "top_speed_kmh": null, "confidence": "unconfirmed" },
+        "source": "易车[reference:16]",
+        "confidence": "unconfirmed"
+      },
+      {
+        "trim": "620km 热浪Max版",
+        "powertrain": "BEV",
+        "engine": null,
+        "motor": {
+          "type": "permanent magnet synchronous",
+          "power_kw": 240,
+          "torque_nm": null,
+          "count": 1,
+          "drive": "FWD",
+          "confidence": "unconfirmed"
+        },
+        "battery": {
+          "chemistry": "LFP (Blade, 2nd gen)",
+          "capacity_total_kwh": null,
+          "capacity_usable_kwh": null,
+          "supplier": "BYD FinDreams",
+          "dc_charge_kw": "flash charging",
+          "ac_charge_kw": null,
+          "ev_range_km": 620,
+          "ev_range_standard": "CLTC",
+          "combined_range_km": null,
+          "confidence": "unconfirmed"
+        },
+        "transmission": { "type": "single-speed reducer", "gears": 1, "confidence": "unconfirmed" },
+        "performance": { "accel_0_100_s": 6.5, "top_speed_kmh": null, "confidence": "unconfirmed" },
+        "source": "易车 / 汽车之家[reference:17][reference:18]",
+        "confidence": "unconfirmed"
+      }
+    ]
+  },
+  {
+    "brand": "BYD",
+    "model": "海狮06 EV",
+    "generation": "2026",
+    "segment": "C-segment mid-size SUV",
+    "body": "5-door SUV",
+    "price_rmb_range": "15.99–17.99万",
+    "variants": [
+      {
+        "trim": "605领航版",
+        "powertrain": "BEV",
+        "engine": null,
+        "motor": {
+          "type": "permanent magnet synchronous",
+          "power_kw": 240,
+          "torque_nm": null,
+          "count": 1,
+          "drive": "RWD",
+          "confidence": "unconfirmed"
+        },
+        "battery": {
+          "chemistry": "LFP (Blade)",
+          "capacity_total_kwh": null,
+          "capacity_usable_kwh": null,
+          "supplier": "BYD FinDreams",
+          "dc_charge_kw": null,
+          "ac_charge_kw": null,
+          "ev_range_km": 605,
+          "ev_range_standard": "CLTC",
+          "combined_range_km": null,
+          "confidence": "unconfirmed"
+        },
+        "transmission": { "type": "single-speed reducer", "gears": 1, "confidence": "unconfirmed" },
+        "performance": { "accel_0_100_s": null, "top_speed_kmh": 210, "confidence": "unconfirmed" },
+        "source": "易车 / 中关村在线[reference:19]",
+        "confidence": "unconfirmed"
+      },
+      {
+        "trim": "710远航旗舰版",
+        "powertrain": "BEV",
+        "engine": null,
+        "motor": {
+          "type": "permanent magnet synchronous",
+          "power_kw": 240,
+          "torque_nm": null,
+          "count": 1,
+          "drive": "RWD",
+          "confidence": "unconfirmed"
+        },
+        "battery": {
+          "chemistry": "LFP (Blade)",
+          "capacity_total_kwh": null,
+          "capacity_usable_kwh": null,
+          "supplier": "BYD FinDreams",
+          "dc_charge_kw": null,
+          "ac_charge_kw": null,
+          "ev_range_km": 710,
+          "ev_range_standard": "CLTC",
+          "combined_range_km": null,
+          "confidence": "unconfirmed"
+        },
+        "transmission": { "type": "single-speed reducer", "gears": 1, "confidence": "unconfirmed" },
+        "performance": { "accel_0_100_s": null, "top_speed_kmh": 210, "confidence": "unconfirmed" },
+        "source": "易车 / 中关村在线[reference:20]",
+        "confidence": "unconfirmed"
+      }
+    ]
+  },
+  {
+    "brand": "BYD",
+    "model": "夏 DM-i",
+    "generation": "2026",
+    "segment": "MPV",
+    "body": "5-door MPV",
+    "price_rmb_range": "19.68–20.68万",
+    "variants": [
+      {
+        "trim": "100KM 进取型",
+        "powertrain": "PHEV",
+        "engine": {
+          "displacement_l": 1.5,
+          "cylinders": 4,
+          "induction": "turbo",
+          "max_power_kw": null,
+          "max_power_hp": null,
+          "max_torque_nm": null,
+          "confidence": "unconfirmed"
+        },
+        "motor": {
+          "type": "permanent magnet synchronous",
+          "power_kw": null,
+          "torque_nm": null,
+          "count": 1,
+          "drive": "FWD",
+          "confidence": "unconfirmed"
+        },
+        "battery": {
+          "chemistry": "LFP (Blade)",
+          "capacity_total_kwh": 20.39,
+          "capacity_usable_kwh": null,
+          "supplier": "BYD FinDreams",
+          "dc_charge_kw": null,
+          "ac_charge_kw": null,
+          "ev_range_km": 100,
+          "ev_range_standard": "CLTC",
+          "combined_range_km": 1163,
+          "confidence": "unconfirmed"
+        },
+        "transmission": { "type": "E-CVT", "gears": "single-speed", "confidence": "unconfirmed" },
+        "performance": { "accel_0_100_s": 8.5, "top_speed_kmh": null, "confidence": "unconfirmed" },
+        "source": "易车[reference:21]",
+        "confidence": "unconfirmed"
+      },
+      {
+        "trim": "218KM 超越型",
+        "powertrain": "PHEV",
+        "engine": {
+          "displacement_l": 1.5,
+          "cylinders": 4,
+          "induction": "turbo",
+          "max_power_kw": null,
+          "max_power_hp": 156,
+          "max_torque_nm": null,
+          "confidence": "unconfirmed"
+        },
+        "motor": {
+          "type": "permanent magnet synchronous",
+          "power_kw": null,
+          "torque_nm": null,
+          "count": 1,
+          "drive": "FWD",
+          "confidence": "unconfirmed"
+        },
+        "battery": {
+          "chemistry": "LFP (Blade)",
+          "capacity_total_kwh": null,
+          "capacity_usable_kwh": null,
+          "supplier": "BYD FinDreams",
+          "dc_charge_kw": null,
+          "ac_charge_kw": null,
+          "ev_range_km": 218,
+          "ev_range_standard": "CLTC",
+          "combined_range_km": 1163,
+          "confidence": "unconfirmed"
+        },
+        "transmission": { "type": "E-CVT", "gears": "single-speed", "confidence": "unconfirmed" },
+        "performance": { "accel_0_100_s": 8.1, "top_speed_kmh": null, "confidence": "unconfirmed" },
+        "source": "易车 / 中关村在线[reference:22]",
+        "confidence": "unconfirmed"
+      }
+    ]
+  },
+  {
+    "brand": "腾势",
+    "model": "D9",
+    "generation": "2026 (2nd gen)",
+    "segment": "MPV",
+    "body": "5-door MPV",
+    "price_rmb_range": "32.98万起",
+    "variants": [
+      {
+        "trim": "DM-i 四驱闪充尊荣型",
+        "powertrain": "PHEV",
+        "engine": {
+          "displacement_l": 1.5,
+          "cylinders": 4,
+          "induction": "turbo",
+          "max_power_kw": 115,
+          "max_power_hp": 156,
+          "max_torque_nm": null,
+          "confidence": "unconfirmed"
+        },
+        "motor": {
+          "type": "permanent magnet synchronous",
+          "power_kw": 245,
+          "torque_nm": 445,
+          "count": 2,
+          "drive": "AWD",
+          "confidence": "unconfirmed"
+        },
+        "battery": {
+          "chemistry": "LFP (Blade, 2nd gen)",
+          "capacity_total_kwh": null,
+          "capacity_usable_kwh": null,
+          "supplier": "BYD FinDreams",
+          "dc_charge_kw": "flash charging",
+          "ac_charge_kw": null,
+          "ev_range_km": 401,
+          "ev_range_standard": "CLTC",
+          "combined_range_km": null,
+          "confidence": "unconfirmed"
+        },
+        "transmission": { "type": "E-CVT", "gears": "single-speed", "confidence": "unconfirmed" },
+        "performance": { "accel_0_100_s": 7.3, "top_speed_kmh": 180, "confidence": "unconfirmed" },
+        "source": "中关村在线 / 太平洋汽车 / 国际在线[reference:23]",
+        "confidence": "unconfirmed"
+      }
+    ]
+  },
+  {
+    "brand": "仰望",
+    "model": "U8",
+    "generation": "2026",
+    "segment": "Full-size luxury SUV",
+    "body": "5-door SUV",
+    "price_rmb_range": "100.8万起",
+    "variants": [
+      {
+        "trim": "豪华版",
+        "powertrain": "PHEV (REEV-style)",
+        "engine": {
+          "displacement_l": 2.0,
+          "cylinders": 4,
+          "induction": "turbo",
+          "max_power_kw": null,
+          "max_power_hp": 272,
+          "max_torque_nm": null,
+          "confidence": "unconfirmed"
+        },
+        "motor": {
+          "type": "permanent magnet synchronous",
+          "power_kw": 880,
+          "torque_nm": 1520,
+          "count": 4,
+          "drive": "AWD",
+          "confidence": "unconfirmed"
+        },
+        "battery": {
+          "chemistry": "LFP (Blade, 2nd gen)",
+          "capacity_total_kwh": null,
+          "capacity_usable_kwh": null,
+          "supplier": "BYD FinDreams",
+          "dc_charge_kw": "574kW peak",
+          "ac_charge_kw": null,
+          "ev_range_km": 230,
+          "ev_range_standard": "CLTC",
+          "combined_range_km": 1205,
+          "confidence": "unconfirmed"
+        },
+        "transmission": { "type": "single-speed reducer", "gears": 1, "confidence": "unconfirmed" },
+        "performance": { "accel_0_100_s": 3.5, "top_speed_kmh": null, "confidence": "unconfirmed" },
+        "source": "中关村在线 / 易车 / 爱咖号[reference:24]",
+        "confidence": "unconfirmed"
+      }
+    ]
+  },
+  {
+    "brand": "方程豹",
+    "model": "豹5",
+    "generation": "2026",
+    "segment": "Mid-size off-road SUV",
+    "body": "5-door SUV",
+    "price_rmb_range": "25.98–30.58万",
+    "variants": [
+      {
+        "trim": "210KM 天神Max版",
+        "powertrain": "PHEV",
+        "engine": {
+          "displacement_l": 1.5,
+          "cylinders": 4,
+          "induction": "turbo",
+          "max_power_kw": 143,
+          "max_power_hp": 194,
+          "max_torque_nm": null,
+          "confidence": "unconfirmed"
+        },
+        "motor": {
+          "type": "permanent magnet synchronous",
+          "power_kw": 485,
+          "torque_nm": 760,
+          "count": 2,
+          "drive": "AWD",
+          "confidence": "unconfirmed"
+        },
+        "battery": {
+          "chemistry": "LFP (Blade)",
+          "capacity_total_kwh": 46,
+          "capacity_usable_kwh": null,
+          "supplier": "BYD FinDreams",
+          "dc_charge_kw": null,
+          "ac_charge_kw": null,
+          "ev_range_km": 210,
+          "ev_range_standard": "CLTC",
+          "combined_range_km": 1310,
+          "confidence": "unconfirmed"
+        },
+        "transmission": { "type": "E-CVT", "gears": "single-speed", "confidence": "unconfirmed" },
+        "performance": { "accel_0_100_s": 4.8, "top_speed_kmh": null, "confidence": "unconfirmed" },
+        "source": "中关村在线 / 网通社 / 易车[reference:25]",
+        "confidence": "unconfirmed"
+      }
+    ]
+  },
+  {
+    "brand": "方程豹",
+    "model": "豹8",
+    "generation": "2026",
+    "segment": "Full-size off-road SUV",
+    "body": "5-door SUV",
+    "price_rmb_range": "41.98–42.78万",
+    "variants": [
+      {
+        "trim": "2.0T 200km 闪充 5座",
+        "powertrain": "PHEV",
+        "engine": {
+          "displacement_l": 2.0,
+          "cylinders": 4,
+          "induction": "turbo",
+          "max_power_kw": 200,
+          "max_power_hp": 245,
+          "max_torque_nm": null,
+          "confidence": "unconfirmed"
+        },
+        "motor": {
+          "type": "permanent magnet synchronous",
+          "power_kw": 550,
+          "torque_nm": 760,
+          "count": 2,
+          "drive": "AWD",
+          "confidence": "unconfirmed"
+        },
+        "battery": {
+          "chemistry": "LFP (Blade, 2nd gen)",
+          "capacity_total_kwh": 46.704,
+          "capacity_usable_kwh": null,
+          "supplier": "BYD FinDreams",
+          "dc_charge_kw": "800V flash charging",
+          "ac_charge_kw": null,
+          "ev_range_km": 200,
+          "ev_range_standard": "WLTC",
+          "combined_range_km": 1380,
+          "confidence": "unconfirmed"
+        },
+        "transmission": { "type": "E-CVT", "gears": "single-speed", "confidence": "unconfirmed" },
+        "performance": { "accel_0_100_s": 4.8, "top_speed_kmh": 180, "confidence": "unconfirmed" },
+        "source": "中关村在线 / 易车 / 爱咖号[reference:26]",
+        "confidence": "unconfirmed"
+      }
+    ]
+  }
+]
