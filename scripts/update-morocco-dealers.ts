@@ -48,7 +48,13 @@ const BRAND_EN_ALIAS: Record<string, string> = {
 function loadJson(filePath: string): DealersFile {
   const abs = path.resolve(filePath);
   if (!fs.existsSync(abs)) throw new Error(`File not found: ${abs}`);
-  return JSON.parse(fs.readFileSync(abs, "utf8"));
+  const parsed = JSON.parse(fs.readFileSync(abs, "utf8"));
+
+  // Accept a single bare dealer entry (e.g. a one-brand follow-up file)
+  // alongside the full {corrections, dealers} shape.
+  if (Array.isArray(parsed)) return { dealers: parsed };
+  if ("brand_en" in parsed) return { dealers: [parsed] };
+  return parsed;
 }
 
 function normalizeConfidence(v: string): "confirmed" | "unconfirmed" | undefined {
