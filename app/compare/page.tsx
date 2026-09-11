@@ -80,18 +80,21 @@ export default function ComparePage() {
   return (
     <div>
       <h1 className="text-2xl font-bold mb-1">Compare Powertrains</h1>
-      <p className="text-zinc-600 mb-4">Select 2–4 model variants to compare side by side.</p>
+      <p className="text-zinc-600 dark:text-zinc-400 mb-4">Select 2–4 model variants to compare side by side.</p>
 
       <input
-        className="border rounded px-3 py-2 text-sm w-full mb-3"
+        className="border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 rounded px-3 py-2 text-sm w-full mb-3"
         placeholder="Search brand, model, or trim..."
         value={query}
         onChange={(e) => setQuery(e.target.value)}
       />
 
-      <div className="max-h-48 overflow-y-auto border border-zinc-200 rounded-lg bg-white mb-6 divide-y divide-zinc-100">
+      <div className="max-h-48 overflow-y-auto border border-zinc-200 dark:border-zinc-800 rounded-lg bg-white dark:bg-zinc-900 mb-6 divide-y divide-zinc-100 dark:divide-zinc-800">
         {filteredOptions.map((p) => (
-          <label key={p._id} className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-zinc-50 cursor-pointer">
+          <label
+            key={p._id}
+            className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-zinc-50 dark:hover:bg-zinc-800/50 cursor-pointer"
+          >
             <input
               type="checkbox"
               checked={!!p._id && selectedIds.includes(p._id)}
@@ -104,14 +107,14 @@ export default function ComparePage() {
       </div>
 
       {selected.length < 2 ? (
-        <p className="text-zinc-500">Select at least 2 variants to compare.</p>
+        <p className="text-zinc-500 dark:text-zinc-400">Select at least 2 variants to compare.</p>
       ) : (
-        <div className="overflow-x-auto bg-white border border-zinc-200 rounded-lg">
+        <div className="overflow-x-auto bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg">
           <table className="w-full text-sm">
             <tbody>
               {rows.map((row) => (
-                <tr key={row.label} className="border-b border-zinc-100">
-                  <td className="p-3 font-medium text-zinc-600 whitespace-nowrap">{row.label}</td>
+                <tr key={row.label} className="border-b border-zinc-100 dark:border-zinc-800">
+                  <td className="p-3 font-medium text-zinc-600 dark:text-zinc-400 whitespace-nowrap">{row.label}</td>
                   {selected.map((p) => (
                     <td key={p._id} className="p-3">
                       {row.get(p)}

@@ -30,13 +30,13 @@ export default async function Home({
   return (
     <div>
       <h1 className="text-2xl font-bold mb-1">Chinese Automotive Brands</h1>
-      <p className="text-zinc-600 mb-1">
+      <p className="text-zinc-600 dark:text-zinc-400 mb-1">
         Browse {brands.length} {showAll ? "" : "active "}Chinese automotive brands, grouped by
         manufacturer.
       </p>
       {inactiveCount > 0 && (
         <p className="text-sm mb-6">
-          <Link href={showAll ? "/" : "/?all=1"} className="text-blue-600 hover:underline">
+          <Link href={showAll ? "/" : "/?all=1"} className="text-blue-600 dark:text-blue-400 hover:underline">
             {showAll
               ? "Hide discontinued/bankrupt brands"
               : `Show ${inactiveCount} discontinued/bankrupt brands (kept for reference)`}

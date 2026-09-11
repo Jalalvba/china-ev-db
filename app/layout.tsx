@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import ThemeToggle, { ThemeInitScript } from "./ThemeToggle";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -23,8 +24,11 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col bg-zinc-50 text-zinc-900">
-        <header className="bg-zinc-900 text-white sticky top-0 z-10">
+      <head>
+        <ThemeInitScript />
+      </head>
+      <body className="min-h-full flex flex-col bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100">
+        <header className="bg-zinc-900 dark:bg-black text-white sticky top-0 z-10">
           <nav className="max-w-6xl mx-auto px-4 py-3 flex flex-wrap items-center gap-4">
             <a href="/" className="font-bold text-lg tracking-tight">
               China EV/ICE Database
@@ -38,6 +42,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             <a href="/compare" className="text-sm text-zinc-300 hover:text-white">
               Compare
             </a>
+            <div className="ml-auto">
+              <ThemeToggle />
+            </div>
           </nav>
         </header>
         <main className="flex-1 max-w-6xl w-full mx-auto px-4 py-6">{children}</main>

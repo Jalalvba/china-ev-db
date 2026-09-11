@@ -68,14 +68,18 @@ export default function SearchPage() {
     <div>
       <h1 className="text-2xl font-bold mb-4">Search &amp; Filter Models</h1>
 
-      <div className="bg-white border border-zinc-200 rounded-lg p-4 mb-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+      <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-4 mb-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
         <input
-          className="border rounded px-3 py-2 text-sm"
+          className="border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 rounded px-3 py-2 text-sm"
           placeholder="Search by name or brand..."
           value={query}
           onChange={(e) => setQuery(e.target.value)}
         />
-        <select className="border rounded px-3 py-2 text-sm" value={brandId} onChange={(e) => setBrandId(e.target.value)}>
+        <select
+          className="border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 rounded px-3 py-2 text-sm"
+          value={brandId}
+          onChange={(e) => setBrandId(e.target.value)}
+        >
           <option value="">All brands</option>
           {brands.map((b) => (
             <option key={b._id} value={b._id}>
@@ -83,7 +87,11 @@ export default function SearchPage() {
             </option>
           ))}
         </select>
-        <select className="border rounded px-3 py-2 text-sm" value={segment} onChange={(e) => setSegment(e.target.value)}>
+        <select
+          className="border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 rounded px-3 py-2 text-sm"
+          value={segment}
+          onChange={(e) => setSegment(e.target.value)}
+        >
           <option value="">All segments</option>
           {SEGMENTS.map((s) => (
             <option key={s} value={s}>
@@ -91,7 +99,11 @@ export default function SearchPage() {
             </option>
           ))}
         </select>
-        <select className="border rounded px-3 py-2 text-sm" value={status} onChange={(e) => setStatus(e.target.value)}>
+        <select
+          className="border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 rounded px-3 py-2 text-sm"
+          value={status}
+          onChange={(e) => setStatus(e.target.value)}
+        >
           <option value="">All statuses</option>
           {STATUSES.map((s) => (
             <option key={s} value={s}>
@@ -101,14 +113,14 @@ export default function SearchPage() {
         </select>
         <input
           type="number"
-          className="border rounded px-3 py-2 text-sm"
+          className="border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 rounded px-3 py-2 text-sm"
           placeholder="Min price (USD)"
           value={minPrice}
           onChange={(e) => setMinPrice(e.target.value)}
         />
         <input
           type="number"
-          className="border rounded px-3 py-2 text-sm"
+          className="border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 rounded px-3 py-2 text-sm"
           placeholder="Max price (USD)"
           value={maxPrice}
           onChange={(e) => setMaxPrice(e.target.value)}
@@ -116,13 +128,13 @@ export default function SearchPage() {
       </div>
 
       {loading ? (
-        <p className="text-zinc-500">Loading...</p>
+        <p className="text-zinc-500 dark:text-zinc-400">Loading...</p>
       ) : (
         <>
-          <p className="text-sm text-zinc-500 mb-3">{filtered.length} models found</p>
-          <div className="overflow-x-auto bg-white border border-zinc-200 rounded-lg">
+          <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-3">{filtered.length} models found</p>
+          <div className="overflow-x-auto bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg">
             <table className="w-full text-sm">
-              <thead className="bg-zinc-50 text-left text-zinc-500">
+              <thead className="bg-zinc-50 dark:bg-zinc-800 text-left text-zinc-500 dark:text-zinc-400">
                 <tr>
                   <th className="p-3">Model</th>
                   <th className="p-3">Brand</th>
@@ -134,9 +146,12 @@ export default function SearchPage() {
               </thead>
               <tbody>
                 {filtered.map((m) => (
-                  <tr key={m._id} className="border-t border-zinc-100 hover:bg-zinc-50">
+                  <tr
+                    key={m._id}
+                    className="border-t border-zinc-100 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-800/50"
+                  >
                     <td className="p-3">
-                      <Link href={`/models/${m._id}`} className="text-blue-600 hover:underline">
+                      <Link href={`/models/${m._id}`} className="text-blue-600 dark:text-blue-400 hover:underline">
                         {m.name}
                       </Link>
                     </td>
