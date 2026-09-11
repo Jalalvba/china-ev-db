@@ -1,0 +1,1086 @@
+[
+  {
+    "brand": "吉利银河",
+    "model": "银河E5",
+    "generation": "2026款",
+    "segment": "紧凑型SUV",
+    "body": "5门5座SUV",
+    "price_rmb_range": "10.18-14.58万",
+    "variants": [
+      {
+        "trim": "530km 启航版",
+        "powertrain": "BEV",
+        "engine": null,
+        "motor": {
+          "type": "永磁同步电机",
+          "power_kw": 160,
+          "torque_nm": 320,
+          "count": 1,
+          "drive": "FWD",
+          "confidence": "confirmed"
+        },
+        "battery": {
+          "chemistry": "磷酸铁锂",
+          "capacity_total_kwh": null,
+          "capacity_usable_kwh": null,
+          "supplier": null,
+          "dc_charge_kw": null,
+          "ac_charge_kw": null,
+          "ev_range_km": 530,
+          "ev_range_standard": "CLTC",
+          "combined_range_km": null,
+          "confidence": "unconfirmed"
+        },
+        "transmission": { "type": "电动车单速变速箱", "gears": 1, "confidence": "confirmed" },
+        "performance": { "accel_0_100_s": 6.9, "top_speed_kmh": 180, "confidence": "confirmed" },
+        "source": "中关村在线 / 太平洋汽车",
+        "confidence": "unconfirmed"
+      },
+      {
+        "trim": "530km 探索版",
+        "powertrain": "BEV",
+        "engine": null,
+        "motor": {
+          "type": "永磁同步电机",
+          "power_kw": 160,
+          "torque_nm": 320,
+          "count": 1,
+          "drive": "FWD",
+          "confidence": "confirmed"
+        },
+        "battery": {
+          "chemistry": "磷酸铁锂",
+          "capacity_total_kwh": null,
+          "capacity_usable_kwh": null,
+          "supplier": null,
+          "dc_charge_kw": null,
+          "ac_charge_kw": null,
+          "ev_range_km": 530,
+          "ev_range_standard": "CLTC",
+          "combined_range_km": null,
+          "confidence": "unconfirmed"
+        },
+        "transmission": { "type": "电动车单速变速箱", "gears": 1, "confidence": "confirmed" },
+        "performance": { "accel_0_100_s": 6.9, "top_speed_kmh": 180, "confidence": "confirmed" },
+        "source": "中关村在线 / 太平洋汽车",
+        "confidence": "unconfirmed"
+      },
+      {
+        "trim": "610km 远航版",
+        "powertrain": "BEV",
+        "engine": null,
+        "motor": {
+          "type": "永磁同步电机",
+          "power_kw": 160,
+          "torque_nm": 320,
+          "count": 1,
+          "drive": "FWD",
+          "confidence": "confirmed"
+        },
+        "battery": {
+          "chemistry": "磷酸铁锂",
+          "capacity_total_kwh": null,
+          "capacity_usable_kwh": null,
+          "supplier": null,
+          "dc_charge_kw": null,
+          "ac_charge_kw": null,
+          "ev_range_km": 610,
+          "ev_range_standard": "CLTC",
+          "combined_range_km": null,
+          "confidence": "unconfirmed"
+        },
+        "transmission": { "type": "电动车单速变速箱", "gears": 1, "confidence": "confirmed" },
+        "performance": { "accel_0_100_s": 6.9, "top_speed_kmh": 180, "confidence": "confirmed" },
+        "source": "中关村在线 / 太平洋汽车",
+        "confidence": "unconfirmed"
+      },
+      {
+        "trim": "610km 探索+版",
+        "powertrain": "BEV",
+        "engine": null,
+        "motor": {
+          "type": "永磁同步电机",
+          "power_kw": 160,
+          "torque_nm": 320,
+          "count": 1,
+          "drive": "FWD",
+          "confidence": "confirmed"
+        },
+        "battery": {
+          "chemistry": "磷酸铁锂",
+          "capacity_total_kwh": null,
+          "capacity_usable_kwh": null,
+          "supplier": null,
+          "dc_charge_kw": null,
+          "ac_charge_kw": null,
+          "ev_range_km": 610,
+          "ev_range_standard": "CLTC",
+          "combined_range_km": null,
+          "confidence": "unconfirmed"
+        },
+        "transmission": { "type": "电动车单速变速箱", "gears": 1, "confidence": "confirmed" },
+        "performance": { "accel_0_100_s": 6.9, "top_speed_kmh": 180, "confidence": "confirmed" },
+        "source": "中关村在线 / 太平洋汽车",
+        "confidence": "unconfirmed"
+      },
+      {
+        "trim": "610km 星舰版",
+        "powertrain": "BEV",
+        "engine": null,
+        "motor": {
+          "type": "永磁同步电机",
+          "power_kw": 160,
+          "torque_nm": 320,
+          "count": 1,
+          "drive": "FWD",
+          "confidence": "confirmed"
+        },
+        "battery": {
+          "chemistry": "磷酸铁锂",
+          "capacity_total_kwh": null,
+          "capacity_usable_kwh": null,
+          "supplier": null,
+          "dc_charge_kw": null,
+          "ac_charge_kw": null,
+          "ev_range_km": 610,
+          "ev_range_standard": "CLTC",
+          "combined_range_km": null,
+          "confidence": "unconfirmed"
+        },
+        "transmission": { "type": "电动车单速变速箱", "gears": 1, "confidence": "confirmed" },
+        "performance": { "accel_0_100_s": 6.9, "top_speed_kmh": 180, "confidence": "confirmed" },
+        "source": "中关村在线 / 太平洋汽车",
+        "confidence": "unconfirmed"
+      }
+    ]
+  },
+  {
+    "brand": "吉利银河",
+    "model": "银河E8",
+    "generation": "2026款",
+    "segment": "中大型轿车",
+    "body": "4门5座三厢车",
+    "price_rmb_range": "14.18-19.88万",
+    "variants": [
+      {
+        "trim": "575km 后驱版",
+        "powertrain": "BEV",
+        "engine": null,
+        "motor": {
+          "type": "SiC油冷电驱",
+          "power_kw": 250,
+          "torque_nm": null,
+          "count": 1,
+          "drive": "RWD",
+          "confidence": "confirmed"
+        },
+        "battery": {
+          "chemistry": "磷酸铁锂",
+          "capacity_total_kwh": null,
+          "capacity_usable_kwh": null,
+          "supplier": null,
+          "dc_charge_kw": "5.5C最大充电倍率，30%-80%需8分钟",
+          "ac_charge_kw": null,
+          "ev_range_km": 575,
+          "ev_range_standard": "CLTC",
+          "combined_range_km": null,
+          "confidence": "unconfirmed"
+        },
+        "transmission": { "type": "电动车单速变速箱", "gears": 1, "confidence": "unconfirmed" },
+        "performance": { "accel_0_100_s": null, "top_speed_kmh": null, "confidence": "unconfirmed" },
+        "source": "汽车之家 / 易车",
+        "confidence": "unconfirmed"
+      },
+      {
+        "trim": "700km 后驱版",
+        "powertrain": "BEV",
+        "engine": null,
+        "motor": {
+          "type": "SiC油冷电驱",
+          "power_kw": 250,
+          "torque_nm": null,
+          "count": 1,
+          "drive": "RWD",
+          "confidence": "confirmed"
+        },
+        "battery": {
+          "chemistry": "磷酸铁锂",
+          "capacity_total_kwh": null,
+          "capacity_usable_kwh": null,
+          "supplier": null,
+          "dc_charge_kw": "5.5C最大充电倍率，30%-80%需8分钟",
+          "ac_charge_kw": null,
+          "ev_range_km": 700,
+          "ev_range_standard": "CLTC",
+          "combined_range_km": null,
+          "confidence": "unconfirmed"
+        },
+        "transmission": { "type": "电动车单速变速箱", "gears": 1, "confidence": "unconfirmed" },
+        "performance": { "accel_0_100_s": null, "top_speed_kmh": null, "confidence": "unconfirmed" },
+        "source": "汽车之家 / 易车",
+        "confidence": "unconfirmed"
+      },
+      {
+        "trim": "620km 四驱版",
+        "powertrain": "BEV",
+        "engine": null,
+        "motor": {
+          "type": "SiC油冷电驱",
+          "power_kw": 475,
+          "torque_nm": null,
+          "count": 2,
+          "drive": "AWD",
+          "confidence": "confirmed"
+        },
+        "battery": {
+          "chemistry": "磷酸铁锂",
+          "capacity_total_kwh": null,
+          "capacity_usable_kwh": null,
+          "supplier": null,
+          "dc_charge_kw": "5.5C最大充电倍率，30%-80%需8分钟",
+          "ac_charge_kw": null,
+          "ev_range_km": 620,
+          "ev_range_standard": "CLTC",
+          "combined_range_km": null,
+          "confidence": "unconfirmed"
+        },
+        "transmission": { "type": "电动车单速变速箱", "gears": 1, "confidence": "unconfirmed" },
+        "performance": { "accel_0_100_s": 3.49, "top_speed_kmh": null, "confidence": "confirmed" },
+        "source": "汽车之家 / 易车",
+        "confidence": "unconfirmed"
+      }
+    ]
+  },
+  {
+    "brand": "吉利银河",
+    "model": "银河L6 EM-i",
+    "generation": "2025/2026款",
+    "segment": "紧凑型轿车",
+    "body": "4门5座三厢车",
+    "price_rmb_range": "7.78-10.28万",
+    "variants": [
+      {
+        "trim": "60km 启航版",
+        "powertrain": "PHEV",
+        "engine": {
+          "displacement_l": 1.5,
+          "cylinders": 4,
+          "induction": "自然吸气",
+          "max_power_kw": 82,
+          "max_power_hp": 112,
+          "max_torque_nm": null,
+          "confidence": "confirmed"
+        },
+        "motor": {
+          "type": "永磁同步电机",
+          "power_kw": 160,
+          "torque_nm": null,
+          "count": 1,
+          "drive": "FWD",
+          "confidence": "confirmed"
+        },
+        "battery": {
+          "chemistry": "磷酸铁锂",
+          "capacity_total_kwh": 8.5,
+          "capacity_usable_kwh": null,
+          "supplier": null,
+          "dc_charge_kw": null,
+          "ac_charge_kw": null,
+          "ev_range_km": 48,
+          "ev_range_standard": "工信部",
+          "combined_range_km": 1300,
+          "confidence": "confirmed"
+        },
+        "transmission": { "type": "E-DHT智能无级11合1混动电驱", "gears": null, "confidence": "confirmed" },
+        "performance": { "accel_0_100_s": null, "top_speed_kmh": null, "confidence": "unconfirmed" },
+        "source": "易车",
+        "confidence": "unconfirmed"
+      },
+      {
+        "trim": "115km 探索版",
+        "powertrain": "PHEV",
+        "engine": {
+          "displacement_l": 1.5,
+          "cylinders": 4,
+          "induction": "自然吸气",
+          "max_power_kw": 82,
+          "max_power_hp": 112,
+          "max_torque_nm": null,
+          "confidence": "confirmed"
+        },
+        "motor": {
+          "type": "永磁同步电机",
+          "power_kw": 160,
+          "torque_nm": null,
+          "count": 1,
+          "drive": "FWD",
+          "confidence": "confirmed"
+        },
+        "battery": {
+          "chemistry": "磷酸铁锂",
+          "capacity_total_kwh": 19.09,
+          "capacity_usable_kwh": null,
+          "supplier": null,
+          "dc_charge_kw": null,
+          "ac_charge_kw": null,
+          "ev_range_km": 115,
+          "ev_range_standard": "工信部",
+          "combined_range_km": 1300,
+          "confidence": "confirmed"
+        },
+        "transmission": { "type": "E-DHT智能无级11合1混动电驱", "gears": null, "confidence": "confirmed" },
+        "performance": { "accel_0_100_s": null, "top_speed_kmh": null, "confidence": "unconfirmed" },
+        "source": "易车",
+        "confidence": "unconfirmed"
+      }
+    ]
+  },
+  {
+    "brand": "吉利银河",
+    "model": "银河L7",
+    "generation": "2026款",
+    "segment": "紧凑型SUV",
+    "body": "5门5座SUV",
+    "price_rmb_range": "12.57-15.99万",
+    "variants": [
+      {
+        "trim": "1.5L EM-i",
+        "powertrain": "PHEV",
+        "engine": {
+          "displacement_l": 1.5,
+          "cylinders": 4,
+          "induction": "自然吸气",
+          "max_power_kw": 82,
+          "max_power_hp": 112,
+          "max_torque_nm": null,
+          "confidence": "unconfirmed"
+        },
+        "motor": {
+          "type": "永磁同步电机",
+          "power_kw": 160,
+          "torque_nm": null,
+          "count": 1,
+          "drive": "FWD",
+          "confidence": "unconfirmed"
+        },
+        "battery": {
+          "chemistry": "磷酸铁锂",
+          "capacity_total_kwh": 18.4,
+          "capacity_usable_kwh": null,
+          "supplier": null,
+          "dc_charge_kw": null,
+          "ac_charge_kw": null,
+          "ev_range_km": 115,
+          "ev_range_standard": "CLTC",
+          "combined_range_km": 1300,
+          "confidence": "confirmed"
+        },
+        "transmission": { "type": "1挡DHT", "gears": 1, "confidence": "confirmed" },
+        "performance": { "accel_0_100_s": 7.7, "top_speed_kmh": 180, "confidence": "confirmed" },
+        "source": "网通社 / 易车",
+        "confidence": "unconfirmed"
+      },
+      {
+        "trim": "1.5T DHT",
+        "powertrain": "PHEV",
+        "engine": {
+          "displacement_l": 1.5,
+          "cylinders": 4,
+          "induction": "涡轮增压",
+          "max_power_kw": 120,
+          "max_power_hp": 163,
+          "max_torque_nm": 255,
+          "confidence": "confirmed"
+        },
+        "motor": {
+          "type": "永磁同步电机",
+          "power_kw": 107,
+          "torque_nm": 338,
+          "count": 1,
+          "drive": "FWD",
+          "confidence": "confirmed"
+        },
+        "battery": {
+          "chemistry": "磷酸铁锂",
+          "capacity_total_kwh": 18.7,
+          "capacity_usable_kwh": null,
+          "supplier": null,
+          "dc_charge_kw": null,
+          "ac_charge_kw": null,
+          "ev_range_km": 115,
+          "ev_range_standard": "CLTC",
+          "combined_range_km": 1360,
+          "confidence": "confirmed"
+        },
+        "transmission": { "type": "3挡DHT", "gears": 3, "confidence": "confirmed" },
+        "performance": { "accel_0_100_s": null, "top_speed_kmh": 200, "confidence": "confirmed" },
+        "source": "网通社 / 易车",
+        "confidence": "unconfirmed"
+      }
+    ]
+  },
+  {
+    "brand": "吉利银河",
+    "model": "星愿",
+    "generation": "2026款",
+    "segment": "A0级小型车",
+    "body": "5门5座两厢车",
+    "price_rmb_range": "6.48-10.18万",
+    "variants": [
+      {
+        "trim": "310km 青春版",
+        "powertrain": "BEV",
+        "engine": null,
+        "motor": {
+          "type": "永磁同步电机",
+          "power_kw": 58,
+          "torque_nm": 130,
+          "count": 1,
+          "drive": "RWD",
+          "confidence": "confirmed"
+        },
+        "battery": {
+          "chemistry": "磷酸铁锂",
+          "capacity_total_kwh": 30.12,
+          "capacity_usable_kwh": null,
+          "supplier": null,
+          "dc_charge_kw": null,
+          "ac_charge_kw": null,
+          "ev_range_km": 310,
+          "ev_range_standard": "CLTC",
+          "combined_range_km": null,
+          "confidence": "confirmed"
+        },
+        "transmission": { "type": "电动车单速变速箱", "gears": 1, "confidence": "confirmed" },
+        "performance": { "accel_0_100_s": null, "top_speed_kmh": 125, "confidence": "confirmed" },
+        "source": "中关村在线 / 易车",
+        "confidence": "unconfirmed"
+      },
+      {
+        "trim": "410km 乘风版",
+        "powertrain": "BEV",
+        "engine": null,
+        "motor": {
+          "type": "永磁同步电机",
+          "power_kw": 85,
+          "torque_nm": 150,
+          "count": 1,
+          "drive": "RWD",
+          "confidence": "confirmed"
+        },
+        "battery": {
+          "chemistry": "磷酸铁锂",
+          "capacity_total_kwh": null,
+          "capacity_usable_kwh": null,
+          "supplier": null,
+          "dc_charge_kw": null,
+          "ac_charge_kw": null,
+          "ev_range_km": 410,
+          "ev_range_standard": "CLTC",
+          "combined_range_km": null,
+          "confidence": "unconfirmed"
+        },
+        "transmission": { "type": "电动车单速变速箱", "gears": 1, "confidence": "confirmed" },
+        "performance": { "accel_0_100_s": null, "top_speed_kmh": 140, "confidence": "confirmed" },
+        "source": "中关村在线 / 易车",
+        "confidence": "unconfirmed"
+      }
+    ]
+  },
+  {
+    "brand": "吉利银河",
+    "model": "星舰7 EM-i",
+    "generation": "2026款",
+    "segment": "紧凑型SUV",
+    "body": "5门5座SUV",
+    "price_rmb_range": "10.18-12.98万",
+    "variants": [
+      {
+        "trim": "135km 领航版",
+        "powertrain": "PHEV",
+        "engine": {
+          "displacement_l": 1.5,
+          "cylinders": 4,
+          "induction": "自然吸气",
+          "max_power_kw": 82,
+          "max_power_hp": 112,
+          "max_torque_nm": null,
+          "confidence": "confirmed"
+        },
+        "motor": {
+          "type": "永磁同步电机",
+          "power_kw": 160,
+          "torque_nm": null,
+          "count": 1,
+          "drive": "FWD",
+          "confidence": "confirmed"
+        },
+        "battery": {
+          "chemistry": "磷酸铁锂",
+          "capacity_total_kwh": 19.09,
+          "capacity_usable_kwh": null,
+          "supplier": null,
+          "dc_charge_kw": "0.33小时（快充）",
+          "ac_charge_kw": "6小时（慢充）",
+          "ev_range_km": 135,
+          "ev_range_standard": "CLTC",
+          "combined_range_km": null,
+          "confidence": "confirmed"
+        },
+        "transmission": { "type": "E-DHT", "gears": null, "confidence": "unconfirmed" },
+        "performance": { "accel_0_100_s": null, "top_speed_kmh": 190, "confidence": "confirmed" },
+        "source": "太平洋汽车 / 越野e族",
+        "confidence": "unconfirmed"
+      }
+    ]
+  },
+  {
+    "brand": "吉利银河",
+    "model": "星耀6",
+    "generation": "2026款",
+    "segment": "紧凑型轿车",
+    "body": "4门5座三厢车",
+    "price_rmb_range": "7.48-12.08万",
+    "variants": [
+      {
+        "trim": "125km 远航版",
+        "powertrain": "PHEV",
+        "engine": {
+          "displacement_l": 1.5,
+          "cylinders": 4,
+          "induction": "自然吸气",
+          "max_power_kw": 82,
+          "max_power_hp": 112,
+          "max_torque_nm": null,
+          "confidence": "confirmed"
+        },
+        "motor": {
+          "type": "永磁同步电机",
+          "power_kw": null,
+          "torque_nm": null,
+          "count": 1,
+          "drive": "FWD",
+          "confidence": "unconfirmed"
+        },
+        "battery": {
+          "chemistry": "磷酸铁锂",
+          "capacity_total_kwh": 17,
+          "capacity_usable_kwh": null,
+          "supplier": null,
+          "dc_charge_kw": "0.33小时（快充）",
+          "ac_charge_kw": null,
+          "ev_range_km": 125,
+          "ev_range_standard": "CLTC",
+          "combined_range_km": 1700,
+          "confidence": "confirmed"
+        },
+        "transmission": { "type": "DHT", "gears": null, "confidence": "unconfirmed" },
+        "performance": { "accel_0_100_s": null, "top_speed_kmh": null, "confidence": "unconfirmed" },
+        "source": "易车 / 汽车经纬",
+        "confidence": "unconfirmed"
+      }
+    ]
+  },
+  {
+    "brand": "吉利银河",
+    "model": "星耀7",
+    "generation": "2026款",
+    "segment": "中型轿车",
+    "body": "4门5座三厢车",
+    "price_rmb_range": "10.88-13.98万",
+    "variants": [
+      {
+        "trim": "230km 两驱远航版",
+        "powertrain": "PHEV",
+        "engine": {
+          "displacement_l": 1.5,
+          "cylinders": 4,
+          "induction": "自然吸气",
+          "max_power_kw": 82,
+          "max_power_hp": 112,
+          "max_torque_nm": null,
+          "confidence": "confirmed"
+        },
+        "motor": {
+          "type": "永磁同步电机",
+          "power_kw": null,
+          "torque_nm": null,
+          "count": 1,
+          "drive": "FWD",
+          "confidence": "unconfirmed"
+        },
+        "battery": {
+          "chemistry": "磷酸铁锂",
+          "capacity_total_kwh": null,
+          "capacity_usable_kwh": null,
+          "supplier": null,
+          "dc_charge_kw": null,
+          "ac_charge_kw": null,
+          "ev_range_km": 230,
+          "ev_range_standard": "CLTC",
+          "combined_range_km": null,
+          "confidence": "unconfirmed"
+        },
+        "transmission": { "type": "1挡DHT", "gears": 1, "confidence": "confirmed" },
+        "performance": { "accel_0_100_s": null, "top_speed_kmh": null, "confidence": "unconfirmed" },
+        "source": "新车评网 / 汽车之家",
+        "confidence": "unconfirmed"
+      },
+      {
+        "trim": "220km 四驱远航版",
+        "powertrain": "PHEV",
+        "engine": {
+          "displacement_l": 1.5,
+          "cylinders": 4,
+          "induction": "自然吸气",
+          "max_power_kw": 82,
+          "max_power_hp": 112,
+          "max_torque_nm": null,
+          "confidence": "confirmed"
+        },
+        "motor": {
+          "type": "永磁同步电机",
+          "power_kw": 312,
+          "torque_nm": 526,
+          "count": 2,
+          "drive": "AWD",
+          "confidence": "confirmed"
+        },
+        "battery": {
+          "chemistry": "磷酸铁锂",
+          "capacity_total_kwh": null,
+          "capacity_usable_kwh": null,
+          "supplier": null,
+          "dc_charge_kw": null,
+          "ac_charge_kw": null,
+          "ev_range_km": 220,
+          "ev_range_standard": "CLTC",
+          "combined_range_km": null,
+          "confidence": "unconfirmed"
+        },
+        "transmission": { "type": "1挡DHT", "gears": 1, "confidence": "confirmed" },
+        "performance": { "accel_0_100_s": 5.4, "top_speed_kmh": null, "confidence": "confirmed" },
+        "source": "新车评网 / 汽车之家",
+        "confidence": "unconfirmed"
+      }
+    ]
+  },
+  {
+    "brand": "吉利银河",
+    "model": "银河A7",
+    "generation": "2026款",
+    "segment": "中大型轿车",
+    "body": "4门5座三厢车",
+    "price_rmb_range": "8.98-13.98万",
+    "variants": [
+      {
+        "trim": "EM-i 150km 悦享版",
+        "powertrain": "PHEV",
+        "engine": {
+          "displacement_l": 1.5,
+          "cylinders": 4,
+          "induction": "自然吸气",
+          "max_power_kw": 82,
+          "max_power_hp": 112,
+          "max_torque_nm": null,
+          "confidence": "confirmed"
+        },
+        "motor": {
+          "type": "永磁同步电机",
+          "power_kw": null,
+          "torque_nm": null,
+          "count": 1,
+          "drive": "FWD",
+          "confidence": "unconfirmed"
+        },
+        "battery": {
+          "chemistry": "磷酸铁锂",
+          "capacity_total_kwh": null,
+          "capacity_usable_kwh": null,
+          "supplier": null,
+          "dc_charge_kw": "0.3小时（快充）",
+          "ac_charge_kw": null,
+          "ev_range_km": 150,
+          "ev_range_standard": "CLTC",
+          "combined_range_km": null,
+          "confidence": "unconfirmed"
+        },
+        "transmission": { "type": "DHT", "gears": null, "confidence": "unconfirmed" },
+        "performance": { "accel_0_100_s": 7.1, "top_speed_kmh": null, "confidence": "confirmed" },
+        "source": "中关村在线 / 汽车经纬",
+        "confidence": "unconfirmed"
+      },
+      {
+        "trim": "EV 550km 尊享版",
+        "powertrain": "BEV",
+        "engine": null,
+        "motor": {
+          "type": "永磁同步电机",
+          "power_kw": 160,
+          "torque_nm": 320,
+          "count": 1,
+          "drive": "FWD",
+          "confidence": "confirmed"
+        },
+        "battery": {
+          "chemistry": "磷酸铁锂",
+          "capacity_total_kwh": null,
+          "capacity_usable_kwh": null,
+          "supplier": null,
+          "dc_charge_kw": "0.33小时（快充）",
+          "ac_charge_kw": null,
+          "ev_range_km": 550,
+          "ev_range_standard": "CLTC",
+          "combined_range_km": null,
+          "confidence": "unconfirmed"
+        },
+        "transmission": { "type": "电动车单速变速箱", "gears": 1, "confidence": "confirmed" },
+        "performance": { "accel_0_100_s": 7.1, "top_speed_kmh": 180, "confidence": "confirmed" },
+        "source": "中关村在线 / 汽车经纬",
+        "confidence": "unconfirmed"
+      }
+    ]
+  },
+  {
+    "brand": "吉利银河",
+    "model": "银河M7",
+    "generation": "2026款",
+    "segment": "A+级SUV",
+    "body": "5门5座SUV",
+    "price_rmb_range": "10.98-14.78万",
+    "variants": [
+      {
+        "trim": "远航家 1.5L 225km 远航版",
+        "powertrain": "PHEV",
+        "engine": {
+          "displacement_l": 1.5,
+          "cylinders": 4,
+          "induction": "自然吸气",
+          "max_power_kw": 82,
+          "max_power_hp": 112,
+          "max_torque_nm": null,
+          "confidence": "confirmed"
+        },
+        "motor": {
+          "type": "永磁同步电机",
+          "power_kw": 175,
+          "torque_nm": null,
+          "count": 1,
+          "drive": "FWD",
+          "confidence": "confirmed"
+        },
+        "battery": {
+          "chemistry": "磷酸铁锂",
+          "capacity_total_kwh": 29.8,
+          "capacity_usable_kwh": null,
+          "supplier": null,
+          "dc_charge_kw": "15分钟（30%-80%）",
+          "ac_charge_kw": null,
+          "ev_range_km": 225,
+          "ev_range_standard": "CLTC",
+          "combined_range_km": 1730,
+          "confidence": "confirmed"
+        },
+        "transmission": { "type": "1挡DHT", "gears": 1, "confidence": "confirmed" },
+        "performance": { "accel_0_100_s": 7.7, "top_speed_kmh": 180, "confidence": "confirmed" },
+        "source": "中关村在线 / 百度百科",
+        "confidence": "unconfirmed"
+      }
+    ]
+  },
+  {
+    "brand": "吉利银河",
+    "model": "银河M9",
+    "generation": "2026款",
+    "segment": "大型SUV",
+    "body": "5门6座SUV",
+    "price_rmb_range": "18.38-26.98万",
+    "variants": [
+      {
+        "trim": "210km 四驱黑金智曜版",
+        "powertrain": "PHEV",
+        "engine": {
+          "displacement_l": 1.5,
+          "cylinders": 4,
+          "induction": "涡轮增压",
+          "max_power_kw": 120,
+          "max_power_hp": 163,
+          "max_torque_nm": null,
+          "confidence": "confirmed"
+        },
+        "motor": {
+          "type": "永磁同步电机",
+          "power_kw": 640,
+          "torque_nm": 1165,
+          "count": 3,
+          "drive": "AWD",
+          "confidence": "confirmed"
+        },
+        "battery": {
+          "chemistry": "磷酸铁锂（神盾电池）",
+          "capacity_total_kwh": 41.46,
+          "capacity_usable_kwh": null,
+          "supplier": null,
+          "dc_charge_kw": null,
+          "ac_charge_kw": null,
+          "ev_range_km": 210,
+          "ev_range_standard": "CLTC",
+          "combined_range_km": 1500,
+          "confidence": "confirmed"
+        },
+        "transmission": { "type": "3挡DHT", "gears": 3, "confidence": "confirmed" },
+        "performance": { "accel_0_100_s": 4.5, "top_speed_kmh": null, "confidence": "confirmed" },
+        "source": "中关村在线 / 易车",
+        "confidence": "unconfirmed"
+      }
+    ]
+  },
+  {
+    "brand": "吉利银河",
+    "model": "银河V900",
+    "generation": "2026款",
+    "segment": "MPV",
+    "body": "5门MPV",
+    "price_rmb_range": "26.98-36.98万",
+    "variants": [
+      {
+        "trim": "1220四驱Max版",
+        "powertrain": "REEV",
+        "engine": {
+          "displacement_l": 1.5,
+          "cylinders": 4,
+          "induction": "涡轮增压",
+          "max_power_kw": 120,
+          "max_power_hp": 163,
+          "max_torque_nm": null,
+          "confidence": "confirmed"
+        },
+        "motor": {
+          "type": "永磁同步电机",
+          "power_kw": 340,
+          "torque_nm": 523,
+          "count": 2,
+          "drive": "AWD",
+          "confidence": "confirmed"
+        },
+        "battery": {
+          "chemistry": "磷酸铁锂",
+          "capacity_total_kwh": 50,
+          "capacity_usable_kwh": null,
+          "supplier": null,
+          "dc_charge_kw": null,
+          "ac_charge_kw": null,
+          "ev_range_km": 260,
+          "ev_range_standard": "CLTC",
+          "combined_range_km": 1220,
+          "confidence": "confirmed"
+        },
+        "transmission": { "type": "电动车单速变速箱", "gears": 1, "confidence": "unconfirmed" },
+        "performance": { "accel_0_100_s": 6.5, "top_speed_kmh": 190, "confidence": "confirmed" },
+        "source": "易车 / 中关村在线",
+        "confidence": "unconfirmed"
+      }
+    ]
+  },
+  {
+    "brand": "吉利银河",
+    "model": "银河TT",
+    "generation": "2026款",
+    "segment": "中大型轿车",
+    "body": "4门5座三厢车",
+    "price_rmb_range": "12.99-18.59万",
+    "variants": [
+      {
+        "trim": "640 后驱尊享",
+        "powertrain": "BEV",
+        "engine": null,
+        "motor": {
+          "type": "永磁同步电机",
+          "power_kw": 245,
+          "torque_nm": 320,
+          "count": 1,
+          "drive": "RWD",
+          "confidence": "confirmed"
+        },
+        "battery": {
+          "chemistry": "磷酸铁锂（宁德时代）",
+          "capacity_total_kwh": 63.8,
+          "capacity_usable_kwh": null,
+          "supplier": "宁德时代",
+          "dc_charge_kw": null,
+          "ac_charge_kw": null,
+          "ev_range_km": 640,
+          "ev_range_standard": "CLTC",
+          "combined_range_km": null,
+          "confidence": "confirmed"
+        },
+        "transmission": { "type": "电动车单速变速箱", "gears": 1, "confidence": "confirmed" },
+        "performance": { "accel_0_100_s": 6.5, "top_speed_kmh": 180, "confidence": "confirmed" },
+        "source": "汽车之家 / 搜狐汽车",
+        "confidence": "unconfirmed"
+      },
+      {
+        "trim": "650 四驱Ultra",
+        "powertrain": "BEV",
+        "engine": null,
+        "motor": {
+          "type": "永磁同步电机",
+          "power_kw": 425,
+          "torque_nm": 597,
+          "count": 2,
+          "drive": "AWD",
+          "confidence": "confirmed"
+        },
+        "battery": {
+          "chemistry": "磷酸铁锂",
+          "capacity_total_kwh": 75.2,
+          "capacity_usable_kwh": null,
+          "supplier": null,
+          "dc_charge_kw": null,
+          "ac_charge_kw": null,
+          "ev_range_km": 650,
+          "ev_range_standard": "CLTC",
+          "combined_range_km": null,
+          "confidence": "confirmed"
+        },
+        "transmission": { "type": "电动车单速变速箱", "gears": 1, "confidence": "confirmed" },
+        "performance": { "accel_0_100_s": 3.8, "top_speed_kmh": null, "confidence": "confirmed" },
+        "source": "汽车之家 / 搜狐汽车",
+        "confidence": "unconfirmed"
+      }
+    ]
+  },
+  {
+    "brand": "吉利银河",
+    "model": "银河战舰700",
+    "generation": "2026款",
+    "segment": "中大型硬派SUV",
+    "body": "5门SUV",
+    "price_rmb_range": "待公布",
+    "variants": [
+      {
+        "trim": "2.0T 三电机四驱",
+        "powertrain": "PHEV",
+        "engine": {
+          "displacement_l": 2.0,
+          "cylinders": 4,
+          "induction": "涡轮增压",
+          "max_power_kw": 160,
+          "max_power_hp": 218,
+          "max_torque_nm": null,
+          "confidence": "confirmed"
+        },
+        "motor": {
+          "type": "永磁同步电机",
+          "power_kw": 830,
+          "torque_nm": null,
+          "count": 3,
+          "drive": "AWD",
+          "confidence": "confirmed"
+        },
+        "battery": {
+          "chemistry": "磷酸铁锂",
+          "capacity_total_kwh": 47.14,
+          "capacity_usable_kwh": null,
+          "supplier": null,
+          "dc_charge_kw": null,
+          "ac_charge_kw": null,
+          "ev_range_km": 305,
+          "ev_range_standard": "CLTC",
+          "combined_range_km": null,
+          "confidence": "confirmed"
+        },
+        "transmission": { "type": "待确认", "gears": null, "confidence": "unconfirmed" },
+        "performance": { "accel_0_100_s": 4.2, "top_speed_kmh": 220, "confidence": "confirmed" },
+        "source": "汽车之家 / 中关村在线",
+        "confidence": "unconfirmed"
+      }
+    ]
+  },
+  {
+    "brand": "吉利银河",
+    "model": "银河A7 EV",
+    "generation": "2026款",
+    "segment": "中大型轿车",
+    "body": "4门5座三厢车",
+    "price_rmb_range": "9.98-10.68万",
+    "variants": [
+      {
+        "trim": "550km 尊享版",
+        "powertrain": "BEV",
+        "engine": null,
+        "motor": {
+          "type": "永磁同步电机",
+          "power_kw": 160,
+          "torque_nm": 320,
+          "count": 1,
+          "drive": "FWD",
+          "confidence": "confirmed"
+        },
+        "battery": {
+          "chemistry": "磷酸铁锂",
+          "capacity_total_kwh": null,
+          "capacity_usable_kwh": null,
+          "supplier": null,
+          "dc_charge_kw": "0.33小时（快充）",
+          "ac_charge_kw": null,
+          "ev_range_km": 550,
+          "ev_range_standard": "CLTC",
+          "combined_range_km": null,
+          "confidence": "unconfirmed"
+        },
+        "transmission": { "type": "电动车单速变速箱", "gears": 1, "confidence": "confirmed" },
+        "performance": { "accel_0_100_s": 7.1, "top_speed_kmh": 180, "confidence": "confirmed" },
+        "source": "易车 / 汽车经纬",
+        "confidence": "unconfirmed"
+      }
+    ]
+  },
+  {
+    "brand": "吉利银河",
+    "model": "银河星耀8",
+    "generation": "2026款",
+    "segment": "中大型轿车",
+    "body": "4门5座三厢车",
+    "price_rmb_range": "12.58-17.28万",
+    "variants": [
+      {
+        "trim": "225km EM-i 远航家远洋版",
+        "powertrain": "PHEV",
+        "engine": {
+          "displacement_l": 1.5,
+          "cylinders": 4,
+          "induction": "自然吸气",
+          "max_power_kw": 82,
+          "max_power_hp": 112,
+          "max_torque_nm": null,
+          "confidence": "unconfirmed"
+        },
+        "motor": {
+          "type": "永磁同步电机",
+          "power_kw": null,
+          "torque_nm": null,
+          "count": 1,
+          "drive": "FWD",
+          "confidence": "unconfirmed"
+        },
+        "battery": {
+          "chemistry": "磷酸铁锂",
+          "capacity_total_kwh": null,
+          "capacity_usable_kwh": null,
+          "supplier": null,
+          "dc_charge_kw": null,
+          "ac_charge_kw": null,
+          "ev_range_km": 225,
+          "ev_range_standard": "CLTC",
+          "combined_range_km": null,
+          "confidence": "unconfirmed"
+        },
+        "transmission": { "type": "DHT", "gears": null, "confidence": "unconfirmed" },
+        "performance": { "accel_0_100_s": null, "top_speed_kmh": null, "confidence": "unconfirmed" },
+        "source": "易车",
+        "confidence": "unconfirmed"
+      }
+    ]
+  }
+]

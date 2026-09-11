@@ -41,6 +41,10 @@ import {
   guessSegment,
   assertValidSegment,
   splitTechPartner,
+  resolveMotorType,
+  resolveInduction,
+  translateBatteryTerms,
+  normalizeEnergyType,
 } from "../lib/deepseekNormalize";
 
 const MONGODB_URI = process.env.MONGODB_URI;
@@ -122,7 +126,7 @@ function normalizeVariant(v: RawVariant) {
     ? {
         displacement_l: num(v.engine.displacement_l),
         cylinders: num(v.engine.cylinders),
-        fuel_type: v.engine.induction ? `Gasoline (${v.engine.induction})` : "Gasoline",
+        fuel_type: v.engine.induction ? `Gasoline (${resolveInduction(v.engine.induction)})` : "Gasoline",
         max_power_hp: num(v.engine.max_power_hp) ?? kwToHp(num(v.engine.max_power_kw)),
         max_torque_nm: num(v.engine.max_torque_nm),
       }
@@ -130,7 +134,7 @@ function normalizeVariant(v: RawVariant) {
 
   const motor = v.motor
     ? {
-        motor_type: v.motor.type?.toLowerCase().includes("induction") ? "Induction" : "PMSM",
+        motor_type: resolveMotorType(v.motor.type),
         motor_power_kw: num(v.motor.power_kw),
         motor_torque_nm: num(v.motor.torque_nm),
         motor_count: motorCountFromNumber(v.motor.count),
@@ -140,10 +144,10 @@ function normalizeVariant(v: RawVariant) {
 
   const battery = v.battery
     ? {
-        battery_chemistry: v.battery.chemistry,
+        battery_chemistry: translateBatteryTerms(v.battery.chemistry),
         battery_capacity_total_kwh: num(v.battery.capacity_total_kwh),
         battery_capacity_usable_kwh: num(v.battery.capacity_usable_kwh),
-        battery_supplier: v.battery.supplier,
+        battery_supplier: translateBatteryTerms(v.battery.supplier),
         charging_speed_dc_kw: parseDcKw(v.battery.dc_charge_kw),
         charging_speed_ac_kw: parseDcKw(v.battery.ac_charge_kw),
         electric_range_km: num(v.battery.ev_range_km),
@@ -154,7 +158,7 @@ function normalizeVariant(v: RawVariant) {
   const gearbox = v.transmission?.type ? correctGearbox(v.transmission.type) : undefined;
   const gearbox_gears = typeof v.transmission?.gears === "number" ? v.transmission.gears : gearbox ? 1 : undefined;
 
-  const energy_type = v.powertrain?.startsWith("PHEV") ? "PHEV" : v.powertrain;
+  const energy_type = normalizeEnergyType(v.powertrain);
 
   const isUnverified = v.confidence === "unconfirmed";
 

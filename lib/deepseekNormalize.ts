@@ -18,6 +18,7 @@ export const KNOWN_BRANDS: Record<
   "极氪": { name: "Zeekr", parent_group: "Geely Holding Group", founded_year: 2021, website: "https://www.zeekr.com" },
   "领克": { name: "Lynk & Co", parent_group: "Geely Holding Group" },
   "银河": { name: "Geely Galaxy", parent_group: "Geely Holding Group" },
+  "吉利银河": { name: "Geely Galaxy", parent_group: "Geely Holding Group" },
   "奇瑞": { name: "Chery", founded_year: 1997, website: "https://www.chery.com" },
   "捷途": { name: "Jetour", parent_group: "Chery Automobile" },
   "长城": { name: "GWM (Great Wall Motor)", founded_year: 1984, website: "https://www.gwm-global.com" },
@@ -84,24 +85,83 @@ export const CHINESE_ORG_TERMS: Record<string, string> = {
   "汽车": " Auto",
 };
 
-/** Best-effort translation of known Chinese org-name fragments inside a mixed-language string. */
-export function translateOrgFragments(text: string): string {
+/** Substring-replace every key of `dict` in `text`, longest keys first to avoid partial-match collisions. */
+export function translateTerms(text: string, dict: Record<string, string>): string {
   let result = text;
-  const keys = Object.keys(CHINESE_ORG_TERMS).sort((a, b) => b.length - a.length);
+  const keys = Object.keys(dict).sort((a, b) => b.length - a.length);
   for (const key of keys) {
-    result = result.split(key).join(CHINESE_ORG_TERMS[key]);
+    result = result.split(key).join(dict[key]);
   }
-  // Normalize full-width Chinese punctuation to plain ASCII and collapse
-  // resulting whitespace, so translated strings never surface CJK punctuation.
-  result = result
-    .replace(/（/g, "(")
-    .replace(/）/g, ")")
+  return result;
+}
+
+/** Normalize full-width Chinese punctuation to plain ASCII and collapse resulting whitespace. */
+export function normalizePunctuation(text: string): string {
+  return text
+    .replace(/\s*（\s*/g, " (")
+    .replace(/\s*）\s*/g, ") ")
     .replace(/、/g, ", ")
     .replace(/\s+/g, " ")
     .replace(/\(\s+/g, "(")
     .replace(/\s+\)/g, ")")
     .trim();
-  return result;
+}
+
+/** Best-effort translation of known Chinese org-name fragments inside a mixed-language string. */
+export function translateOrgFragments(text: string): string {
+  return normalizePunctuation(translateTerms(text, CHINESE_ORG_TERMS));
+}
+
+/** Chinese battery chemistry / supplier / proprietary-name fragments -> English. Extend as needed. */
+export const BATTERY_TERMS: Record<string, string> = {
+  "磷酸铁锂": "LFP",
+  "三元锂": "NMC",
+  "钠离子": "Sodium-ion",
+  "神盾电池": "Shield Battery",
+  "宁德时代": "CATL",
+  "比亚迪弗迪电池": "BYD FinDreams",
+};
+
+/** Translate Chinese battery chemistry/supplier text (e.g. "磷酸铁锂（神盾电池）") to English. */
+export function translateBatteryTerms(text: string | null | undefined): string | undefined {
+  if (!text) return undefined;
+  return normalizePunctuation(translateTerms(text, BATTERY_TERMS));
+}
+
+/** Chinese motor-type descriptions -> normalized English label. */
+const MOTOR_TYPE_TERMS: Record<string, string> = {
+  "永磁同步电机": "PMSM",
+  "感应电机": "Induction",
+  "异步电机": "Induction",
+  "SiC油冷电驱": "PMSM (SiC oil-cooled)",
+};
+
+/** Resolve a raw (possibly Chinese) motor-type description to a normalized label, defaulting to PMSM. */
+export function resolveMotorType(raw: string | null | undefined): string {
+  if (!raw) return "PMSM";
+  for (const [term, en] of Object.entries(MOTOR_TYPE_TERMS)) {
+    if (raw.includes(term)) return en;
+  }
+  if (/induction/i.test(raw)) return "Induction";
+  if (isAscii(raw)) return raw;
+  console.warn(`[import] No English mapping for motor type "${raw}" — defaulting to PMSM. Add it to MOTOR_TYPE_TERMS in lib/deepseekNormalize.ts.`);
+  return "PMSM";
+}
+
+/** Chinese engine-induction terms -> English. */
+const INDUCTION_TERMS: Record<string, string> = {
+  "自然吸气": "naturally aspirated",
+  "涡轮增压": "turbo",
+};
+
+/** Translate a raw (possibly Chinese) induction description, passing through unmapped ASCII text and warning otherwise. */
+export function resolveInduction(raw: string | null | undefined): string | undefined {
+  if (!raw) return undefined;
+  const known = INDUCTION_TERMS[raw];
+  if (known) return known;
+  if (isAscii(raw)) return raw;
+  console.warn(`[import] No English mapping for induction type "${raw}" — keeping original. Add it to INDUCTION_TERMS in lib/deepseekNormalize.ts.`);
+  return raw;
 }
 
 /**
@@ -144,11 +204,31 @@ export const KNOWN_MODELS: Record<string, string> = {
   "夏 DM-i": "Xia DM-i",
   "豹5": "Bao 5",
   "豹8": "Bao 8",
+  // Geely Galaxy (吉利银河) lineup
+  "银河E5": "Galaxy E5",
+  "银河E8": "Galaxy E8",
+  "银河L6 EM-i": "Galaxy L6 EM-i",
+  "银河L7": "Galaxy L7",
+  "星愿": "Starwish",
+  "星舰7 EM-i": "Starship 7 EM-i",
+  "星耀6": "Starlight 6",
+  "星耀7": "Starlight 7",
+  "银河A7": "Galaxy A7",
+  "银河A7 EV": "Galaxy A7 EV",
+  "银河M7": "Galaxy M7",
+  "银河M9": "Galaxy M9",
+  "银河V900": "Galaxy V900",
+  "银河TT": "Galaxy TT",
+  "银河战舰700": "Galaxy Warship 700",
+  "银河星耀8": "Galaxy Starlight 8",
 };
 
 const RANGE_STANDARD_CORRECTIONS: Record<string, string> = {
   WLTC: "WLTP",
   NEDC2: "NEDC",
+  // "工信部" (MIIT-published figure) uses the CLTC test cycle under current
+  // Chinese regulation — treated as equivalent, not a literal translation.
+  "工信部": "CLTC",
 };
 
 const VALID_RANGE_STANDARDS = new Set(["CLTC", "WLTP", "NEDC"]);
@@ -181,6 +261,9 @@ const GEARBOX_CORRECTIONS: Record<string, string> = {
   "eCVT": "CVT",
   "DHT": "multi-speed EV transmission",
 };
+
+/** Values meaning "not yet determined" rather than an actual gearbox type. */
+const GEARBOX_PLACEHOLDER_TERMS = ["待确认", "待定", "TBD", "未知"];
 
 const MOTOR_COUNT_MAP: Record<number, string> = {
   1: "single",
@@ -278,12 +361,23 @@ export function correctRangeStandard(v: unknown): string | undefined {
 export function correctGearbox(v: unknown): string | undefined {
   if (!v) return undefined;
   const s = String(v);
-  const corrected = GEARBOX_CORRECTIONS[s] ?? s;
-  if (!VALID_GEARBOX.has(corrected)) {
-    console.warn(`[import] Unknown gearbox type "${v}" — keeping as-is; verify against schema enum.`);
-    return corrected;
-  }
-  return corrected;
+
+  if (GEARBOX_PLACEHOLDER_TERMS.some((t) => s.includes(t))) return undefined;
+
+  // Exact-match corrections first (covers whole-string values like "E-CVT").
+  const exact = GEARBOX_CORRECTIONS[s];
+  if (exact) return exact;
+  if (VALID_GEARBOX.has(s)) return s;
+
+  // Chinese keyword detection for longer descriptive strings, e.g.
+  // "电动车单速变速箱" or "E-DHT智能无级11合1混动电驱".
+  if (/单速/.test(s) || (s.includes("电动车") && s.includes("变速箱"))) return "single-speed reducer";
+  if (/DHT/i.test(s)) return "multi-speed EV transmission";
+  if (/CVT/i.test(s)) return "CVT";
+  if (/AMT/i.test(s)) return "AMT";
+
+  console.warn(`[import] Unknown gearbox type "${v}" — keeping as-is; verify against schema enum.`);
+  return s;
 }
 
 export function motorCountFromNumber(n: unknown): string {
@@ -300,14 +394,14 @@ export function guessSegment(segmentText: string | undefined, bodyText: string |
   if (/sports|coupe|roadster/.test(text)) return "Sports";
 
   if (/suv/.test(text)) {
-    if (/a00|city|mini|compact|小型|紧凑/.test(text)) return "SUV-compact";
+    if (/a0+|a\+|city|mini|compact|小型|紧凑/.test(text)) return "SUV-compact";
     if (/full|large|大型|旗舰/.test(text)) return "SUV-full";
     return "SUV-mid";
   }
 
   if (/d-segment|large sedan|大型/.test(text)) return "D-segment/Large";
   if (/c-segment|c\+|mid-size|中型/.test(text)) return "C-segment/Mid-size";
-  if (/a00|city car|微型/.test(text)) return "A-segment/City";
+  if (/a0+|city car|微型|小型/.test(text)) return "A-segment/City";
   if (/b-segment|compact|紧凑/.test(text)) return "B-segment/Compact";
 
   console.warn(`[import] Could not confidently map segment "${segmentText}" / body "${bodyText}" — defaulting to SUV-mid.`);
@@ -320,4 +414,20 @@ export function assertValidSegment(seg: string): string {
     return "SUV-mid";
   }
   return seg;
+}
+
+const VALID_ENERGY_TYPES = new Set(["ICE", "HEV", "PHEV", "BEV", "REEV/EREV", "MHEV"]);
+
+/** Normalize a raw powertrain/energy-type string (e.g. "REEV", "PHEV (DM-i)") to the schema enum. */
+export function normalizeEnergyType(raw: string | undefined): string | undefined {
+  if (!raw) return undefined;
+  if (VALID_ENERGY_TYPES.has(raw)) return raw;
+  if (/^REEV|^EREV/i.test(raw)) return "REEV/EREV";
+  if (/^PHEV/i.test(raw)) return "PHEV";
+  if (/^HEV/i.test(raw)) return "HEV";
+  if (/^MHEV/i.test(raw)) return "MHEV";
+  if (/^BEV|^EV/i.test(raw)) return "BEV";
+  if (/^ICE/i.test(raw)) return "ICE";
+  console.warn(`[import] Unknown energy_type "${raw}" — keeping as-is; verify against schema enum.`);
+  return raw;
 }
