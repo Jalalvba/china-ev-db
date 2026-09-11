@@ -32,7 +32,8 @@ import {
   resolveModelName,
   isModelNameResolvable,
   isBrandNameResolvable,
-  parsePriceRange,
+  resolvePriceRange,
+  type CanonicalPriceInput,
   parseDcKw,
   parseCombinedRange,
   num,
@@ -105,12 +106,13 @@ interface RawVariant {
 
 interface RawVariantEntry {
   brand: string;
+  brand_en?: string;
   model: string;
   model_en?: string;
   generation?: string;
   segment?: string;
   body?: string;
-  price_rmb_range?: string;
+  price_rmb_range?: string | CanonicalPriceInput;
   /** Explicit override to flag price_range.unverified even when parsePriceRange succeeds. */
   price_unverified?: boolean;
   production_status?: string;
@@ -235,7 +237,8 @@ async function upsertBrand(brandFields: Record<string, unknown>, name: string) {
 
 async function runVariantImport(entries: RawVariantEntry[], filePath: string) {
   const primaryRaw = detectPrimaryBrand(entries);
-  const primaryResolved = resolveBrandName(primaryRaw);
+  const primaryBrandEn = entries.find((e) => e.brand === primaryRaw)?.brand_en;
+  const primaryResolved = resolveBrandName(primaryRaw, primaryBrandEn);
 
   console.log(`Importing ${entries.length} model entries (variant-spec shape) from ${filePath}`);
 
@@ -245,7 +248,7 @@ async function runVariantImport(entries: RawVariantEntry[], filePath: string) {
 
   for (const entry of entries) {
     const isSubBrand = entry.brand !== primaryRaw;
-    const resolved = isSubBrand ? resolveBrandName(entry.brand) : primaryResolved;
+    const resolved = isSubBrand ? resolveBrandName(entry.brand, entry.brand_en) : primaryResolved;
     const brandFields = stripUndefined({
       name_cn: entry.brand,
       name_en: resolved.name,
@@ -260,8 +263,7 @@ async function runVariantImport(entries: RawVariantEntry[], filePath: string) {
 
     const englishModelName = resolveModelName(entry.model, entry.model_en);
     const segment = assertValidSegment(guessSegment(entry.segment, entry.body));
-    const price_range = parsePriceRange(entry.price_rmb_range);
-    if (price_range && entry.price_unverified) price_range.unverified = true;
+    const price_range = resolvePriceRange(entry.price_rmb_range, entry.price_unverified);
 
     const modelFields = stripUndefined({
       name_cn: entry.model,
@@ -631,7 +633,7 @@ async function run() {
   if (Array.isArray(raw)) {
     const entries = raw as RawVariantEntry[];
     preflightCheckModelNames(entries);
-    preflightCheckBrandNames(entries.map((e) => ({ raw: e.brand })));
+    preflightCheckBrandNames(entries.map((e) => ({ raw: e.brand, explicitEnglish: e.brand_en })));
   } else if (isDeltaReport(raw)) {
     pendingDelta = flattenDeltaReport(raw);
     preflightCheckBrandNames(pendingDelta.map((p) => ({ raw: p.brand_cn, explicitEnglish: p.brand_en })));

@@ -10,6 +10,7 @@ export const KNOWN_BRANDS: Record<
   { name: string; parent_group?: string; founded_year?: number; website?: string; country_origin?: string }
 > = {
   "BYD": { name: "BYD", founded_year: 1995, website: "https://www.byd.com" },
+  "比亚迪": { name: "BYD", founded_year: 1995, website: "https://www.byd.com" },
   "腾势": { name: "Denza", parent_group: "BYD Group", founded_year: 2010, website: "https://www.denzaauto.com" },
   "仰望": { name: "Yangwang", parent_group: "BYD Group", founded_year: 2022, website: "https://www.yangwangauto.com" },
   "方程豹": { name: "Fangchengbao", parent_group: "BYD Group", founded_year: 2023, website: "https://www.fangchengbao.com" },
@@ -38,6 +39,13 @@ export const KNOWN_BRANDS: Record<
   "睿蓝": { name: "Livan", parent_group: "Geely", founded_year: 2022 },
   "名爵": { name: "MG", parent_group: "SAIC Motor" },
   "斯柯达": { name: "Škoda", country_origin: "Czech Republic" },
+  "智己": { name: "IM Motors", parent_group: "SAIC Motor", founded_year: 2020 },
+  "广汽埃安": { name: "GAC Aion", parent_group: "GAC Group", founded_year: 2017 },
+  "岚图": { name: "Voyah", parent_group: "Dongfeng", founded_year: 2020 },
+  "智界": { name: "Luxeed", parent_group: "Chery / Huawei", founded_year: 2024 },
+  "享界": { name: "Stelato", parent_group: "BAIC / Huawei", founded_year: 2024 },
+  "尊界": { name: "Maestro", parent_group: "JAC / Huawei", founded_year: 2025 },
+  "尚界": { name: "Shangjie", parent_group: "SAIC / Huawei", founded_year: 2025 },
 };
 
 /**
@@ -462,6 +470,45 @@ export function parsePriceRange(str: string | null | undefined):
     currency_local: "CNY",
     min_usd: Math.round(min / CNY_PER_USD),
     max_usd: Math.round(max / CNY_PER_USD),
+  };
+}
+
+export interface CanonicalPriceInput {
+  min?: number | null;
+  max?: number | null;
+  unverified?: boolean;
+}
+
+/**
+ * Resolve price_rmb_range whether it's the legacy raw string ("7.98-9.98万")
+ * or the canonical {min, max, unverified} object already in DB-ready form.
+ * Falls back to explicitUnverified (e.g. an entry-level price_unverified
+ * flag) only when the object/string itself doesn't already carry one.
+ */
+export function resolvePriceRange(
+  input: string | CanonicalPriceInput | null | undefined,
+  explicitUnverified?: boolean
+): { min?: number; max?: number; currency_local: string; min_usd?: number; max_usd?: number; unverified?: boolean } | undefined {
+  if (!input) return undefined;
+
+  if (typeof input === "string") {
+    const parsed = parsePriceRange(input);
+    if (parsed && explicitUnverified) parsed.unverified = true;
+    return parsed;
+  }
+
+  const min = input.min ?? undefined;
+  const max = input.max ?? undefined;
+  if (min === undefined && max === undefined) {
+    return { currency_local: "CNY", unverified: input.unverified ?? explicitUnverified };
+  }
+  return {
+    min,
+    max,
+    currency_local: "CNY",
+    min_usd: min !== undefined ? Math.round(min / CNY_PER_USD) : undefined,
+    max_usd: max !== undefined ? Math.round(max / CNY_PER_USD) : undefined,
+    unverified: input.unverified ?? explicitUnverified,
   };
 }
 
