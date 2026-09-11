@@ -85,6 +85,7 @@ export default async function ModelPage({ params }: { params: Promise<{ id: stri
           {moroccoListing.dealer_confidence === "unconfirmed" && (
             <span className="ml-2 px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 text-xs">unconfirmed</span>
           )}
+          {moroccoListing.note && <p className="text-xs text-zinc-500 mt-1">{moroccoListing.note}</p>}
         </div>
       )}
 

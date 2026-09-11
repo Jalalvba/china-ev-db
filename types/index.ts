@@ -160,6 +160,8 @@ export interface IMoroccoListing {
   powertrain?: string;
   dealer_morocco?: string;
   dealer_confidence?: Confidence;
+  /** Free-text caveat about dealer_morocco, e.g. dual distribution, corporate-structure clarification, or a source discrepancy pending verification. */
+  note?: string;
   source?: string;
   matched: boolean;
   last_updated: string;

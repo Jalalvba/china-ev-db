@@ -22,6 +22,8 @@ const MoroccoListingSchema = new Schema<MoroccoListingDoc>(
     powertrain: { type: String },
     dealer_morocco: { type: String },
     dealer_confidence: { type: String, enum: CONFIDENCE_VALUES },
+    /** Free-text caveat about dealer_morocco, e.g. dual distribution, corporate-structure clarification, or a source discrepancy pending verification. */
+    note: { type: String },
     source: { type: String },
     matched: { type: Boolean, required: true, default: false },
     last_updated: { type: Date, required: true, default: Date.now },
