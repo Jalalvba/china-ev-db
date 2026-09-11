@@ -70,10 +70,11 @@ export default function ComparePage() {
           ? `${p.battery_details.electric_range_km} km (${p.battery_details.range_standard ?? "?"})`
           : "—",
     },
-    { label: "Gearbox", get: (p) => p?.gearbox ?? "—" },
+    { label: "Gearbox", get: (p) => p?.transmission?.type ?? "—" },
     { label: "Combined Range", get: (p) => (p?.combined_range_km ? `${p.combined_range_km} km` : "—") },
-    { label: "0–100 km/h", get: (p) => (p?.accel_0_100_kmh_s ? `${p.accel_0_100_kmh_s} s` : "—") },
-    { label: "Top Speed", get: (p) => (p?.top_speed_kmh ? `${p.top_speed_kmh} km/h` : "—") },
+    { label: "0–100 km/h", get: (p) => (p?.performance?.accel_0_100_s ? `${p.performance.accel_0_100_s} s` : "—") },
+    { label: "Top Speed", get: (p) => (p?.performance?.top_speed_kmh ? `${p.performance.top_speed_kmh} km/h` : "—") },
+    { label: "Source", get: (p) => p?.source ?? "—" },
   ];
 
   return (

@@ -440,7 +440,7 @@ export function isModelNameResolvable(raw: string, explicitEnglish?: string): bo
 
 /** Parse a "7.98–9.98万" / "22.98万起" / "100.8万" style RMB price string into numeric CNY. */
 export function parsePriceRange(str: string | null | undefined):
-  | { min_local: number; max_local: number; currency_local: string; min_usd: number; max_usd: number; unverified?: boolean }
+  | { min: number; max: number; currency_local: string; min_usd: number; max_usd: number; unverified?: boolean }
   | undefined {
   if (!str) return undefined;
   const cleaned = str.replace(/,/g, "");
@@ -448,14 +448,14 @@ export function parsePriceRange(str: string | null | undefined):
   if (!nums || nums.length === 0) return undefined;
   const isWan = cleaned.includes("万");
   const mult = isWan ? 10000 : 1;
-  const min_local = Math.round(nums[0] * mult);
-  const max_local = Math.round((nums.length > 1 ? nums[1] : nums[0]) * mult);
+  const min = Math.round(nums[0] * mult);
+  const max = Math.round((nums.length > 1 ? nums[1] : nums[0]) * mult);
   return {
-    min_local,
-    max_local,
+    min,
+    max,
     currency_local: "CNY",
-    min_usd: Math.round(min_local / CNY_PER_USD),
-    max_usd: Math.round(max_local / CNY_PER_USD),
+    min_usd: Math.round(min / CNY_PER_USD),
+    max_usd: Math.round(max / CNY_PER_USD),
   };
 }
 

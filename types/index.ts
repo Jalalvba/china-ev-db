@@ -31,9 +31,15 @@ export type RangeStandard = "CLTC" | "WLTP" | "NEDC";
 
 export type BrandStatus = "active" | "discontinued" | "bankrupt" | "merged";
 
+export type Confidence = "confirmed" | "unconfirmed";
+
 export interface IBrand {
   _id?: string;
   name: string;
+  /** Original-language (typically Chinese) name, kept alongside the canonical English `name`. */
+  name_cn?: string;
+  /** English name — usually identical to `name`, kept as an explicit canonical field per the DeepSeek schema. */
+  name_en?: string;
   logo_url?: string;
   parent_group?: string;
   tech_partner?: string;
@@ -45,8 +51,8 @@ export interface IBrand {
 }
 
 export interface IPriceRange {
-  min_local?: number;
-  max_local?: number;
+  min?: number;
+  max?: number;
   currency_local: string;
   min_usd?: number;
   max_usd?: number;
@@ -57,6 +63,10 @@ export interface IModel {
   _id?: string;
   brand_id: string;
   name: string;
+  /** Original-language (typically Chinese) model name. */
+  name_cn?: string;
+  /** English model name — usually identical to `name`. */
+  name_en?: string;
   generation?: string;
   year?: number;
   segment: Segment;
@@ -69,9 +79,13 @@ export interface IModel {
 export interface IEngineDetails {
   displacement_l?: number;
   cylinders?: number;
+  /** Discrete induction type, e.g. "turbo" | "naturally aspirated" — kept separate from fuel_type. */
+  induction?: string;
   fuel_type?: string;
+  power_kw?: number;
   max_power_hp?: number;
   max_torque_nm?: number;
+  confidence?: Confidence;
 }
 
 export interface IElectricMotorDetails {
@@ -82,6 +96,7 @@ export interface IElectricMotorDetails {
   drive_type?: DriveType;
   /** Free-text caveat, e.g. when power/torque figures are reported as system-level rather than motor-only. */
   note?: string;
+  confidence?: Confidence;
 }
 
 export interface IBatteryDetails {
@@ -94,6 +109,19 @@ export interface IBatteryDetails {
   charging_speed_ac_kw?: number;
   electric_range_km?: number;
   range_standard?: RangeStandard;
+  confidence?: Confidence;
+}
+
+export interface ITransmission {
+  type?: GearboxType;
+  gears?: number;
+  confidence?: Confidence;
+}
+
+export interface IPerformance {
+  accel_0_100_s?: number;
+  top_speed_kmh?: number;
+  confidence?: Confidence;
 }
 
 export interface IPowertrain {
@@ -104,12 +132,12 @@ export interface IPowertrain {
   engine_details?: IEngineDetails;
   electric_motor_details?: IElectricMotorDetails;
   battery_details?: IBatteryDetails;
-  gearbox?: GearboxType;
-  gearbox_gears?: number;
+  transmission?: ITransmission;
+  performance?: IPerformance;
   combined_range_km?: number;
   /** Free-text caveat about combined_range_km, e.g. a suspected source mislabeling of the test standard. */
   combined_range_note?: string;
-  accel_0_100_kmh_s?: number;
-  top_speed_kmh?: number;
+  /** Attribution, e.g. "Autohome / Dongchedi". */
+  source?: string;
   unverified?: boolean;
 }

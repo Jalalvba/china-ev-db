@@ -97,8 +97,9 @@ interface RawVariant {
     /** Free-text caveat about combined_range_km, e.g. a suspected source mislabeling of the test standard. */
     combined_range_note?: string;
   }) | null;
-  transmission?: { type?: string; gears?: number | string };
-  performance?: { accel_0_100_s?: number; top_speed_kmh?: number };
+  transmission?: { type?: string; gears?: number | string; confidence?: string };
+  performance?: { accel_0_100_s?: number; top_speed_kmh?: number; confidence?: string };
+  source?: string;
   confidence?: string;
 }
 
@@ -130,14 +131,22 @@ function detectPrimaryBrand(entries: RawVariantEntry[]): string {
   return best;
 }
 
+/** Clamp a raw confidence string to the schema enum, dropping anything else rather than risking a validation error. */
+function normalizeConfidence(v: unknown): "confirmed" | "unconfirmed" | undefined {
+  return v === "confirmed" || v === "unconfirmed" ? v : undefined;
+}
+
 function normalizeVariant(v: RawVariant) {
   const engine = v.engine
     ? {
         displacement_l: num(v.engine.displacement_l),
         cylinders: num(v.engine.cylinders),
-        fuel_type: v.engine.induction ? `Gasoline (${resolveInduction(v.engine.induction)})` : "Gasoline",
+        induction: resolveInduction(v.engine.induction),
+        fuel_type: "Gasoline",
+        power_kw: num(v.engine.max_power_kw),
         max_power_hp: num(v.engine.max_power_hp) ?? kwToHp(num(v.engine.max_power_kw)),
         max_torque_nm: num(v.engine.max_torque_nm),
+        confidence: normalizeConfidence(v.engine.confidence),
       }
     : undefined;
 
@@ -149,6 +158,7 @@ function normalizeVariant(v: RawVariant) {
         motor_count: motorCountFromNumber(v.motor.count),
         drive_type: v.motor.drive,
         note: v.motor.note,
+        confidence: normalizeConfidence(v.motor.confidence),
       }
     : undefined;
 
@@ -165,11 +175,30 @@ function normalizeVariant(v: RawVariant) {
         charging_speed_ac_kw: parseDcKw(v.battery.ac_charge_kw),
         electric_range_km: num(v.battery.ev_range_km),
         range_standard: correctRangeStandard(v.battery.ev_range_standard),
+        confidence: normalizeConfidence(v.battery.confidence),
       }
     : undefined;
 
-  const gearbox = v.transmission?.type ? correctGearbox(v.transmission.type) : undefined;
-  const gearbox_gears = typeof v.transmission?.gears === "number" ? v.transmission.gears : gearbox ? 1 : undefined;
+  const gearboxType = v.transmission?.type ? correctGearbox(v.transmission.type) : undefined;
+  const gearboxGears =
+    typeof v.transmission?.gears === "number" ? v.transmission.gears : gearboxType ? 1 : undefined;
+  const transmission =
+    gearboxType || gearboxGears
+      ? {
+          type: gearboxType,
+          gears: gearboxGears,
+          confidence: normalizeConfidence(v.transmission?.confidence),
+        }
+      : undefined;
+
+  const performance =
+    v.performance?.accel_0_100_s !== undefined || v.performance?.top_speed_kmh !== undefined
+      ? {
+          accel_0_100_s: num(v.performance?.accel_0_100_s),
+          top_speed_kmh: num(v.performance?.top_speed_kmh),
+          confidence: normalizeConfidence(v.performance?.confidence),
+        }
+      : undefined;
 
   const energy_type = normalizeEnergyType(v.powertrain);
 
@@ -181,20 +210,25 @@ function normalizeVariant(v: RawVariant) {
     engine_details: engine,
     electric_motor_details: motor,
     battery_details: battery,
-    gearbox,
-    gearbox_gears,
+    transmission,
+    performance,
     combined_range_km: parseCombinedRange(v.battery?.combined_range_km),
     combined_range_note: v.battery?.combined_range_note,
-    accel_0_100_kmh_s: num(v.performance?.accel_0_100_s),
-    top_speed_kmh: num(v.performance?.top_speed_kmh),
+    source: v.source,
     unverified: isUnverified,
   };
 }
 
 async function upsertBrand(brandFields: Record<string, unknown>, name: string) {
+  // name_cn/name_en are purely descriptive metadata, not editorial decisions
+  // like parent_group/founded_year — always keep them current, even on an
+  // already-existing brand, unlike the rest of brandFields (insert-only).
+  const { name_cn, name_en, ...insertOnlyFields } = brandFields;
+  const alwaysSet = stripUndefined({ name_cn, name_en });
+
   return Brand.findOneAndUpdate(
     { name },
-    { $setOnInsert: { ...brandFields, name } },
+    { $setOnInsert: { ...insertOnlyFields, name }, ...(Object.keys(alwaysSet).length ? { $set: alwaysSet } : {}) },
     { upsert: true, returnDocument: "after" }
   );
 }
@@ -213,6 +247,8 @@ async function runVariantImport(entries: RawVariantEntry[], filePath: string) {
     const isSubBrand = entry.brand !== primaryRaw;
     const resolved = isSubBrand ? resolveBrandName(entry.brand) : primaryResolved;
     const brandFields = stripUndefined({
+      name_cn: entry.brand,
+      name_en: resolved.name,
       parent_group: resolved.parent_group ?? (isSubBrand ? `${primaryResolved.name} Group` : undefined),
       country_origin: resolved.country_origin ?? "China",
       founded_year: resolved.founded_year,
@@ -228,6 +264,8 @@ async function runVariantImport(entries: RawVariantEntry[], filePath: string) {
     if (price_range && entry.price_unverified) price_range.unverified = true;
 
     const modelFields = stripUndefined({
+      name_cn: entry.model,
+      name_en: englishModelName,
       generation: entry.generation,
       segment,
       body_type: entry.body ?? "Unknown",
@@ -483,6 +521,8 @@ async function runDeltaImport(pending: PendingBrand[], filePath: string) {
     const { parent_group, tech_partner } = splitTechPartner(item.parent_group_raw ?? resolved.parent_group);
 
     const brandFields = stripUndefined({
+      name_cn: item.brand_cn,
+      name_en: resolved.name,
       parent_group,
       tech_partner,
       country_origin: resolved.country_origin ?? "China",

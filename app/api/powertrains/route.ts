@@ -16,7 +16,7 @@ export async function GET(req: NextRequest) {
 
   if (model_id) filter.model_id = model_id;
   if (energy_type) filter.energy_type = energy_type;
-  if (gearbox) filter.gearbox = gearbox;
+  if (gearbox) filter["transmission.type"] = gearbox;
   if (ids) filter._id = { $in: ids.split(",") };
   if (minBattery || maxBattery) {
     filter["battery_details.battery_capacity_total_kwh"] = {};

@@ -16,14 +16,18 @@ const GEARBOX_TYPES = [
   "multi-speed EV transmission",
 ];
 const RANGE_STANDARDS = ["CLTC", "WLTP", "NEDC"];
+const CONFIDENCE_VALUES = ["confirmed", "unconfirmed"];
 
 const EngineDetailsSchema = new Schema(
   {
     displacement_l: Number,
     cylinders: Number,
+    induction: String,
     fuel_type: String,
+    power_kw: Number,
     max_power_hp: Number,
     max_torque_nm: Number,
+    confidence: { type: String, enum: CONFIDENCE_VALUES },
   },
   { _id: false }
 );
@@ -36,6 +40,7 @@ const ElectricMotorDetailsSchema = new Schema(
     motor_count: { type: String, enum: MOTOR_COUNTS },
     drive_type: { type: String, enum: DRIVE_TYPES },
     note: String,
+    confidence: { type: String, enum: CONFIDENCE_VALUES },
   },
   { _id: false }
 );
@@ -51,6 +56,25 @@ const BatteryDetailsSchema = new Schema(
     charging_speed_ac_kw: Number,
     electric_range_km: Number,
     range_standard: { type: String, enum: RANGE_STANDARDS },
+    confidence: { type: String, enum: CONFIDENCE_VALUES },
+  },
+  { _id: false }
+);
+
+const TransmissionSchema = new Schema(
+  {
+    type: { type: String, enum: GEARBOX_TYPES },
+    gears: Number,
+    confidence: { type: String, enum: CONFIDENCE_VALUES },
+  },
+  { _id: false }
+);
+
+const PerformanceSchema = new Schema(
+  {
+    accel_0_100_s: Number,
+    top_speed_kmh: Number,
+    confidence: { type: String, enum: CONFIDENCE_VALUES },
   },
   { _id: false }
 );
@@ -63,12 +87,11 @@ const PowertrainSchema = new Schema<PowertrainDoc>(
     engine_details: { type: EngineDetailsSchema },
     electric_motor_details: { type: ElectricMotorDetailsSchema },
     battery_details: { type: BatteryDetailsSchema },
-    gearbox: { type: String, enum: GEARBOX_TYPES },
-    gearbox_gears: { type: Number },
+    transmission: { type: TransmissionSchema },
+    performance: { type: PerformanceSchema },
     combined_range_km: { type: Number },
     combined_range_note: { type: String },
-    accel_0_100_kmh_s: { type: Number },
-    top_speed_kmh: { type: Number },
+    source: { type: String },
     unverified: { type: Boolean, default: false },
   },
   { timestamps: true }

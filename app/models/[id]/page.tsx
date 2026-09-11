@@ -59,8 +59,8 @@ export default async function ModelPage({ params }: { params: Promise<{ id: stri
       </div>
       {model.price_range && (
         <p className="text-sm text-zinc-600 mt-1">
-          Price: {model.price_range.min_local?.toLocaleString()}–
-          {model.price_range.max_local?.toLocaleString()} {model.price_range.currency_local}
+          Price: {model.price_range.min?.toLocaleString()}–
+          {model.price_range.max?.toLocaleString()} {model.price_range.currency_local}
           {model.price_range.min_usd &&
             ` (~$${model.price_range.min_usd.toLocaleString()}–$${model.price_range.max_usd?.toLocaleString()})`}
           {model.price_range.unverified && (
@@ -86,7 +86,9 @@ export default async function ModelPage({ params }: { params: Promise<{ id: stri
                 label="Engine"
                 values={powertrains.map((p) =>
                   p.engine_details
-                    ? `${p.engine_details.displacement_l ?? "?"}L ${p.engine_details.cylinders ?? "?"}-cyl ${p.engine_details.fuel_type ?? ""}`
+                    ? `${p.engine_details.displacement_l ?? "?"}L ${p.engine_details.cylinders ?? "?"}-cyl ${p.engine_details.induction ?? ""} ${p.engine_details.fuel_type ?? ""}${
+                        p.engine_details.confidence === "unconfirmed" ? " ⚠" : ""
+                      }`
                     : undefined
                 )}
               />
@@ -94,7 +96,7 @@ export default async function ModelPage({ params }: { params: Promise<{ id: stri
                 label="Engine Power / Torque"
                 values={powertrains.map((p) =>
                   p.engine_details
-                    ? `${p.engine_details.max_power_hp ?? "?"} hp / ${p.engine_details.max_torque_nm ?? "?"} Nm`
+                    ? `${p.engine_details.power_kw ?? "?"} kW / ${p.engine_details.max_power_hp ?? "?"} hp / ${p.engine_details.max_torque_nm ?? "?"} Nm`
                     : undefined
                 )}
               />
@@ -149,7 +151,9 @@ export default async function ModelPage({ params }: { params: Promise<{ id: stri
               <Row
                 label="Gearbox"
                 values={powertrains.map((p) =>
-                  p.gearbox ? `${p.gearbox}${p.gearbox_gears ? ` (${p.gearbox_gears}-spd)` : ""}` : undefined
+                  p.transmission?.type
+                    ? `${p.transmission.type}${p.transmission.gears ? ` (${p.transmission.gears}-spd)` : ""}`
+                    : undefined
                 )}
               />
               <Row
@@ -164,12 +168,17 @@ export default async function ModelPage({ params }: { params: Promise<{ id: stri
               />
               <Row
                 label="0–100 km/h"
-                values={powertrains.map((p) => (p.accel_0_100_kmh_s ? `${p.accel_0_100_kmh_s} s` : undefined))}
+                values={powertrains.map((p) =>
+                  p.performance?.accel_0_100_s ? `${p.performance.accel_0_100_s} s` : undefined
+                )}
               />
               <Row
                 label="Top Speed"
-                values={powertrains.map((p) => (p.top_speed_kmh ? `${p.top_speed_kmh} km/h` : undefined))}
+                values={powertrains.map((p) =>
+                  p.performance?.top_speed_kmh ? `${p.performance.top_speed_kmh} km/h` : undefined
+                )}
               />
+              <Row label="Source" values={powertrains.map((p) => p.source)} />
             </tbody>
           </table>
         </div>

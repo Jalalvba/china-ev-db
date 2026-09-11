@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "seed": "tsx scripts/seed.ts",
-    "import": "tsx scripts/import-deepseek.ts"
+    "import": "tsx scripts/import-deepseek.ts",
+    "migrate-schema": "tsx scripts/migrate-schema.ts"
   },
   "dependencies": {
     "dotenv": "^17.4.2",

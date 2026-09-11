@@ -6,6 +6,8 @@ const BRAND_STATUSES = ["active", "discontinued", "bankrupt", "merged"];
 const BrandSchema = new Schema<IBrand>(
   {
     name: { type: String, required: true, unique: true, trim: true },
+    name_cn: { type: String, trim: true },
+    name_en: { type: String, trim: true },
     logo_url: { type: String },
     parent_group: { type: String, trim: true },
     tech_partner: { type: String, trim: true },

@@ -18,8 +18,8 @@ const SEGMENTS = [
 
 const PRICE_RANGE_SCHEMA = new Schema(
   {
-    min_local: Number,
-    max_local: Number,
+    min: Number,
+    max: Number,
     currency_local: { type: String, default: "CNY" },
     min_usd: Number,
     max_usd: Number,
@@ -32,6 +32,8 @@ const ModelSchema = new Schema<ModelDoc>(
   {
     brand_id: { type: Schema.Types.ObjectId, ref: "Brand", required: true },
     name: { type: String, required: true, trim: true },
+    name_cn: { type: String, trim: true },
+    name_en: { type: String, trim: true },
     generation: { type: String },
     year: { type: Number },
     segment: { type: String, enum: SEGMENTS, required: true },
