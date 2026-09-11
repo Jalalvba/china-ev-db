@@ -37,6 +37,8 @@ export const KNOWN_BRANDS: Record<
   "东风": { name: "Dongfeng", founded_year: 1969 },
   "荣威": { name: "Roewe", parent_group: "SAIC Motor" },
   "睿蓝": { name: "Livan", parent_group: "Geely", founded_year: 2022 },
+  "小米汽车": { name: "Xiaomi Auto", parent_group: "Xiaomi", founded_year: 2021, website: "https://www.xiaomiev.com" },
+  "小米澎程": { name: "Xiaomi Pengcheng", parent_group: "Xiaomi", founded_year: 2026 },
   "名爵": { name: "MG", parent_group: "SAIC Motor" },
   "斯柯达": { name: "Škoda", country_origin: "Czech Republic" },
   "智己": { name: "IM Motors", parent_group: "SAIC Motor", founded_year: 2020 },
@@ -250,6 +252,7 @@ const MOTOR_TYPE_TERMS: Record<string, string> = {
   "front permanent magnet/synchronous + rear permanent magnet/synchronous": "Dual PMSM",
   "permanent magnet synchronous motors": "PMSM",
   "permanent magnet synchronous motor": "PMSM",
+  "小米超级三电机 (前V6s+后双V8s)": "Tri-Motor PMSM (front V6s + rear dual V8s)",
 };
 
 /** Resolve a raw (possibly Chinese) motor-type description to a normalized label, defaulting to PMSM. */
@@ -364,6 +367,12 @@ export const KNOWN_MODELS: Record<string, string> = {
   "睿蓝8": "Livan 8",
   "睿蓝9": "Livan 9",
   "睿蓝X3 PRO": "Livan X3 PRO",
+  // Xiaomi Auto lineup
+  "小米SU7": "SU7",
+  "小米YU7": "YU7",
+  // Xiaomi Pengcheng (SkyNomad) lineup
+  "小米澎程N70": "N70",
+  "小米澎程N90": "N90",
 };
 
 const RANGE_STANDARD_CORRECTIONS: Record<string, string> = {
