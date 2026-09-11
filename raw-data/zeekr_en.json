@@ -1,0 +1,1074 @@
+[
+  {
+    "brand": "Zeekr",
+    "model": "Zeekr 001",
+    "model_en": "001",
+    "generation": "2026",
+    "segment": "Mid-large BEV shooting brake",
+    "body": "5-door 5-seat liftback",
+    "price_rmb_range": "269,800–365,000 RMB",
+    "variants": [
+      {
+        "trim": "103 kWh RWD Max",
+        "powertrain": "BEV",
+        "engine": null,
+        "motor": {
+          "type": "permanent magnet synchronous motor",
+          "power_kw": 370,
+          "torque_nm": null,
+          "count": 1,
+          "drive": "RWD"
+        },
+        "battery": {
+          "chemistry": "ternary lithium battery (103 kWh Kirin battery)",
+          "capacity_total_kwh": 103,
+          "capacity_usable_kwh": null,
+          "supplier": null,
+          "dc_charge_kw": "900V silicon carbide high-voltage platform; 95 kWh battery version 10%-80% fast charge in 7 minutes",
+          "ac_charge_kw": null,
+          "ev_range_km": 810,
+          "ev_range_standard": "CLTC",
+          "combined_range_km": null
+        },
+        "transmission": {
+          "type": "single-speed EV reducer",
+          "gears": 1
+        },
+        "performance": {
+          "accel_0_100_s": null,
+          "top_speed_kmh": null
+        },
+        "source": "Yiche / ZOL",
+        "confidence": "unconfirmed"
+      },
+      {
+        "trim": "103 kWh AWD Ultra",
+        "powertrain": "BEV",
+        "engine": null,
+        "motor": {
+          "type": "front induction/asynchronous + rear permanent magnet/synchronous",
+          "power_kw": 680,
+          "torque_nm": 913,
+          "count": 2,
+          "drive": "AWD"
+        },
+        "battery": {
+          "chemistry": "ternary lithium battery (103 kWh Kirin battery)",
+          "capacity_total_kwh": 103,
+          "capacity_usable_kwh": null,
+          "supplier": null,
+          "dc_charge_kw": "900V silicon carbide high-voltage platform; supports 1.32 MW flash charging",
+          "ac_charge_kw": null,
+          "ev_range_km": 762,
+          "ev_range_standard": "CLTC",
+          "combined_range_km": null
+        },
+        "transmission": {
+          "type": "single-speed EV reducer",
+          "gears": 1
+        },
+        "performance": {
+          "accel_0_100_s": 2.83,
+          "top_speed_kmh": null
+        },
+        "source": "Yiche / ZOL",
+        "confidence": "unconfirmed"
+      },
+      {
+        "trim": "103 kWh AWD Ultra+",
+        "powertrain": "BEV",
+        "engine": null,
+        "motor": {
+          "type": "front induction/asynchronous + rear permanent magnet/synchronous",
+          "power_kw": 680,
+          "torque_nm": 913,
+          "count": 2,
+          "drive": "AWD"
+        },
+        "battery": {
+          "chemistry": "ternary lithium battery (103 kWh Kirin battery)",
+          "capacity_total_kwh": 103,
+          "capacity_usable_kwh": null,
+          "supplier": null,
+          "dc_charge_kw": "900V silicon carbide high-voltage platform",
+          "ac_charge_kw": null,
+          "ev_range_km": 730,
+          "ev_range_standard": "CLTC",
+          "combined_range_km": null
+        },
+        "transmission": {
+          "type": "single-speed EV reducer",
+          "gears": 1
+        },
+        "performance": {
+          "accel_0_100_s": 2.91,
+          "top_speed_kmh": 280
+        },
+        "source": "ZOL",
+        "confidence": "unconfirmed"
+      },
+      {
+        "trim": "5th Anniversary Edition",
+        "powertrain": "BEV",
+        "engine": null,
+        "motor": {
+          "type": "front induction/asynchronous + rear permanent magnet/synchronous",
+          "power_kw": null,
+          "torque_nm": null,
+          "count": 2,
+          "drive": "AWD"
+        },
+        "battery": {
+          "chemistry": "ternary lithium battery",
+          "capacity_total_kwh": null,
+          "capacity_usable_kwh": null,
+          "supplier": null,
+          "dc_charge_kw": null,
+          "ac_charge_kw": null,
+          "ev_range_km": 680,
+          "ev_range_standard": "CLTC",
+          "combined_range_km": null
+        },
+        "transmission": {
+          "type": "single-speed EV reducer",
+          "gears": 1
+        },
+        "performance": {
+          "accel_0_100_s": null,
+          "top_speed_kmh": null
+        },
+        "source": "Yiche",
+        "confidence": "unconfirmed"
+      }
+    ]
+  },
+  {
+    "brand": "Zeekr",
+    "model": "Zeekr 007",
+    "model_en": "007",
+    "generation": "2026",
+    "segment": "Mid-size BEV sedan",
+    "body": "4-door 5-seat sedan",
+    "price_rmb_range": "203,900–243,900 RMB (limited benefit price 193,900–233,900 RMB)",
+    "variants": [
+      {
+        "trim": "RWD Max 75 kWh",
+        "powertrain": "BEV",
+        "engine": null,
+        "motor": {
+          "type": "permanent magnet synchronous motor",
+          "power_kw": 370,
+          "torque_nm": null,
+          "count": 1,
+          "drive": "RWD"
+        },
+        "battery": {
+          "chemistry": "LFP",
+          "capacity_total_kwh": 75,
+          "capacity_usable_kwh": null,
+          "supplier": null,
+          "dc_charge_kw": "900V platform; 10%-80% fast charge in 10 minutes",
+          "ac_charge_kw": null,
+          "ev_range_km": 715,
+          "ev_range_standard": "CLTC",
+          "combined_range_km": null
+        },
+        "transmission": {
+          "type": "single-speed EV reducer",
+          "gears": 1
+        },
+        "performance": {
+          "accel_0_100_s": null,
+          "top_speed_kmh": null
+        },
+        "source": "Yiche / Automotive Jingwei",
+        "confidence": "unconfirmed"
+      },
+      {
+        "trim": "RWD Max 103 kWh",
+        "powertrain": "BEV",
+        "engine": null,
+        "motor": {
+          "type": "permanent magnet synchronous motor",
+          "power_kw": 370,
+          "torque_nm": null,
+          "count": 1,
+          "drive": "RWD"
+        },
+        "battery": {
+          "chemistry": "ternary lithium battery (Kirin battery)",
+          "capacity_total_kwh": 103,
+          "capacity_usable_kwh": null,
+          "supplier": null,
+          "dc_charge_kw": "900V platform",
+          "ac_charge_kw": null,
+          "ev_range_km": 905,
+          "ev_range_standard": "CLTC",
+          "combined_range_km": null
+        },
+        "transmission": {
+          "type": "single-speed EV reducer",
+          "gears": 1
+        },
+        "performance": {
+          "accel_0_100_s": null,
+          "top_speed_kmh": null
+        },
+        "source": "Yiche / Automotive Jingwei",
+        "confidence": "unconfirmed"
+      },
+      {
+        "trim": "AWD Ultra 103 kWh",
+        "powertrain": "BEV",
+        "engine": null,
+        "motor": {
+          "type": "front induction/asynchronous + rear permanent magnet/synchronous",
+          "power_kw": 585,
+          "torque_nm": 812,
+          "count": 2,
+          "drive": "AWD"
+        },
+        "battery": {
+          "chemistry": "ternary lithium battery (Kirin battery)",
+          "capacity_total_kwh": 103,
+          "capacity_usable_kwh": null,
+          "supplier": null,
+          "dc_charge_kw": "900V platform; 10%-80% fast charge in 10 minutes",
+          "ac_charge_kw": null,
+          "ev_range_km": 800,
+          "ev_range_standard": "CLTC",
+          "combined_range_km": null
+        },
+        "transmission": {
+          "type": "single-speed EV reducer",
+          "gears": 1
+        },
+        "performance": {
+          "accel_0_100_s": 2.73,
+          "top_speed_kmh": 240
+        },
+        "source": "ZOL / Yiche",
+        "confidence": "unconfirmed"
+      }
+    ]
+  },
+  {
+    "brand": "Zeekr",
+    "model": "Zeekr 007GT",
+    "model_en": "007 GT",
+    "generation": "2026",
+    "segment": "Mid-size BEV shooting brake",
+    "body": "5-door 5-seat wagon",
+    "price_rmb_range": "203,900–243,900 RMB (limited benefit price 193,900–233,900 RMB)",
+    "variants": [
+      {
+        "trim": "RWD Max 75 kWh",
+        "powertrain": "BEV",
+        "engine": null,
+        "motor": {
+          "type": "permanent magnet synchronous motor",
+          "power_kw": 370,
+          "torque_nm": null,
+          "count": 1,
+          "drive": "RWD"
+        },
+        "battery": {
+          "chemistry": "LFP",
+          "capacity_total_kwh": 75,
+          "capacity_usable_kwh": null,
+          "supplier": null,
+          "dc_charge_kw": "900V platform",
+          "ac_charge_kw": null,
+          "ev_range_km": 702,
+          "ev_range_standard": "CLTC",
+          "combined_range_km": null
+        },
+        "transmission": {
+          "type": "single-speed EV reducer",
+          "gears": 1
+        },
+        "performance": {
+          "accel_0_100_s": 4.8,
+          "top_speed_kmh": null
+        },
+        "source": "Automotive Jingwei / Yiche",
+        "confidence": "unconfirmed"
+      },
+      {
+        "trim": "RWD Max 103 kWh",
+        "powertrain": "BEV",
+        "engine": null,
+        "motor": {
+          "type": "permanent magnet synchronous motor",
+          "power_kw": 370,
+          "torque_nm": null,
+          "count": 1,
+          "drive": "RWD"
+        },
+        "battery": {
+          "chemistry": "ternary lithium battery (Kirin battery)",
+          "capacity_total_kwh": 103,
+          "capacity_usable_kwh": null,
+          "supplier": null,
+          "dc_charge_kw": "900V platform; 10%-80% fast charge in 10 minutes",
+          "ac_charge_kw": null,
+          "ev_range_km": 880,
+          "ev_range_standard": "CLTC",
+          "combined_range_km": null
+        },
+        "transmission": {
+          "type": "single-speed EV reducer",
+          "gears": 1
+        },
+        "performance": {
+          "accel_0_100_s": 4.8,
+          "top_speed_kmh": null
+        },
+        "source": "Yiche / Automotive Jingwei",
+        "confidence": "unconfirmed"
+      },
+      {
+        "trim": "AWD Ultra 103 kWh",
+        "powertrain": "BEV",
+        "engine": null,
+        "motor": {
+          "type": "front induction/asynchronous + rear permanent magnet/synchronous",
+          "power_kw": 585,
+          "torque_nm": 812,
+          "count": 2,
+          "drive": "AWD"
+        },
+        "battery": {
+          "chemistry": "ternary lithium battery (Kirin battery)",
+          "capacity_total_kwh": 103,
+          "capacity_usable_kwh": null,
+          "supplier": null,
+          "dc_charge_kw": "900V platform; 10%-80% fast charge in 10 minutes",
+          "ac_charge_kw": null,
+          "ev_range_km": 760,
+          "ev_range_standard": "CLTC",
+          "combined_range_km": null
+        },
+        "transmission": {
+          "type": "single-speed EV reducer",
+          "gears": 1
+        },
+        "performance": {
+          "accel_0_100_s": 2.85,
+          "top_speed_kmh": 240
+        },
+        "source": "ZOL / Yiche",
+        "confidence": "unconfirmed"
+      }
+    ]
+  },
+  {
+    "brand": "Zeekr",
+    "model": "Zeekr X",
+    "model_en": "X",
+    "generation": "2026",
+    "segment": "Compact BEV SUV",
+    "body": "5-door 5-seat SUV",
+    "price_rmb_range": "155,800–175,800 RMB (limited benefit price 145,800–165,800 RMB)",
+    "variants": [
+      {
+        "trim": "Max 5-seat",
+        "powertrain": "BEV",
+        "engine": null,
+        "motor": {
+          "type": "permanent magnet synchronous motor",
+          "power_kw": 250,
+          "torque_nm": 373,
+          "count": 1,
+          "drive": "RWD"
+        },
+        "battery": {
+          "chemistry": "LFP (61.47 kWh Golden Brick battery)",
+          "capacity_total_kwh": 61.47,
+          "capacity_usable_kwh": null,
+          "supplier": null,
+          "dc_charge_kw": null,
+          "ac_charge_kw": null,
+          "ev_range_km": 530,
+          "ev_range_standard": "CLTC",
+          "combined_range_km": null
+        },
+        "transmission": {
+          "type": "single-speed EV reducer",
+          "gears": 1
+        },
+        "performance": {
+          "accel_0_100_s": 5.6,
+          "top_speed_kmh": null
+        },
+        "source": "Yiche / Automotive Jingwei",
+        "confidence": "unconfirmed"
+      },
+      {
+        "trim": "Max 4-seat",
+        "powertrain": "BEV",
+        "engine": null,
+        "motor": {
+          "type": "permanent magnet synchronous motor",
+          "power_kw": 250,
+          "torque_nm": 373,
+          "count": 1,
+          "drive": "RWD"
+        },
+        "battery": {
+          "chemistry": "LFP (61.47 kWh Golden Brick battery)",
+          "capacity_total_kwh": 61.47,
+          "capacity_usable_kwh": null,
+          "supplier": null,
+          "dc_charge_kw": null,
+          "ac_charge_kw": null,
+          "ev_range_km": 530,
+          "ev_range_standard": "CLTC",
+          "combined_range_km": null
+        },
+        "transmission": {
+          "type": "single-speed EV reducer",
+          "gears": 1
+        },
+        "performance": {
+          "accel_0_100_s": 5.6,
+          "top_speed_kmh": null
+        },
+        "source": "Yiche / Automotive Jingwei",
+        "confidence": "unconfirmed"
+      },
+      {
+        "trim": "Ultra 5-seat Performance",
+        "powertrain": "BEV",
+        "engine": null,
+        "motor": {
+          "type": "front permanent magnet/synchronous + rear permanent magnet/synchronous",
+          "power_kw": 365,
+          "torque_nm": 573,
+          "count": 2,
+          "drive": "AWD"
+        },
+        "battery": {
+          "chemistry": "ternary lithium battery",
+          "capacity_total_kwh": 66,
+          "capacity_usable_kwh": null,
+          "supplier": null,
+          "dc_charge_kw": "fast charge 0.5 hours",
+          "ac_charge_kw": null,
+          "ev_range_km": 512,
+          "ev_range_standard": "CLTC",
+          "combined_range_km": null
+        },
+        "transmission": {
+          "type": "single-speed EV reducer",
+          "gears": 1
+        },
+        "performance": {
+          "accel_0_100_s": 3.69,
+          "top_speed_kmh": null
+        },
+        "source": "Yiche / ZOL",
+        "confidence": "unconfirmed"
+      }
+    ]
+  },
+  {
+    "brand": "Zeekr",
+    "model": "Zeekr 7X",
+    "model_en": "7X",
+    "generation": "2026",
+    "segment": "Mid-size BEV SUV",
+    "body": "5-door 5-seat SUV",
+    "price_rmb_range": "229,800–269,800 RMB",
+    "variants": [
+      {
+        "trim": "75 kWh RWD Max",
+        "powertrain": "BEV",
+        "engine": null,
+        "motor": {
+          "type": "permanent magnet synchronous motor",
+          "power_kw": 370,
+          "torque_nm": null,
+          "count": 1,
+          "drive": "RWD"
+        },
+        "battery": {
+          "chemistry": "LFP",
+          "capacity_total_kwh": 75,
+          "capacity_usable_kwh": null,
+          "supplier": null,
+          "dc_charge_kw": "800V high-voltage architecture",
+          "ac_charge_kw": null,
+          "ev_range_km": 620,
+          "ev_range_standard": "CLTC",
+          "combined_range_km": null
+        },
+        "transmission": {
+          "type": "single-speed EV reducer",
+          "gears": 1
+        },
+        "performance": {
+          "accel_0_100_s": 5.4,
+          "top_speed_kmh": null
+        },
+        "source": "CNMO Tech / Pacific Auto",
+        "confidence": "unconfirmed"
+      },
+      {
+        "trim": "103 kWh RWD Max",
+        "powertrain": "BEV",
+        "engine": null,
+        "motor": {
+          "type": "permanent magnet synchronous motor",
+          "power_kw": 370,
+          "torque_nm": null,
+          "count": 1,
+          "drive": "RWD"
+        },
+        "battery": {
+          "chemistry": "ternary lithium battery",
+          "capacity_total_kwh": 103,
+          "capacity_usable_kwh": null,
+          "supplier": null,
+          "dc_charge_kw": "900V architecture; fast charge 0.17 hours",
+          "ac_charge_kw": null,
+          "ev_range_km": 802,
+          "ev_range_standard": "CLTC",
+          "combined_range_km": null
+        },
+        "transmission": {
+          "type": "single-speed EV reducer",
+          "gears": 1
+        },
+        "performance": {
+          "accel_0_100_s": null,
+          "top_speed_kmh": null
+        },
+        "source": "Pacific Auto / CNMO Tech",
+        "confidence": "unconfirmed"
+      },
+      {
+        "trim": "103 kWh AWD Ultra",
+        "powertrain": "BEV",
+        "engine": null,
+        "motor": {
+          "type": "front induction/asynchronous + rear permanent magnet/synchronous",
+          "power_kw": 585,
+          "torque_nm": 812,
+          "count": 2,
+          "drive": "AWD"
+        },
+        "battery": {
+          "chemistry": "ternary lithium battery",
+          "capacity_total_kwh": 103,
+          "capacity_usable_kwh": null,
+          "supplier": null,
+          "dc_charge_kw": "900V architecture",
+          "ac_charge_kw": null,
+          "ev_range_km": 715,
+          "ev_range_standard": "CLTC",
+          "combined_range_km": null
+        },
+        "transmission": {
+          "type": "single-speed EV reducer",
+          "gears": 1
+        },
+        "performance": {
+          "accel_0_100_s": 2.98,
+          "top_speed_kmh": 255
+        },
+        "source": "ZOL / CNMO Tech",
+        "confidence": "unconfirmed"
+      }
+    ]
+  },
+  {
+    "brand": "Zeekr",
+    "model": "Zeekr 009",
+    "model_en": "009",
+    "generation": "2026",
+    "segment": "Mid-large BEV MPV",
+    "body": "5-door 7-seat MPV",
+    "price_rmb_range": "439,800–469,800 RMB (limited benefit price 413,800–443,800 RMB)",
+    "variants": [
+      {
+        "trim": "7-seat Ultra",
+        "powertrain": "BEV",
+        "engine": null,
+        "motor": {
+          "type": "permanent magnet synchronous motor",
+          "power_kw": 310,
+          "torque_nm": 440,
+          "count": 1,
+          "drive": "RWD"
+        },
+        "battery": {
+          "chemistry": "ternary lithium battery (115 kWh CATL 6C Kirin battery)",
+          "capacity_total_kwh": 115,
+          "capacity_usable_kwh": null,
+          "supplier": "CATL",
+          "dc_charge_kw": "900V high-voltage architecture; 10 minutes charging adds 510 km",
+          "ac_charge_kw": null,
+          "ev_range_km": 740,
+          "ev_range_standard": "CLTC",
+          "combined_range_km": null
+        },
+        "transmission": {
+          "type": "single-speed EV reducer",
+          "gears": 1
+        },
+        "performance": {
+          "accel_0_100_s": null,
+          "top_speed_kmh": null
+        },
+        "source": "ZOL / China Jiangsu Network",
+        "confidence": "unconfirmed"
+      },
+      {
+        "trim": "7-seat Ultra+ Family",
+        "powertrain": "BEV",
+        "engine": null,
+        "motor": {
+          "type": "front induction/asynchronous + rear permanent magnet/synchronous",
+          "power_kw": 680,
+          "torque_nm": 913,
+          "count": 2,
+          "drive": "AWD"
+        },
+        "battery": {
+          "chemistry": "ternary lithium battery (115 kWh CATL 6C Kirin battery)",
+          "capacity_total_kwh": 115,
+          "capacity_usable_kwh": null,
+          "supplier": "CATL",
+          "dc_charge_kw": "900V high-voltage architecture; 10 minutes charging adds 510 km",
+          "ac_charge_kw": null,
+          "ev_range_km": 720,
+          "ev_range_standard": "CLTC",
+          "combined_range_km": null
+        },
+        "transmission": {
+          "type": "single-speed EV reducer",
+          "gears": 1
+        },
+        "performance": {
+          "accel_0_100_s": 3.9,
+          "top_speed_kmh": null
+        },
+        "source": "Car Quality Network / China Jiangsu Network",
+        "confidence": "unconfirmed"
+      },
+      {
+        "trim": "6-seat Ultra+ Executive",
+        "powertrain": "BEV",
+        "engine": null,
+        "motor": {
+          "type": "front induction/asynchronous + rear permanent magnet/synchronous",
+          "power_kw": 680,
+          "torque_nm": 913,
+          "count": 2,
+          "drive": "AWD"
+        },
+        "battery": {
+          "chemistry": "ternary lithium battery (115 kWh CATL 6C Kirin battery)",
+          "capacity_total_kwh": 115,
+          "capacity_usable_kwh": null,
+          "supplier": "CATL",
+          "dc_charge_kw": "900V high-voltage architecture; 10 minutes charging adds 510 km",
+          "ac_charge_kw": null,
+          "ev_range_km": 720,
+          "ev_range_standard": "CLTC",
+          "combined_range_km": null
+        },
+        "transmission": {
+          "type": "single-speed EV reducer",
+          "gears": 1
+        },
+        "performance": {
+          "accel_0_100_s": 3.9,
+          "top_speed_kmh": null
+        },
+        "source": "Car Quality Network / China Jiangsu Network",
+        "confidence": "unconfirmed"
+      }
+    ]
+  },
+  {
+    "brand": "Zeekr",
+    "model": "Zeekr MIX",
+    "model_en": "MIX",
+    "generation": "2026",
+    "segment": "Mid-size BEV MPV",
+    "body": "5-door 5-seat MPV",
+    "price_rmb_range": "279,900–299,900 RMB",
+    "variants": [
+      {
+        "trim": "Smart Driving",
+        "powertrain": "BEV",
+        "engine": null,
+        "motor": {
+          "type": "permanent magnet synchronous motor",
+          "power_kw": 310,
+          "torque_nm": 440,
+          "count": 1,
+          "drive": "RWD"
+        },
+        "battery": {
+          "chemistry": "LFP (76 kWh)",
+          "capacity_total_kwh": 76,
+          "capacity_usable_kwh": null,
+          "supplier": null,
+          "dc_charge_kw": "800V high-voltage platform; 10%-80% fast charge in 10.8 minutes",
+          "ac_charge_kw": null,
+          "ev_range_km": 550,
+          "ev_range_standard": "CLTC",
+          "combined_range_km": null
+        },
+        "transmission": {
+          "type": "single-speed EV reducer",
+          "gears": 1
+        },
+        "performance": {
+          "accel_0_100_s": 6.8,
+          "top_speed_kmh": 190
+        },
+        "source": "Autohome / Yiche",
+        "confidence": "unconfirmed"
+      },
+      {
+        "trim": "Long Range Smart Driving",
+        "powertrain": "BEV",
+        "engine": null,
+        "motor": {
+          "type": "permanent magnet synchronous motor",
+          "power_kw": 310,
+          "torque_nm": 440,
+          "count": 1,
+          "drive": "RWD"
+        },
+        "battery": {
+          "chemistry": "ternary lithium battery (102 kWh)",
+          "capacity_total_kwh": 102,
+          "capacity_usable_kwh": null,
+          "supplier": null,
+          "dc_charge_kw": "800V high-voltage platform",
+          "ac_charge_kw": null,
+          "ev_range_km": 702,
+          "ev_range_standard": "CLTC",
+          "combined_range_km": null
+        },
+        "transmission": {
+          "type": "single-speed EV reducer",
+          "gears": 1
+        },
+        "performance": {
+          "accel_0_100_s": 6.8,
+          "top_speed_kmh": 190
+        },
+        "source": "Autohome / Yiche",
+        "confidence": "unconfirmed"
+      }
+    ]
+  },
+  {
+    "brand": "Zeekr",
+    "model": "Zeekr 9X",
+    "model_en": "9X",
+    "generation": "2026",
+    "segment": "Full-size PHEV SUV",
+    "body": "5-door 5-seat SUV",
+    "price_rmb_range": "471,900–585,900 RMB (limited benefit price 451,900–565,900 RMB)",
+    "variants": [
+      {
+        "trim": "Ultra 55 kWh 5-seat",
+        "powertrain": "PHEV",
+        "engine": {
+          "displacement_l": 2,
+          "cylinders": 4,
+          "induction": "turbocharged",
+          "max_power_kw": 205,
+          "max_power_hp": 279,
+          "max_torque_nm": null
+        },
+        "motor": {
+          "type": "permanent magnet synchronous motors",
+          "power_kw": 660,
+          "torque_nm": null,
+          "count": 2,
+          "drive": "AWD"
+        },
+        "battery": {
+          "chemistry": "LFP",
+          "capacity_total_kwh": 55,
+          "capacity_usable_kwh": null,
+          "supplier": null,
+          "dc_charge_kw": "900V high-voltage platform; 20%-80% fast charge in 9 minutes",
+          "ac_charge_kw": null,
+          "ev_range_km": 288,
+          "ev_range_standard": "CLTC",
+          "combined_range_km": 1160
+        },
+        "transmission": {
+          "type": "1-speed DHT",
+          "gears": 1
+        },
+        "performance": {
+          "accel_0_100_s": null,
+          "top_speed_kmh": null
+        },
+        "source": "Wangtongshe / Yiche",
+        "confidence": "unconfirmed"
+      },
+      {
+        "trim": "Ultra 70 kWh 5-seat",
+        "powertrain": "PHEV",
+        "engine": {
+          "displacement_l": 2,
+          "cylinders": 4,
+          "induction": "turbocharged",
+          "max_power_kw": 205,
+          "max_power_hp": 279,
+          "max_torque_nm": null
+        },
+        "motor": {
+          "type": "permanent magnet synchronous motors",
+          "power_kw": 660,
+          "torque_nm": null,
+          "count": 2,
+          "drive": "AWD"
+        },
+        "battery": {
+          "chemistry": "LFP",
+          "capacity_total_kwh": 70,
+          "capacity_usable_kwh": null,
+          "supplier": null,
+          "dc_charge_kw": "900V high-voltage platform; 20%-80% fast charge in 9 minutes",
+          "ac_charge_kw": null,
+          "ev_range_km": 380,
+          "ev_range_standard": "CLTC",
+          "combined_range_km": 1250
+        },
+        "transmission": {
+          "type": "1-speed DHT",
+          "gears": 1
+        },
+        "performance": {
+          "accel_0_100_s": null,
+          "top_speed_kmh": null
+        },
+        "source": "Wangtongshe / Yiche",
+        "confidence": "unconfirmed"
+      },
+      {
+        "trim": "Hyper 70 kWh 5-seat",
+        "powertrain": "PHEV",
+        "engine": {
+          "displacement_l": 2,
+          "cylinders": 4,
+          "induction": "turbocharged",
+          "max_power_kw": 205,
+          "max_power_hp": 279,
+          "max_torque_nm": null
+        },
+        "motor": {
+          "type": "permanent magnet synchronous motors",
+          "power_kw": 1030,
+          "torque_nm": 1410,
+          "count": 3,
+          "drive": "AWD"
+        },
+        "battery": {
+          "chemistry": "LFP",
+          "capacity_total_kwh": 70,
+          "capacity_usable_kwh": null,
+          "supplier": null,
+          "dc_charge_kw": "900V high-voltage platform; 20%-80% fast charge in 9 minutes",
+          "ac_charge_kw": null,
+          "ev_range_km": 355,
+          "ev_range_standard": "CLTC",
+          "combined_range_km": 1250
+        },
+        "transmission": {
+          "type": "1-speed DHT",
+          "gears": 1
+        },
+        "performance": {
+          "accel_0_100_s": 3.1,
+          "top_speed_kmh": 240
+        },
+        "source": "ZOL / Wangtongshe",
+        "confidence": "unconfirmed"
+      },
+      {
+        "trim": "Obsidian 70 kWh 5-seat",
+        "powertrain": "PHEV",
+        "engine": {
+          "displacement_l": 2,
+          "cylinders": 4,
+          "induction": "turbocharged",
+          "max_power_kw": 205,
+          "max_power_hp": 279,
+          "max_torque_nm": null
+        },
+        "motor": {
+          "type": "permanent magnet synchronous motors",
+          "power_kw": 1030,
+          "torque_nm": 1410,
+          "count": 3,
+          "drive": "AWD"
+        },
+        "battery": {
+          "chemistry": "LFP",
+          "capacity_total_kwh": 70,
+          "capacity_usable_kwh": null,
+          "supplier": null,
+          "dc_charge_kw": "900V high-voltage platform; 20%-80% fast charge in 9 minutes",
+          "ac_charge_kw": null,
+          "ev_range_km": 355,
+          "ev_range_standard": "CLTC",
+          "combined_range_km": 1250
+        },
+        "transmission": {
+          "type": "1-speed DHT",
+          "gears": 1
+        },
+        "performance": {
+          "accel_0_100_s": 3.1,
+          "top_speed_kmh": 240
+        },
+        "source": "Wangtongshe",
+        "confidence": "unconfirmed"
+      }
+    ]
+  },
+  {
+    "brand": "Zeekr",
+    "model": "Zeekr 8X",
+    "model_en": "8X",
+    "generation": "2026",
+    "segment": "Mid-large PHEV SUV",
+    "body": "5-door 5-seat SUV",
+    "price_rmb_range": "356,800–426,800 RMB (limited benefit price 329,800–399,800 RMB)",
+    "variants": [
+      {
+        "trim": "Max 70 kWh",
+        "powertrain": "PHEV",
+        "engine": {
+          "displacement_l": 2,
+          "cylinders": 4,
+          "induction": "turbocharged",
+          "max_power_kw": 205,
+          "max_power_hp": 279,
+          "max_torque_nm": 410
+        },
+        "motor": {
+          "type": "permanent magnet synchronous motors",
+          "power_kw": 660,
+          "torque_nm": 935,
+          "count": 2,
+          "drive": "AWD"
+        },
+        "battery": {
+          "chemistry": "LFP",
+          "capacity_total_kwh": 70,
+          "capacity_usable_kwh": null,
+          "supplier": null,
+          "dc_charge_kw": null,
+          "ac_charge_kw": null,
+          "ev_range_km": 410,
+          "ev_range_standard": "CLTC",
+          "combined_range_km": null
+        },
+        "transmission": {
+          "type": "1-speed DHT",
+          "gears": 1
+        },
+        "performance": {
+          "accel_0_100_s": 3.7,
+          "top_speed_kmh": 220
+        },
+        "source": "ZOL / Wangtongshe",
+        "confidence": "unconfirmed"
+      },
+      {
+        "trim": "Ultra 70 kWh",
+        "powertrain": "PHEV",
+        "engine": {
+          "displacement_l": 2,
+          "cylinders": 4,
+          "induction": "turbocharged",
+          "max_power_kw": 205,
+          "max_power_hp": 279,
+          "max_torque_nm": 410
+        },
+        "motor": {
+          "type": "permanent magnet synchronous motors",
+          "power_kw": 660,
+          "torque_nm": 935,
+          "count": 2,
+          "drive": "AWD"
+        },
+        "battery": {
+          "chemistry": "LFP",
+          "capacity_total_kwh": 70,
+          "capacity_usable_kwh": null,
+          "supplier": null,
+          "dc_charge_kw": null,
+          "ac_charge_kw": null,
+          "ev_range_km": 410,
+          "ev_range_standard": "CLTC",
+          "combined_range_km": null
+        },
+        "transmission": {
+          "type": "1-speed DHT",
+          "gears": 1
+        },
+        "performance": {
+          "accel_0_100_s": 3.7,
+          "top_speed_kmh": 220
+        },
+        "source": "ZOL / Wangtongshe",
+        "confidence": "unconfirmed"
+      },
+      {
+        "trim": "Ultra+ 70 kWh",
+        "powertrain": "PHEV",
+        "engine": {
+          "displacement_l": 2,
+          "cylinders": 4,
+          "induction": "turbocharged",
+          "max_power_kw": 205,
+          "max_power_hp": 279,
+          "max_torque_nm": 410
+        },
+        "motor": {
+          "type": "permanent magnet synchronous motors",
+          "power_kw": 660,
+          "torque_nm": 935,
+          "count": 2,
+          "drive": "AWD"
+        },
+        "battery": {
+          "chemistry": "LFP",
+          "capacity_total_kwh": 70,
+          "capacity_usable_kwh": null,
+          "supplier": null,
+          "dc_charge_kw": null,
+          "ac_charge_kw": null,
+          "ev_range_km": 410,
+          "ev_range_standard": "CLTC",
+          "combined_range_km": null
+        },
+        "transmission": {
+          "type": "1-speed DHT",
+          "gears": 1
+        },
+        "performance": {
+          "accel_0_100_s": 3.7,
+          "top_speed_kmh": 220
+        },
+        "source": "ZOL / Wangtongshe",
+        "confidence": "unconfirmed"
+      }
+    ]
+  }
+]

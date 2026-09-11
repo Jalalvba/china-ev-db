@@ -135,6 +135,11 @@ const BASE_CHEMISTRY_TERMS: Record<string, string> = {
   "三元锂电池": "NMC",
   "三元锂": "NMC",
   "钠离子": "Sodium-ion",
+  // English-language sources describe the same chemistries in prose rather
+  // than the LFP/NMC abbreviations directly.
+  "ternary lithium battery": "NMC",
+  "ternary lithium": "NMC",
+  "lithium iron phosphate": "LFP",
 };
 
 /** Chinese proprietary battery-product names -> English label, for the battery_variant field. */
@@ -144,6 +149,11 @@ const BATTERY_VARIANT_TERMS: Record<string, string> = {
   "金砖电池": "Zeekr Golden Brick",
   "骁遥电池": "CATL Shenyao",
   "神盾电池": "Shield Battery",
+  // English equivalents of the same proprietary battery product names.
+  "Kirin battery": "Qilin",
+  "Kirin": "Qilin",
+  "Golden Brick battery": "Zeekr Golden Brick",
+  "Shenyao": "CATL Shenyao",
 };
 
 export interface ParsedBatteryChemistry {
@@ -226,6 +236,11 @@ const MOTOR_TYPE_TERMS: Record<string, string> = {
   "异步电机": "Induction",
   "SiC油冷电驱": "PMSM (SiC oil-cooled)",
   "48V BSG电机（轻混）": "48V BSG (mild hybrid)",
+  // English equivalents of the same compound dual-motor descriptions.
+  "front induction/asynchronous + rear permanent magnet/synchronous": "Front Induction + Rear PMSM",
+  "front permanent magnet/synchronous + rear permanent magnet/synchronous": "Dual PMSM",
+  "permanent magnet synchronous motors": "PMSM",
+  "permanent magnet synchronous motor": "PMSM",
 };
 
 /** Resolve a raw (possibly Chinese) motor-type description to a normalized label, defaulting to PMSM. */
@@ -245,6 +260,7 @@ const INDUCTION_TERMS: Record<string, string> = {
   "自然吸气": "naturally aspirated",
   "涡轮增压": "turbo",
   "机械增压+涡轮增压 双增压": "twin-charged (supercharger + turbo)",
+  "turbocharged": "turbo",
 };
 
 /** Translate a raw (possibly Chinese) induction description, passing through unmapped ASCII text and warning otherwise. */
@@ -448,7 +464,9 @@ export function parseDcKw(v: unknown): number | undefined {
   if (v === null || v === undefined) return undefined;
   if (typeof v === "number") return v;
   const s = String(v);
-  const m = s.match(/(\d+(?:\.\d+)?)\s*kW/i);
+  // Negative lookahead on "h" so "95 kWh" (a capacity mention) isn't
+  // misread as a 95kW charging-power figure.
+  const m = s.match(/(\d+(?:\.\d+)?)\s*kW(?!h)/i);
   if (m) return Number(m[1]);
   if (/megawatt/i.test(s)) return 1000;
   return undefined;
@@ -494,7 +512,7 @@ export function correctGearbox(v: unknown): string | undefined {
 
   // Chinese keyword detection for longer descriptive strings, e.g.
   // "电动车单速变速箱" or "E-DHT智能无级11合1混动电驱".
-  if (/单速/.test(s) || (s.includes("电动车") && s.includes("变速箱"))) return "single-speed reducer";
+  if (/单速/.test(s) || /single.?speed/i.test(s) || (s.includes("电动车") && s.includes("变速箱"))) return "single-speed reducer";
   if (/DHT/i.test(s)) return "multi-speed EV transmission";
   if (/双离合/.test(s)) return "DCT";
   if (/CVT/i.test(s)) return "CVT";
@@ -525,7 +543,7 @@ export function guessSegment(segmentText: string | undefined, bodyText: string |
     return "SUV-mid";
   }
 
-  if (/d-segment|large sedan|大型/.test(text)) return "D-segment/Large";
+  if (/d-segment|large sedan|mid-large|大型/.test(text)) return "D-segment/Large";
   if (/c-segment|c\+|mid-size|中型/.test(text)) return "C-segment/Mid-size";
   if (/a0+|city car|微型|小型/.test(text)) return "A-segment/City";
   if (/b-segment|compact|紧凑/.test(text)) return "B-segment/Compact";
