@@ -20,13 +20,17 @@ if (!MONGODB_URI) {
 interface RawListing {
   brand_en: string;
   model_en: string;
-  price_mad: number | null;
+  // Some source files use price_mad, others price_mad_min — accept both.
+  price_mad?: number | null;
+  price_mad_min?: number | null;
   price_mad_max: number | null;
-  autonomie_km: number | null;
+  autonomie_km?: number | null;
   powertrain: string | null;
   dealer_morocco: string | null;
   dealer_confidence: string | null;
   source: string | null;
+  /** Model confirmed to exist in-market but no published price found — kept with price null rather than dropped. */
+  price_unverified?: boolean;
 }
 
 // Our DB structures a few Chinese OEMs' sub-brands as a model-name prefix
@@ -101,7 +105,7 @@ async function run() {
       brand_en: entry.brand_en,
       model_en: entry.model_en,
       model_id: modelDoc?._id,
-      price_mad: entry.price_mad ?? undefined,
+      price_mad: entry.price_mad ?? entry.price_mad_min ?? undefined,
       price_mad_max: entry.price_mad_max ?? undefined,
       autonomie_km: entry.autonomie_km ?? undefined,
       powertrain: entry.powertrain ?? undefined,
