@@ -1,0 +1,240 @@
+[
+  {
+    "brand": "睿蓝",
+    "brand_en": "Livan",
+    "model": "睿蓝7",
+    "model_en": "Livan 7",
+    "generation": "2026款",
+    "segment": "中型轿车",
+    "body": "4门5座三厢车",
+    "price_rmb_range": "13.37-16.37万",
+    "variants": [
+      {
+        "trim": "550km 标准续航版",
+        "powertrain": "BEV",
+        "engine": null,
+        "motor": {
+          "type": "永磁同步电机",
+          "power_kw": 180,
+          "torque_nm": 385,
+          "count": 1,
+          "drive": "RWD",
+          "confidence": "confirmed"
+        },
+        "battery": {
+          "chemistry": "磷酸铁锂",
+          "capacity_total_kwh": 50.4,
+          "capacity_usable_kwh": null,
+          "supplier": null,
+          "dc_charge_kw": null,
+          "ac_charge_kw": null,
+          "ev_range_km": 450,
+          "ev_range_standard": "CLTC",
+          "combined_range_km": null,
+          "confidence": "unconfirmed"
+        },
+        "transmission": { "type": "电动车单速变速箱", "gears": 1, "confidence": "confirmed" },
+        "performance": { "accel_0_100_s": null, "top_speed_kmh": null, "confidence": "unconfirmed" },
+        "source": "新出行 xchuxing.com/article/93638 / EV视界 evlook.com/ruilan7",
+        "confidence": "unconfirmed"
+      },
+      {
+        "trim": "605km 长续航版",
+        "powertrain": "BEV",
+        "engine": null,
+        "motor": {
+          "type": "永磁同步电机",
+          "power_kw": 180,
+          "torque_nm": 385,
+          "count": 1,
+          "drive": "RWD",
+          "confidence": "confirmed"
+        },
+        "battery": {
+          "chemistry": "三元锂电池",
+          "capacity_total_kwh": 68.03,
+          "capacity_usable_kwh": null,
+          "supplier": null,
+          "dc_charge_kw": null,
+          "ac_charge_kw": null,
+          "ev_range_km": 605,
+          "ev_range_standard": "CLTC",
+          "combined_range_km": null,
+          "confidence": "confirmed"
+        },
+        "transmission": { "type": "电动车单速变速箱", "gears": 1, "confidence": "confirmed" },
+        "performance": { "accel_0_100_s": null, "top_speed_kmh": null, "confidence": "unconfirmed" },
+        "source": "新出行 xchuxing.com/article/93638 / 汽车之家 chejiahao.autohome.com.cn/info/13156471",
+        "confidence": "unconfirmed"
+      }
+    ]
+  },
+  {
+    "brand": "睿蓝",
+    "model": "睿蓝8",
+    "model_en": "Livan 8",
+    "generation": "2026款",
+    "segment": "紧凑型纯电MPV",
+    "body": "5门5/7座MPV",
+    "price_rmb_range": "12.78-13.78万（限时权益价11.28-12.28万）",
+    "variants": [
+      {
+        "trim": "标准续航五座版",
+        "powertrain": "BEV",
+        "engine": null,
+        "motor": {
+          "type": "永磁同步电机",
+          "power_kw": 120,
+          "torque_nm": 240,
+          "count": 1,
+          "drive": "FWD",
+          "confidence": "confirmed"
+        },
+        "battery": {
+          "chemistry": "磷酸铁锂",
+          "capacity_total_kwh": 50.4,
+          "capacity_usable_kwh": null,
+          "supplier": null,
+          "dc_charge_kw": null,
+          "ac_charge_kw": null,
+          "ev_range_km": 425,
+          "ev_range_standard": "CLTC",
+          "combined_range_km": null,
+          "confidence": "confirmed"
+        },
+        "transmission": { "type": "电动车单速变速箱", "gears": 1, "confidence": "confirmed" },
+        "performance": { "accel_0_100_s": null, "top_speed_kmh": null, "confidence": "unconfirmed" },
+        "source": "汽车之家 autohome.com.cn/news/202601/1311865 / IT之家 ithome.com/0/913/850",
+        "confidence": "unconfirmed"
+      },
+      {
+        "trim": "长续航七座版",
+        "powertrain": "BEV",
+        "engine": null,
+        "motor": {
+          "type": "永磁同步电机",
+          "power_kw": 120,
+          "torque_nm": 240,
+          "count": 1,
+          "drive": "FWD",
+          "confidence": "confirmed"
+        },
+        "battery": {
+          "chemistry": "三元锂电池",
+          "capacity_total_kwh": 68.03,
+          "capacity_usable_kwh": null,
+          "supplier": null,
+          "dc_charge_kw": null,
+          "ac_charge_kw": null,
+          "ev_range_km": 545,
+          "ev_range_standard": "CLTC",
+          "combined_range_km": null,
+          "confidence": "confirmed"
+        },
+        "transmission": { "type": "电动车单速变速箱", "gears": 1, "confidence": "confirmed" },
+        "performance": { "accel_0_100_s": null, "top_speed_kmh": null, "confidence": "unconfirmed" },
+        "source": "汽车之家 chejiahao.autohome.com.cn/info/24850145",
+        "confidence": "unconfirmed"
+      }
+    ]
+  },
+  {
+    "brand": "睿蓝",
+    "model": "睿蓝9",
+    "model_en": "Livan 9",
+    "generation": "2026款",
+    "segment": "中大型纯电SUV",
+    "body": "5门6/7座SUV",
+    "price_rmb_range": "10.99-12.99万",
+    "variants": [
+      {
+        "trim": "380km 标准续航版",
+        "powertrain": "BEV",
+        "engine": null,
+        "motor": {
+          "type": "永磁同步电机",
+          "power_kw": 150,
+          "torque_nm": 310,
+          "count": 1,
+          "drive": "FWD",
+          "confidence": "confirmed"
+        },
+        "battery": {
+          "chemistry": "三元锂电池",
+          "capacity_total_kwh": 52.56,
+          "capacity_usable_kwh": null,
+          "supplier": null,
+          "dc_charge_kw": null,
+          "ac_charge_kw": null,
+          "ev_range_km": 380,
+          "ev_range_standard": "CLTC",
+          "combined_range_km": null,
+          "confidence": "confirmed"
+        },
+        "transmission": { "type": "电动车单速变速箱", "gears": 1, "confidence": "confirmed" },
+        "performance": { "accel_0_100_s": null, "top_speed_kmh": null, "confidence": "unconfirmed" },
+        "source": "汽车之家 chejiahao.autohome.com.cn/info/11933732 / 中车网 auto.net.cn",
+        "confidence": "unconfirmed"
+      },
+      {
+        "trim": "470km 长续航版",
+        "powertrain": "BEV",
+        "engine": null,
+        "motor": {
+          "type": "永磁同步电机",
+          "power_kw": 150,
+          "torque_nm": 310,
+          "count": 1,
+          "drive": "FWD",
+          "confidence": "confirmed"
+        },
+        "battery": {
+          "chemistry": "三元锂电池",
+          "capacity_total_kwh": 66.57,
+          "capacity_usable_kwh": null,
+          "supplier": null,
+          "dc_charge_kw": null,
+          "ac_charge_kw": null,
+          "ev_range_km": 470,
+          "ev_range_standard": "CLTC",
+          "combined_range_km": null,
+          "confidence": "confirmed"
+        },
+        "transmission": { "type": "电动车单速变速箱", "gears": 1, "confidence": "confirmed" },
+        "performance": { "accel_0_100_s": null, "top_speed_kmh": null, "confidence": "unconfirmed" },
+        "source": "汽车之家 chejiahao.autohome.com.cn/info/11933732 / 爱咖号 aikahao.xcar.com.cn/item/1464948",
+        "confidence": "unconfirmed"
+      }
+    ]
+  },
+  {
+    "brand": "睿蓝",
+    "model": "睿蓝X3 PRO",
+    "model_en": "Livan X3 PRO",
+    "generation": "2024款",
+    "segment": "小型SUV",
+    "body": "5门5座SUV",
+    "price_rmb_range": "5.59-8.99万",
+    "variants": [
+      {
+        "trim": "1.5L CVT 小飒",
+        "powertrain": "ICE",
+        "engine": {
+          "displacement_l": 1.5,
+          "cylinders": 4,
+          "induction": "自然吸气",
+          "max_power_kw": 83,
+          "max_power_hp": 113,
+          "max_torque_nm": 143,
+          "confidence": "confirmed"
+        },
+        "motor": null,
+        "battery": null,
+        "transmission": { "type": "CVT", "gears": null, "confidence": "confirmed" },
+        "performance": { "accel_0_100_s": null, "top_speed_kmh": null, "confidence": "unconfirmed" },
+        "source": "汽车之家 chejiahao.autohome.com.cn/info/10558075 / 14938287",
+        "confidence": "unconfirmed"
+      }
+    ]
+  }
+]

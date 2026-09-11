@@ -35,6 +35,7 @@ export const KNOWN_BRANDS: Record<
   "埃安": { name: "GAC Aion", parent_group: "GAC Group", founded_year: 2017 },
   "东风": { name: "Dongfeng", founded_year: 1969 },
   "荣威": { name: "Roewe", parent_group: "SAIC Motor" },
+  "睿蓝": { name: "Livan", parent_group: "Geely", founded_year: 2022 },
   "名爵": { name: "MG", parent_group: "SAIC Motor" },
   "斯柯达": { name: "Škoda", country_origin: "Czech Republic" },
 };
@@ -350,6 +351,11 @@ export const KNOWN_MODELS: Record<string, string> = {
   "领克09": "09",
   "领克900": "900",
   "领克Z10": "Z10",
+  // Livan (睿蓝) lineup
+  "睿蓝7": "Livan 7",
+  "睿蓝8": "Livan 8",
+  "睿蓝9": "Livan 9",
+  "睿蓝X3 PRO": "Livan X3 PRO",
 };
 
 const RANGE_STANDARD_CORRECTIONS: Record<string, string> = {
