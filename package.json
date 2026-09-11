@@ -11,7 +11,8 @@
     "import": "tsx scripts/import-deepseek.ts",
     "migrate-schema": "tsx scripts/migrate-schema.ts",
     "import-morocco": "tsx scripts/import-morocco.ts",
-    "update-morocco-dealers": "tsx scripts/update-morocco-dealers.ts"
+    "update-morocco-dealers": "tsx scripts/update-morocco-dealers.ts",
+    "migrate-parent-groups": "tsx scripts/migrate-parent-groups.ts"
   },
   "dependencies": {
     "dotenv": "^17.4.2",

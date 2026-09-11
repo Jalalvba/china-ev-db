@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import type { BrandGroup, NormalizedBrand } from "@/lib/brandGrouping";
+import type { BrandGroup } from "@/lib/brandGrouping";
+import type { IBrand } from "@/types";
 
 const STATUS_STYLES: Record<string, string> = {
   discontinued: "bg-zinc-200 text-zinc-600",
@@ -10,7 +11,7 @@ const STATUS_STYLES: Record<string, string> = {
   merged: "bg-amber-100 text-amber-700",
 };
 
-function BrandCard({ brand }: { brand: NormalizedBrand }) {
+function BrandCard({ brand }: { brand: IBrand }) {
   return (
     <Link
       href={`/brands/${brand._id}`}
@@ -24,11 +25,11 @@ function BrandCard({ brand }: { brand: NormalizedBrand }) {
           </span>
         )}
       </div>
-      {(brand.displayParentGroup || brand.displayTechPartner) && (
+      {(brand.parent_group || brand.tech_partner) && (
         <p className="text-sm text-zinc-500">
-          {brand.displayParentGroup}
-          {brand.displayParentGroup && brand.displayTechPartner && " · "}
-          {brand.displayTechPartner && `powered by ${brand.displayTechPartner}`}
+          {brand.parent_group}
+          {brand.parent_group && brand.tech_partner && " · "}
+          {brand.tech_partner && `powered by ${brand.tech_partner}`}
         </p>
       )}
       <div className="mt-2 text-xs text-zinc-500 flex gap-3">
@@ -81,7 +82,7 @@ export default function BrandGroupList({
   standalone,
 }: {
   groups: BrandGroup[];
-  standalone: NormalizedBrand[];
+  standalone: IBrand[];
 }) {
   return (
     <div className="space-y-4">
