@@ -79,6 +79,9 @@ export const CHINESE_ORG_TERMS: Record<string, string> = {
   "通用": "GM",
   "广汽": "GAC",
   "小米": "Xiaomi",
+  "赛豆科技": "AIVA Tech",
+  "参股公司": "-invested ",
+  "汽车": " Auto",
 };
 
 /** Best-effort translation of known Chinese org-name fragments inside a mixed-language string. */
@@ -88,6 +91,16 @@ export function translateOrgFragments(text: string): string {
   for (const key of keys) {
     result = result.split(key).join(CHINESE_ORG_TERMS[key]);
   }
+  // Normalize full-width Chinese punctuation to plain ASCII and collapse
+  // resulting whitespace, so translated strings never surface CJK punctuation.
+  result = result
+    .replace(/（/g, "(")
+    .replace(/）/g, ")")
+    .replace(/、/g, ", ")
+    .replace(/\s+/g, " ")
+    .replace(/\(\s+/g, "(")
+    .replace(/\s+\)/g, ")")
+    .trim();
   return result;
 }
 
