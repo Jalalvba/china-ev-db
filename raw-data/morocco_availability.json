@@ -1,0 +1,128 @@
+[
+  {"brand_en":"BYD","model_en":"Seagull","price_mad":199900,"price_mad_max":null,"autonomie_km":305,"powertrain":"BEV","dealer_morocco":"Auto Nejma","dealer_confidence":"confirmed","source":"atlasdragon.ma"},
+  {"brand_en":"BYD","model_en":"Atto 2","price_mad":259900,"price_mad_max":null,"autonomie_km":80,"powertrain":"PHEV","dealer_morocco":"Auto Nejma","dealer_confidence":"confirmed","source":"atlasdragon.ma"},
+  {"brand_en":"BYD","model_en":"Atto 3","price_mad":339900,"price_mad_max":null,"autonomie_km":480,"powertrain":"BEV","dealer_morocco":"Auto Nejma","dealer_confidence":"confirmed","source":"atlasdragon.ma"},
+  {"brand_en":"BYD","model_en":"Seal 5 DM-i","price_mad":259900,"price_mad_max":null,"autonomie_km":100,"powertrain":"PHEV","dealer_morocco":"Auto Nejma","dealer_confidence":"confirmed","source":"atlasdragon.ma"},
+  {"brand_en":"BYD","model_en":"Seal","price_mad":469900,"price_mad_max":null,"autonomie_km":580,"powertrain":"BEV","dealer_morocco":"Auto Nejma","dealer_confidence":"confirmed","source":"atlasdragon.ma"},
+  {"brand_en":"BYD","model_en":"Seal U DM-i","price_mad":339000,"price_mad_max":null,"autonomie_km":70,"powertrain":"PHEV","dealer_morocco":"Auto Nejma","dealer_confidence":"confirmed","source":"atlasdragon.ma"},
+  {"brand_en":"BYD","model_en":"Sealion 7","price_mad":489900,"price_mad_max":null,"autonomie_km":500,"powertrain":"BEV","dealer_morocco":"Auto Nejma","dealer_confidence":"confirmed","source":"atlasdragon.ma"},
+  {"brand_en":"BYD","model_en":"Han","price_mad":659900,"price_mad_max":null,"autonomie_km":550,"powertrain":"BEV","dealer_morocco":"Auto Nejma","dealer_confidence":"confirmed","source":"atlasdragon.ma"},
+  {"brand_en":"BYD","model_en":"Tang","price_mad":709900,"price_mad_max":null,"autonomie_km":530,"powertrain":"BEV","dealer_morocco":"Auto Nejma","dealer_confidence":"confirmed","source":"atlasdragon.ma"},
+  {"brand_en":"Denza","model_en":"B5","price_mad":629900,"price_mad_max":null,"autonomie_km":80,"powertrain":"PHEV","dealer_morocco":"Auto Nejma","dealer_confidence":"unconfirmed","source":"atlasdragon.ma (news 2026-09-04)"},
+  {"brand_en":"Denza","model_en":"Z9GT","price_mad":1075000,"price_mad_max":null,"autonomie_km":null,"powertrain":"PHEV","dealer_morocco":"Auto Nejma","dealer_confidence":"unconfirmed","source":"atlasdragon.ma (news 2026-08-26)"},
+
+  {"brand_en":"MG","model_en":"MG3","price_mad":169000,"price_mad_max":null,"autonomie_km":650,"powertrain":"ICE","dealer_morocco":null,"dealer_confidence":"unconfirmed","source":"atlasdragon.ma"},
+  {"brand_en":"MG","model_en":"MG3+ HEV","price_mad":202000,"price_mad_max":null,"autonomie_km":700,"powertrain":"HEV","dealer_morocco":null,"dealer_confidence":"unconfirmed","source":"atlasdragon.ma"},
+  {"brand_en":"MG","model_en":"MG5","price_mad":195000,"price_mad_max":null,"autonomie_km":650,"powertrain":"ICE","dealer_morocco":null,"dealer_confidence":"unconfirmed","source":"atlasdragon.ma"},
+  {"brand_en":"MG","model_en":"ZS EV","price_mad":231750,"price_mad_max":null,"autonomie_km":440,"powertrain":"BEV","dealer_morocco":null,"dealer_confidence":"unconfirmed","source":"atlasdragon.ma"},
+  {"brand_en":"MG","model_en":"ZS HEV","price_mad":259000,"price_mad_max":null,"autonomie_km":750,"powertrain":"HEV","dealer_morocco":null,"dealer_confidence":"unconfirmed","source":"atlasdragon.ma"},
+  {"brand_en":"MG","model_en":"HS","price_mad":270000,"price_mad_max":null,"autonomie_km":700,"powertrain":"ICE","dealer_morocco":null,"dealer_confidence":"unconfirmed","source":"atlasdragon.ma"},
+  {"brand_en":"MG","model_en":"HS HEV","price_mad":278900,"price_mad_max":null,"autonomie_km":800,"powertrain":"HEV","dealer_morocco":null,"dealer_confidence":"unconfirmed","source":"atlasdragon.ma"},
+  {"brand_en":"MG","model_en":"Marvel R","price_mad":541500,"price_mad_max":null,"autonomie_km":370,"powertrain":"BEV","dealer_morocco":null,"dealer_confidence":"unconfirmed","source":"atlasdragon.ma"},
+  {"brand_en":"MG","model_en":"Cyberster","price_mad":580000,"price_mad_max":null,"autonomie_km":520,"powertrain":"BEV","dealer_morocco":null,"dealer_confidence":"unconfirmed","source":"atlasdragon.ma"},
+
+  {"brand_en":"Chery","model_en":"Arrizo 6","price_mad":149000,"price_mad_max":null,"autonomie_km":650,"powertrain":"ICE","dealer_morocco":null,"dealer_confidence":"unconfirmed","source":"atlasdragon.ma"},
+  {"brand_en":"Chery","model_en":"Tiggo 2 Pro","price_mad":145000,"price_mad_max":null,"autonomie_km":600,"powertrain":"ICE","dealer_morocco":null,"dealer_confidence":"unconfirmed","source":"atlasdragon.ma"},
+  {"brand_en":"Chery","model_en":"Tiggo 3 X","price_mad":159000,"price_mad_max":null,"autonomie_km":580,"powertrain":"ICE","dealer_morocco":null,"dealer_confidence":"unconfirmed","source":"atlasdragon.ma"},
+  {"brand_en":"Chery","model_en":"Tiggo 4 Pro","price_mad":165000,"price_mad_max":null,"autonomie_km":650,"powertrain":"ICE","dealer_morocco":null,"dealer_confidence":"unconfirmed","source":"atlasdragon.ma"},
+  {"brand_en":"Chery","model_en":"Tiggo 4 Cross HEV","price_mad":219000,"price_mad_max":null,"autonomie_km":80,"powertrain":"HEV","dealer_morocco":null,"dealer_confidence":"unconfirmed","source":"atlasdragon.ma"},
+  {"brand_en":"Chery","model_en":"Tiggo 7 Pro PHEV","price_mad":299000,"price_mad_max":null,"autonomie_km":80,"powertrain":"PHEV","dealer_morocco":null,"dealer_confidence":"unconfirmed","source":"atlasdragon.ma"},
+  {"brand_en":"Chery","model_en":"Tiggo 8 Pro PHEV","price_mad":359000,"price_mad_max":null,"autonomie_km":75,"powertrain":"PHEV","dealer_morocco":null,"dealer_confidence":"unconfirmed","source":"atlasdragon.ma"},
+
+  {"brand_en":"Haval","model_en":"Jolion","price_mad":199900,"price_mad_max":null,"autonomie_km":650,"powertrain":"ICE","dealer_morocco":"Stellantis Maroc","dealer_confidence":"confirmed","source":"atlasdragon.ma"},
+  {"brand_en":"Haval","model_en":"Jolion Pro HEV","price_mad":259900,"price_mad_max":null,"autonomie_km":750,"powertrain":"HEV","dealer_morocco":"Stellantis Maroc","dealer_confidence":"confirmed","source":"atlasdragon.ma"},
+  {"brand_en":"Haval","model_en":"H6 HEV","price_mad":289900,"price_mad_max":null,"autonomie_km":800,"powertrain":"HEV","dealer_morocco":"Stellantis Maroc","dealer_confidence":"confirmed","source":"atlasdragon.ma"},
+  {"brand_en":"Haval","model_en":"H6 PHEV 4WD","price_mad":339900,"price_mad_max":null,"autonomie_km":100,"powertrain":"PHEV","dealer_morocco":"Stellantis Maroc","dealer_confidence":"confirmed","source":"atlasdragon.ma"},
+  {"brand_en":"Haval","model_en":"H7","price_mad":369900,"price_mad_max":null,"autonomie_km":800,"powertrain":"HEV","dealer_morocco":"Stellantis Maroc","dealer_confidence":"confirmed","source":"atlasdragon.ma"},
+  {"brand_en":"ORA","model_en":"03","price_mad":319900,"price_mad_max":null,"autonomie_km":420,"powertrain":"BEV","dealer_morocco":"Stellantis Maroc","dealer_confidence":"confirmed","source":"atlasdragon.ma"},
+  {"brand_en":"WEY","model_en":"05","price_mad":569000,"price_mad_max":null,"autonomie_km":150,"powertrain":"PHEV","dealer_morocco":"Stellantis Maroc","dealer_confidence":"confirmed","source":"atlasdragon.ma"},
+  {"brand_en":"Tank","model_en":"300","price_mad":429900,"price_mad_max":null,"autonomie_km":650,"powertrain":"ICE","dealer_morocco":"Stellantis Maroc","dealer_confidence":"confirmed","source":"atlasdragon.ma"},
+  {"brand_en":"Tank","model_en":"500","price_mad":679900,"price_mad_max":null,"autonomie_km":700,"powertrain":"MHEV","dealer_morocco":"Stellantis Maroc","dealer_confidence":"confirmed","source":"atlasdragon.ma"},
+  {"brand_en":"GWM","model_en":"POER DC","price_mad":229900,"price_mad_max":null,"autonomie_km":750,"powertrain":"ICE","dealer_morocco":"Stellantis Maroc","dealer_confidence":"confirmed","source":"atlasdragon.ma"},
+
+  {"brand_en":"Omoda","model_en":"3","price_mad":209000,"price_mad_max":null,"autonomie_km":620,"powertrain":"ICE","dealer_morocco":"Omoda Maroc (ex-CFAO Mobility)","dealer_confidence":"confirmed","source":"atlasdragon.ma"},
+  {"brand_en":"Omoda","model_en":"5 HEV","price_mad":285000,"price_mad_max":null,"autonomie_km":800,"powertrain":"HEV","dealer_morocco":"Omoda Maroc (ex-CFAO Mobility)","dealer_confidence":"confirmed","source":"atlasdragon.ma"},
+  {"brand_en":"Omoda","model_en":"E5","price_mad":420000,"price_mad_max":null,"autonomie_km":430,"powertrain":"BEV","dealer_morocco":"Omoda Maroc (ex-CFAO Mobility)","dealer_confidence":"confirmed","source":"atlasdragon.ma"},
+  {"brand_en":"Jaecoo","model_en":"J7","price_mad":389000,"price_mad_max":null,"autonomie_km":700,"powertrain":"ICE","dealer_morocco":"Jaecoo Maroc (ex-CFAO Mobility)","dealer_confidence":"confirmed","source":"atlasdragon.ma"},
+  {"brand_en":"Jaecoo","model_en":"J7 PHEV","price_mad":369000,"price_mad_max":null,"autonomie_km":80,"powertrain":"PHEV","dealer_morocco":"Jaecoo Maroc (ex-CFAO Mobility)","dealer_confidence":"confirmed","source":"atlasdragon.ma"},
+
+  {"brand_en":"Exeed","model_en":"RX PHEV 2WD","price_mad":379900,"price_mad_max":null,"autonomie_km":169,"powertrain":"PHEV","dealer_morocco":null,"dealer_confidence":"unconfirmed","source":"atlasdragon.ma"},
+  {"brand_en":"Exeed","model_en":"RX PHEV AWD","price_mad":443900,"price_mad_max":null,"autonomie_km":169,"powertrain":"PHEV","dealer_morocco":null,"dealer_confidence":"unconfirmed","source":"atlasdragon.ma"},
+  {"brand_en":"Exeed","model_en":"VX PHEV","price_mad":539900,"price_mad_max":null,"autonomie_km":100,"powertrain":"PHEV","dealer_morocco":null,"dealer_confidence":"unconfirmed","source":"atlasdragon.ma"},
+  {"brand_en":"Exeed","model_en":"Eslantix ES","price_mad":489900,"price_mad_max":null,"autonomie_km":200,"powertrain":"REEV/EREV","dealer_morocco":null,"dealer_confidence":"unconfirmed","source":"atlasdragon.ma"},
+  {"brand_en":"Exeed","model_en":"Eslantix ET","price_mad":509900,"price_mad_max":null,"autonomie_km":200,"powertrain":"REEV/EREV","dealer_morocco":null,"dealer_confidence":"unconfirmed","source":"atlasdragon.ma"},
+
+  {"brand_en":"Geely","model_en":"GX3 Pro","price_mad":129900,"price_mad_max":null,"autonomie_km":600,"powertrain":"ICE","dealer_morocco":null,"dealer_confidence":"unconfirmed","source":"atlasdragon.ma"},
+  {"brand_en":"Geely","model_en":"Emgrand","price_mad":170000,"price_mad_max":null,"autonomie_km":650,"powertrain":"ICE","dealer_morocco":null,"dealer_confidence":"unconfirmed","source":"atlasdragon.ma"},
+  {"brand_en":"Geely","model_en":"Coolray","price_mad":209900,"price_mad_max":null,"autonomie_km":650,"powertrain":"ICE","dealer_morocco":null,"dealer_confidence":"unconfirmed","source":"atlasdragon.ma"},
+  {"brand_en":"Geely","model_en":"Cityray","price_mad":239900,"price_mad_max":null,"autonomie_km":650,"powertrain":"ICE","dealer_morocco":null,"dealer_confidence":"unconfirmed","source":"atlasdragon.ma"},
+  {"brand_en":"Geely","model_en":"EX2","price_mad":199900,"price_mad_max":null,"autonomie_km":300,"powertrain":"BEV","dealer_morocco":null,"dealer_confidence":"unconfirmed","source":"atlasdragon.ma"},
+  {"brand_en":"Geely","model_en":"Geometry C","price_mad":315000,"price_mad_max":null,"autonomie_km":550,"powertrain":"BEV","dealer_morocco":null,"dealer_confidence":"unconfirmed","source":"atlasdragon.ma"},
+  {"brand_en":"Geely","model_en":"EX5 PHEV","price_mad":339900,"price_mad_max":null,"autonomie_km":80,"powertrain":"PHEV","dealer_morocco":null,"dealer_confidence":"unconfirmed","source":"atlasdragon.ma"},
+  {"brand_en":"Geely","model_en":"Riddara RD6 PHEV","price_mad":379900,"price_mad_max":null,"autonomie_km":80,"powertrain":"PHEV","dealer_morocco":null,"dealer_confidence":"unconfirmed","source":"atlasdragon.ma"},
+
+  {"brand_en":"Changan","model_en":"CS15+","price_mad":139900,"price_mad_max":null,"autonomie_km":580,"powertrain":"ICE","dealer_morocco":null,"dealer_confidence":"unconfirmed","source":"atlasdragon.ma"},
+  {"brand_en":"Changan","model_en":"Alsvin","price_mad":154900,"price_mad_max":null,"autonomie_km":600,"powertrain":"ICE","dealer_morocco":null,"dealer_confidence":"unconfirmed","source":"atlasdragon.ma"},
+  {"brand_en":"Changan","model_en":"CS35+","price_mad":219900,"price_mad_max":null,"autonomie_km":650,"powertrain":"ICE","dealer_morocco":null,"dealer_confidence":"unconfirmed","source":"atlasdragon.ma"},
+  {"brand_en":"Changan","model_en":"CS55+","price_mad":264900,"price_mad_max":null,"autonomie_km":700,"powertrain":"ICE","dealer_morocco":null,"dealer_confidence":"unconfirmed","source":"atlasdragon.ma"},
+  {"brand_en":"Changan","model_en":"UNI-K","price_mad":459900,"price_mad_max":null,"autonomie_km":700,"powertrain":"ICE","dealer_morocco":null,"dealer_confidence":"unconfirmed","source":"atlasdragon.ma"},
+
+  {"brand_en":"Deepal","model_en":"S05 REEV","price_mad":329900,"price_mad_max":null,"autonomie_km":217,"powertrain":"REEV/EREV","dealer_morocco":null,"dealer_confidence":"unconfirmed","source":"atlasdragon.ma"},
+  {"brand_en":"Deepal","model_en":"S07 REEV","price_mad":369900,"price_mad_max":null,"autonomie_km":217,"powertrain":"REEV/EREV","dealer_morocco":null,"dealer_confidence":"unconfirmed","source":"atlasdragon.ma"},
+  {"brand_en":"Deepal","model_en":"G318 REEV 4WD","price_mad":426895,"price_mad_max":null,"autonomie_km":138,"powertrain":"REEV/EREV","dealer_morocco":null,"dealer_confidence":"unconfirmed","source":"atlasdragon.ma"},
+
+  {"brand_en":"BAIC","model_en":"U5 Plus","price_mad":169000,"price_mad_max":null,"autonomie_km":640,"powertrain":"ICE","dealer_morocco":null,"dealer_confidence":"unconfirmed","source":"atlasdragon.ma"},
+  {"brand_en":"BAIC","model_en":"X35","price_mad":175000,"price_mad_max":null,"autonomie_km":620,"powertrain":"ICE","dealer_morocco":null,"dealer_confidence":"unconfirmed","source":"atlasdragon.ma"},
+  {"brand_en":"BAIC","model_en":"X55","price_mad":239000,"price_mad_max":null,"autonomie_km":660,"powertrain":"ICE","dealer_morocco":null,"dealer_confidence":"unconfirmed","source":"atlasdragon.ma"},
+  {"brand_en":"BAIC","model_en":"X7","price_mad":275000,"price_mad_max":null,"autonomie_km":680,"powertrain":"ICE","dealer_morocco":null,"dealer_confidence":"unconfirmed","source":"atlasdragon.ma"},
+  {"brand_en":"BAIC","model_en":"BJ30e","price_mad":299000,"price_mad_max":null,"autonomie_km":750,"powertrain":"HEV","dealer_morocco":null,"dealer_confidence":"unconfirmed","source":"atlasdragon.ma"},
+
+  {"brand_en":"JAC","model_en":"E30X","price_mad":229000,"price_mad_max":null,"autonomie_km":374,"powertrain":"BEV","dealer_morocco":null,"dealer_confidence":"unconfirmed","source":"atlasdragon.ma"},
+  {"brand_en":"JAC","model_en":"T8 Pro","price_mad":219000,"price_mad_max":null,"autonomie_km":700,"powertrain":"ICE","dealer_morocco":null,"dealer_confidence":"unconfirmed","source":"atlasdragon.ma"},
+
+  {"brand_en":"Soueast","model_en":"S05","price_mad":199900,"price_mad_max":null,"autonomie_km":640,"powertrain":"ICE","dealer_morocco":"M-Automotiv / KMG","dealer_confidence":"confirmed","source":"atlasdragon.ma"},
+  {"brand_en":"Soueast","model_en":"S06 ICE","price_mad":234900,"price_mad_max":null,"autonomie_km":660,"powertrain":"ICE","dealer_morocco":"M-Automotiv / KMG","dealer_confidence":"confirmed","source":"atlasdragon.ma"},
+  {"brand_en":"Soueast","model_en":"S06 DM PHEV","price_mad":289900,"price_mad_max":null,"autonomie_km":100,"powertrain":"PHEV","dealer_morocco":"M-Automotiv / KMG","dealer_confidence":"confirmed","source":"atlasdragon.ma"},
+  {"brand_en":"Soueast","model_en":"S07","price_mad":249900,"price_mad_max":null,"autonomie_km":680,"powertrain":"ICE","dealer_morocco":"M-Automotiv / KMG","dealer_confidence":"confirmed","source":"atlasdragon.ma"},
+  {"brand_en":"Soueast","model_en":"S08 DM PHEV","price_mad":349000,"price_mad_max":null,"autonomie_km":100,"powertrain":"PHEV","dealer_morocco":"M-Automotiv / KMG","dealer_confidence":"confirmed","source":"atlasdragon.ma"},
+  {"brand_en":"Soueast","model_en":"S09","price_mad":314900,"price_mad_max":null,"autonomie_km":700,"powertrain":"ICE","dealer_morocco":"M-Automotiv / KMG","dealer_confidence":"confirmed","source":"atlasdragon.ma"},
+
+  {"brand_en":"Jetour","model_en":"Dashing","price_mad":249900,"price_mad_max":null,"autonomie_km":660,"powertrain":"ICE","dealer_morocco":null,"dealer_confidence":"unconfirmed","source":"atlasdragon.ma"},
+  {"brand_en":"Jetour","model_en":"T2","price_mad":360900,"price_mad_max":null,"autonomie_km":700,"powertrain":"ICE","dealer_morocco":null,"dealer_confidence":"unconfirmed","source":"atlasdragon.ma"},
+  {"brand_en":"Jetour","model_en":"T2 PHEV","price_mad":419900,"price_mad_max":null,"autonomie_km":139,"powertrain":"PHEV","dealer_morocco":null,"dealer_confidence":"unconfirmed","source":"atlasdragon.ma"},
+
+  {"brand_en":"Lynk & Co","model_en":"06","price_mad":259000,"price_mad_max":null,"autonomie_km":680,"powertrain":"ICE","dealer_morocco":"Volvo Maroc network","dealer_confidence":"confirmed","source":"atlasdragon.ma"},
+  {"brand_en":"Lynk & Co","model_en":"01 PHEV","price_mad":340000,"price_mad_max":null,"autonomie_km":75,"powertrain":"PHEV","dealer_morocco":"Volvo Maroc network","dealer_confidence":"confirmed","source":"atlasdragon.ma"},
+  {"brand_en":"Lynk & Co","model_en":"02 BEV","price_mad":399000,"price_mad_max":null,"autonomie_km":435,"powertrain":"BEV","dealer_morocco":"Volvo Maroc network","dealer_confidence":"confirmed","source":"atlasdragon.ma"},
+  {"brand_en":"Lynk & Co","model_en":"08 PHEV AWD","price_mad":399000,"price_mad_max":null,"autonomie_km":200,"powertrain":"PHEV","dealer_morocco":"Volvo Maroc network","dealer_confidence":"confirmed","source":"atlasdragon.ma"},
+
+  {"brand_en":"Leapmotor","model_en":"T03","price_mad":200000,"price_mad_max":null,"autonomie_km":400,"powertrain":"BEV","dealer_morocco":null,"dealer_confidence":"unconfirmed","source":"atlasdragon.ma"},
+  {"brand_en":"Leapmotor","model_en":"C10 REEV","price_mad":350000,"price_mad_max":null,"autonomie_km":150,"powertrain":"REEV/EREV","dealer_morocco":null,"dealer_confidence":"unconfirmed","source":"atlasdragon.ma"},
+  {"brand_en":"Leapmotor","model_en":"B10","price_mad":269000,"price_mad_max":null,"autonomie_km":900,"powertrain":"REEV/EREV","dealer_morocco":null,"dealer_confidence":"unconfirmed","source":"atlasdragon.ma (news 2026-09-06, just launched)"},
+
+  {"brand_en":"XPeng","model_en":"G6","price_mad":417800,"price_mad_max":null,"autonomie_km":550,"powertrain":"BEV","dealer_morocco":null,"dealer_confidence":"unconfirmed","source":"atlasdragon.ma"},
+  {"brand_en":"XPeng","model_en":"G9","price_mad":662000,"price_mad_max":null,"autonomie_km":520,"powertrain":"BEV","dealer_morocco":null,"dealer_confidence":"unconfirmed","source":"atlasdragon.ma"},
+
+  {"brand_en":"DFSK","model_en":"Glory 500","price_mad":195000,"price_mad_max":null,"autonomie_km":650,"powertrain":"ICE","dealer_morocco":null,"dealer_confidence":"unconfirmed","source":"atlasdragon.ma"},
+  {"brand_en":"DFSK","model_en":"E5 PHEV","price_mad":255000,"price_mad_max":null,"autonomie_km":80,"powertrain":"PHEV","dealer_morocco":null,"dealer_confidence":"unconfirmed","source":"atlasdragon.ma"},
+
+  {"brand_en":"Zeekr","model_en":"X","price_mad":399000,"price_mad_max":null,"autonomie_km":445,"powertrain":"BEV","dealer_morocco":null,"dealer_confidence":"unconfirmed","source":"atlasdragon.ma"},
+  {"brand_en":"Zeekr","model_en":"001","price_mad":649000,"price_mad_max":null,"autonomie_km":580,"powertrain":"BEV","dealer_morocco":null,"dealer_confidence":"unconfirmed","source":"atlasdragon.ma"},
+  {"brand_en":"Zeekr","model_en":"7X","price_mad":599000,"price_mad_max":null,"autonomie_km":543,"powertrain":"BEV","dealer_morocco":null,"dealer_confidence":"unconfirmed","source":"atlasdragon.ma"},
+
+  {"brand_en":"Dongfeng","model_en":"Box","price_mad":239000,"price_mad_max":null,"autonomie_km":344,"powertrain":"BEV","dealer_morocco":null,"dealer_confidence":"unconfirmed","source":"atlasdragon.ma"},
+  {"brand_en":"Dongfeng","model_en":"Shine","price_mad":179000,"price_mad_max":null,"autonomie_km":1200,"powertrain":"ICE","dealer_morocco":null,"dealer_confidence":"unconfirmed","source":"atlasdragon.ma"},
+  {"brand_en":"Dongfeng","model_en":"Shine Max","price_mad":269000,"price_mad_max":null,"autonomie_km":1200,"powertrain":"HEV","dealer_morocco":null,"dealer_confidence":"unconfirmed","source":"atlasdragon.ma"},
+  {"brand_en":"Dongfeng","model_en":"Mage","price_mad":269900,"price_mad_max":null,"autonomie_km":1000,"powertrain":"HEV","dealer_morocco":null,"dealer_confidence":"unconfirmed","source":"atlasdragon.ma"},
+  {"brand_en":"Dongfeng","model_en":"Huge","price_mad":319000,"price_mad_max":null,"autonomie_km":1000,"powertrain":"HEV","dealer_morocco":null,"dealer_confidence":"unconfirmed","source":"atlasdragon.ma"},
+
+  {"brand_en":"ROX","model_en":"01","price_mad":700000,"price_mad_max":null,"autonomie_km":235,"powertrain":"REEV/EREV","dealer_morocco":null,"dealer_confidence":"unconfirmed","source":"atlasdragon.ma"},
+  {"brand_en":"ROX","model_en":"Adamas","price_mad":800000,"price_mad_max":null,"autonomie_km":235,"powertrain":"REEV/EREV","dealer_morocco":null,"dealer_confidence":"unconfirmed","source":"atlasdragon.ma"},
+
+  {"brand_en":"Seres","model_en":"3","price_mad":349000,"price_mad_max":null,"autonomie_km":310,"powertrain":"BEV","dealer_morocco":null,"dealer_confidence":"unconfirmed","source":"atlasdragon.ma"},
+  {"brand_en":"Seres","model_en":"5","price_mad":555000,"price_mad_max":null,"autonomie_km":483,"powertrain":"BEV","dealer_morocco":null,"dealer_confidence":"unconfirmed","source":"atlasdragon.ma"},
+
+  {"brand_en":"GAC","model_en":"Emzoom","price_mad":199900,"price_mad_max":null,"autonomie_km":800,"powertrain":"ICE","dealer_morocco":null,"dealer_confidence":"unconfirmed","source":"atlasdragon.ma"},
+  {"brand_en":"GAC","model_en":"Emkoo HEV","price_mad":279900,"price_mad_max":null,"autonomie_km":1000,"powertrain":"HEV","dealer_morocco":null,"dealer_confidence":"unconfirmed","source":"atlasdragon.ma"},
+  {"brand_en":"GAC","model_en":"S7 PHEV","price_mad":419900,"price_mad_max":null,"autonomie_km":160,"powertrain":"PHEV","dealer_morocco":null,"dealer_confidence":"unconfirmed","source":"atlasdragon.ma"}
+]

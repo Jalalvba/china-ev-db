@@ -3,18 +3,22 @@ import { notFound } from "next/navigation";
 import { connectToDatabase } from "@/lib/db";
 import ModelSchema from "@/models/Model";
 import Powertrain from "@/models/Powertrain";
-import type { IBrand, IModel, IPowertrain } from "@/types";
+import MoroccoListing from "@/models/MoroccoListing";
+import type { IBrand, IModel, IMoroccoListing, IPowertrain } from "@/types";
 
 export const dynamic = "force-dynamic";
 
 type PopulatedModel = Omit<IModel, "brand_id"> & { brand_id: IBrand };
 
-async function getData(id: string): Promise<{ model: PopulatedModel; powertrains: IPowertrain[] } | null> {
+async function getData(
+  id: string
+): Promise<{ model: PopulatedModel; powertrains: IPowertrain[]; moroccoListing: IMoroccoListing | null } | null> {
   await connectToDatabase();
   const model = await ModelSchema.findById(id).populate("brand_id").lean();
   if (!model) return null;
   const powertrains = await Powertrain.find({ model_id: id }).lean();
-  return JSON.parse(JSON.stringify({ model, powertrains }));
+  const moroccoListing = await MoroccoListing.findOne({ model_id: id }).lean();
+  return JSON.parse(JSON.stringify({ model, powertrains, moroccoListing }));
 }
 
 function Row({ label, values }: { label: string; values: (string | number | undefined)[] }) {
@@ -35,7 +39,7 @@ export default async function ModelPage({ params }: { params: Promise<{ id: stri
   const { id } = await params;
   const data = await getData(id);
   if (!data) notFound();
-  const { model, powertrains } = data;
+  const { model, powertrains, moroccoListing } = data;
   const brand = model.brand_id;
 
   return (
@@ -67,6 +71,21 @@ export default async function ModelPage({ params }: { params: Promise<{ id: stri
             <span className="ml-2 px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 text-xs">unverified</span>
           )}
         </p>
+      )}
+      {moroccoListing && (
+        <div className="mt-3 p-3 rounded-lg bg-zinc-50 border border-zinc-200 text-sm">
+          <span className="font-medium">🇲🇦 Available in Morocco:</span>{" "}
+          {moroccoListing.price_mad?.toLocaleString()} MAD
+          {moroccoListing.price_mad_max ? `–${moroccoListing.price_mad_max.toLocaleString()} MAD` : ""}
+          {moroccoListing.dealer_morocco ? (
+            <span className="text-zinc-600"> via {moroccoListing.dealer_morocco}</span>
+          ) : (
+            <span className="text-zinc-500 italic"> — dealer unconfirmed</span>
+          )}
+          {moroccoListing.dealer_confidence === "unconfirmed" && (
+            <span className="ml-2 px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 text-xs">unconfirmed</span>
+          )}
+        </div>
       )}
 
       <h2 className="text-lg font-semibold mt-6 mb-3">Powertrain Variants ({powertrains.length})</h2>

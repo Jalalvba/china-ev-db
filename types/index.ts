@@ -141,3 +141,26 @@ export interface IPowertrain {
   source?: string;
   unverified?: boolean;
 }
+
+/**
+ * A per-model market listing for an export market (currently Morocco only).
+ * Deliberately a separate collection rather than a Model sub-document: it's
+ * a different currency/market concern, and many listings won't match any
+ * Model we have yet — the row is still worth keeping (model_id left unset)
+ * so the sourced data isn't lost while the China-side lineup catches up.
+ */
+export interface IMoroccoListing {
+  _id?: string;
+  model_id?: string;
+  brand_en: string;
+  model_en: string;
+  price_mad?: number;
+  price_mad_max?: number;
+  autonomie_km?: number;
+  powertrain?: string;
+  dealer_morocco?: string;
+  dealer_confidence?: Confidence;
+  source?: string;
+  matched: boolean;
+  last_updated: string;
+}
