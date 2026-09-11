@@ -29,14 +29,19 @@ export type GearboxType =
 
 export type RangeStandard = "CLTC" | "WLTP" | "NEDC";
 
+export type BrandStatus = "active" | "discontinued" | "bankrupt" | "merged";
+
 export interface IBrand {
   _id?: string;
   name: string;
   logo_url?: string;
   parent_group?: string;
+  tech_partner?: string;
   country_origin: string;
   founded_year?: number;
   website?: string;
+  status?: BrandStatus;
+  status_note?: string;
 }
 
 export interface IPriceRange {

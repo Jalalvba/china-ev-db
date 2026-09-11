@@ -5,7 +5,10 @@
 export const CNY_PER_USD = 7.2;
 
 /** Known Chinese brand names -> canonical English brand name + group. Extend as needed. */
-export const KNOWN_BRANDS: Record<string, { name: string; parent_group?: string; founded_year?: number; website?: string }> = {
+export const KNOWN_BRANDS: Record<
+  string,
+  { name: string; parent_group?: string; founded_year?: number; website?: string; country_origin?: string }
+> = {
   "BYD": { name: "BYD", founded_year: 1995, website: "https://www.byd.com" },
   "腾势": { name: "Denza", parent_group: "BYD Group", founded_year: 2010, website: "https://www.denzaauto.com" },
   "仰望": { name: "Yangwang", parent_group: "BYD Group", founded_year: 2022, website: "https://www.yangwangauto.com" },
@@ -32,7 +35,85 @@ export const KNOWN_BRANDS: Record<string, { name: string; parent_group?: string;
   "东风": { name: "Dongfeng", founded_year: 1969 },
   "荣威": { name: "Roewe", parent_group: "SAIC Motor" },
   "名爵": { name: "MG", parent_group: "SAIC Motor" },
+  "斯柯达": { name: "Škoda", country_origin: "Czech Republic" },
 };
+
+/**
+ * Chinese org-name fragments -> English, for cleaning up parent_group / jv_partners
+ * strings that mix Chinese company names with English brand names (e.g.
+ * "江淮 / 大众" -> "JAC / Volkswagen"). Applied as best-effort substring
+ * replacement, longest keys first to avoid partial-match collisions
+ * (e.g. "江淮汽车" before "江淮"). Extend as needed.
+ */
+export const CHINESE_ORG_TERMS: Record<string, string> = {
+  "凯翼汽车": "Cowin Auto",
+  "奇瑞控股": "Chery Holding",
+  "宜宾国资": "Yibin State Capital",
+  "神龙汽车": "Shenlong Automobile",
+  "成都经开区": "Chengdu Economic Development Zone",
+  "楚能新能源": "Chuneng New Energy",
+  "追觅科技": "Dreame Technology",
+  "金菓汽车": "Jinguo Auto",
+  "比亚迪": "BYD",
+  "吉利": "Geely",
+  "奇瑞": "Chery",
+  "长城": "GWM (Great Wall Motor)",
+  "长安": "Changan",
+  "北汽": "BAIC",
+  "上汽": "SAIC",
+  "一汽": "FAW",
+  "东风": "Dongfeng",
+  "蔚来": "NIO",
+  "江淮": "JAC",
+  "江铃": "JMC",
+  "柳汽": "Liuzhou Motor",
+  "赛力斯": "Seres",
+  "华为": "Huawei",
+  "大众": "Volkswagen",
+  "本田": "Honda",
+  "日产": "Nissan",
+  "沃尔沃": "Volvo",
+  "奔驰": "Mercedes-Benz",
+  "捷豹路虎": "JLR",
+  "五菱": "Wuling",
+  "通用": "GM",
+  "广汽": "GAC",
+  "小米": "Xiaomi",
+};
+
+/** Best-effort translation of known Chinese org-name fragments inside a mixed-language string. */
+export function translateOrgFragments(text: string): string {
+  let result = text;
+  const keys = Object.keys(CHINESE_ORG_TERMS).sort((a, b) => b.length - a.length);
+  for (const key of keys) {
+    result = result.split(key).join(CHINESE_ORG_TERMS[key]);
+  }
+  return result;
+}
+
+/**
+ * Split a parent_group string like "Seres / Huawei" into the manufacturing
+ * parent and an optional tech/ecosystem partner (currently only Huawei is
+ * treated as a tech partner rather than a co-parent). Also handles the
+ * standalone "Huawei ecosystem" label used for umbrella entities like HIMA.
+ */
+export function splitTechPartner(rawParentGroup: string | undefined): { parent_group?: string; tech_partner?: string } {
+  if (!rawParentGroup) return {};
+  const translated = translateOrgFragments(rawParentGroup);
+
+  if (/^huawei\s*ecosystem$/i.test(translated.trim())) {
+    return { tech_partner: "Huawei" };
+  }
+
+  const parts = translated.split("/").map((p) => p.trim().replace(/\s*\([^)]*\)\s*$/, "").trim());
+  const huaweiIdx = parts.findIndex((p) => /^huawei$/i.test(p));
+  if (huaweiIdx !== -1 && parts.length > 1) {
+    const others = parts.filter((_, i) => i !== huaweiIdx);
+    return { parent_group: others.join(" / "), tech_partner: "Huawei" };
+  }
+
+  return { parent_group: translated };
+}
 
 /** Known Chinese model names -> English. Extend as needed; unmapped names pass through unchanged. */
 export const KNOWN_MODELS: Record<string, string> = {
@@ -100,9 +181,13 @@ export function isAscii(s: string): boolean {
 }
 
 /** Resolve a raw (possibly Chinese) brand name to English + metadata, warning if unmapped. */
-export function resolveBrandName(raw: string): { name: string; parent_group?: string; founded_year?: number; website?: string } {
+export function resolveBrandName(
+  raw: string,
+  explicitEnglish?: string
+): { name: string; parent_group?: string; founded_year?: number; website?: string; country_origin?: string } {
   const known = KNOWN_BRANDS[raw];
   if (known) return known;
+  if (explicitEnglish) return { name: explicitEnglish };
   if (isAscii(raw)) return { name: raw };
   console.warn(`[import] No English mapping for brand "${raw}" — keeping original name. Add it to KNOWN_BRANDS in lib/deepseekNormalize.ts.`);
   return { name: raw };

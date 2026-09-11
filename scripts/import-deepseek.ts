@@ -1,15 +1,21 @@
-// Reusable importer for "deepseek-style" raw spec JSON files (see
-// deepseek_json_20260911_6957cc.json for the reference shape).
+// Reusable importer for "deepseek-style" raw spec JSON files. Handles two shapes:
+//
+//   1. Variant-spec files (array of model entries with `variants`, e.g.
+//      deepseek_json_20260911_6957cc.json) — imports Brand + Model + Powertrain.
+//   2. Delta-report files (object with numbered sections like
+//      "1_missing_brands_entirely", "3_defunct_merged_rebranded", etc., e.g.
+//      deepseek_json_20260911_e9d3c6.json) — brand-only metadata, no specs.
 //
 // Usage:
 //   npm run import -- raw-data/geely.json
 //
-// - Auto-detects brand / sub-brand grouping from the `brand` field on each entry
-//   (the most frequent brand in the file is treated as primary; others become
-//   sub-brands with parent_group `${primary} Group`, unless KNOWN_BRANDS in
-//   lib/deepseekNormalize.ts already says otherwise).
+// - Auto-detects brand / sub-brand grouping (variant-spec files: most frequent
+//   `brand` field is primary, others are sub-brands; delta-report files: each
+//   section supplies its own parent_group / parent_brand).
 // - Normalizes Chinese names, 万-denominated prices, range-standard typos
-//   (WLTC -> WLTP), transmission naming, etc. via lib/deepseekNormalize.ts.
+//   (WLTC -> WLTP), transmission naming, Chinese org-name fragments in
+//   parent_group strings, and splits a "X / Huawei" parent_group into
+//   parent_group "X" + tech_partner "Huawei", via lib/deepseekNormalize.ts.
 // - Upserts into MongoDB: existing brands are never overwritten (only filled in
 //   via $setOnInsert), existing models/powertrains are matched by name/trim and
 //   updated in place, new ones are inserted. Nothing is deleted.
@@ -34,12 +40,17 @@ import {
   motorCountFromNumber,
   guessSegment,
   assertValidSegment,
+  splitTechPartner,
 } from "../lib/deepseekNormalize";
 
 const MONGODB_URI = process.env.MONGODB_URI;
 if (!MONGODB_URI) {
   throw new Error("Missing MONGODB_URI. Copy .env.example to .env and set it.");
 }
+
+// ---------------------------------------------------------------------------
+// Shape 1: variant-spec files (array of model entries with powertrain specs)
+// ---------------------------------------------------------------------------
 
 interface RawDetailBlock {
   confidence?: string;
@@ -80,7 +91,7 @@ interface RawVariant {
   confidence?: string;
 }
 
-interface RawEntry {
+interface RawVariantEntry {
   brand: string;
   model: string;
   model_en?: string;
@@ -92,19 +103,7 @@ interface RawEntry {
   variants: RawVariant[];
 }
 
-function loadEntries(filePath: string): RawEntry[] {
-  const abs = path.resolve(filePath);
-  if (!fs.existsSync(abs)) {
-    throw new Error(`File not found: ${abs}`);
-  }
-  const raw = JSON.parse(fs.readFileSync(abs, "utf8"));
-  if (!Array.isArray(raw)) {
-    throw new Error("Expected the input JSON to be an array of model entries.");
-  }
-  return raw as RawEntry[];
-}
-
-function detectPrimaryBrand(entries: RawEntry[]): string {
+function detectPrimaryBrand(entries: RawVariantEntry[]): string {
   const counts = new Map<string, number>();
   for (const e of entries) counts.set(e.brand, (counts.get(e.brand) ?? 0) + 1);
   let best = entries[0].brand;
@@ -174,28 +173,19 @@ function normalizeVariant(v: RawVariant) {
   };
 }
 
-function stripUndefined<T extends Record<string, unknown>>(obj: T): T {
-  const out: Record<string, unknown> = {};
-  for (const [k, v] of Object.entries(obj)) {
-    if (v === undefined) continue;
-    out[k] = v && typeof v === "object" && !Array.isArray(v) ? stripUndefined(v as Record<string, unknown>) : v;
-  }
-  return out as T;
+async function upsertBrand(brandFields: Record<string, unknown>, name: string) {
+  return Brand.findOneAndUpdate(
+    { name },
+    { $setOnInsert: { ...brandFields, name } },
+    { upsert: true, returnDocument: "after" }
+  );
 }
 
-async function run() {
-  const filePath = process.argv[2];
-  if (!filePath) {
-    console.error("Usage: npm run import -- <path-to-json-file>");
-    process.exit(1);
-  }
-
-  const entries = loadEntries(filePath);
+async function runVariantImport(entries: RawVariantEntry[], filePath: string) {
   const primaryRaw = detectPrimaryBrand(entries);
   const primaryResolved = resolveBrandName(primaryRaw);
 
-  await mongoose.connect(MONGODB_URI as string);
-  console.log(`Connected to MongoDB. Importing ${entries.length} model entries from ${filePath}`);
+  console.log(`Importing ${entries.length} model entries (variant-spec shape) from ${filePath}`);
 
   let brandsTouched = 0;
   let modelsUpserted = 0;
@@ -205,19 +195,13 @@ async function run() {
     const isSubBrand = entry.brand !== primaryRaw;
     const resolved = isSubBrand ? resolveBrandName(entry.brand) : primaryResolved;
     const brandFields = stripUndefined({
-      name: resolved.name,
       parent_group: resolved.parent_group ?? (isSubBrand ? `${primaryResolved.name} Group` : undefined),
-      country_origin: "China",
+      country_origin: resolved.country_origin ?? "China",
       founded_year: resolved.founded_year,
       website: resolved.website,
     });
 
-    // Never overwrite an existing brand's fields — only fill in on first insert.
-    const brand = await Brand.findOneAndUpdate(
-      { name: resolved.name },
-      { $setOnInsert: brandFields },
-      { upsert: true, returnDocument: "after" }
-    );
+    const brand = await upsertBrand(brandFields, resolved.name);
     brandsTouched++;
 
     const englishModelName = resolveModelName(entry.model, entry.model_en);
@@ -254,6 +238,293 @@ async function run() {
   console.log(
     `Done. Touched ${brandsTouched} brand refs, upserted ${modelsUpserted} models and ${powertrainsUpserted} powertrains.`
   );
+}
+
+// ---------------------------------------------------------------------------
+// Shape 2: delta-report files (brand-only metadata, sectioned)
+// ---------------------------------------------------------------------------
+
+interface DeltaBrandEntry {
+  brand_cn: string;
+  brand_en: string;
+  parent_group?: string;
+  market_position?: string;
+  sub_brands?: DeltaBrandEntry[];
+}
+
+interface DeltaSubBrandGroup {
+  parent_brand: string;
+  missing_sub_brands: { brand_cn: string; brand_en: string; note?: string }[];
+}
+
+interface DeltaStatusEntry {
+  brand_cn: string;
+  brand_en: string;
+  status: string;
+}
+
+interface DeltaJvEntry {
+  brand_cn: string;
+  brand_en: string;
+  jv_partners?: string;
+  market_position?: string;
+}
+
+interface DeltaCommercialEntry {
+  brand_cn: string;
+  brand_en: string;
+  parent_group?: string;
+  passenger_brands?: string[];
+  note?: string;
+}
+
+interface DeltaReport {
+  "1_missing_brands_entirely"?: Record<string, DeltaBrandEntry[]>;
+  "2_missing_sub_brands_within_existing_list"?: DeltaSubBrandGroup[];
+  "3_defunct_merged_rebranded"?: Record<string, DeltaStatusEntry[]>;
+  "4_joint_venture_specific_brands"?: DeltaJvEntry[];
+  "5_commercial_vehicle_makers_with_passenger_cars"?: DeltaCommercialEntry[];
+  [key: string]: unknown;
+}
+
+function isDeltaReport(raw: unknown): raw is DeltaReport {
+  return typeof raw === "object" && raw !== null && !Array.isArray(raw) && "1_missing_brands_entirely" in raw;
+}
+
+interface PendingBrand {
+  brand_cn: string;
+  brand_en: string;
+  parent_group_raw?: string;
+  status: "active" | "discontinued" | "bankrupt" | "merged";
+  status_note?: string;
+  market_position?: string;
+}
+
+/** Try to pull a clean brand-name pair out of a loosely-formatted "X (Y)" string. */
+function parseNamePair(text: string): { brand_cn: string; brand_en: string } | undefined {
+  const asciiFirst = text.match(/^([A-Za-z0-9\-\s&]+)\s*\(([^)]+)\)$/);
+  if (asciiFirst && /[A-Za-z]/.test(asciiFirst[1])) {
+    return { brand_en: asciiFirst[1].trim(), brand_cn: asciiFirst[2].trim() };
+  }
+  const cjkFirst = text.match(/^([一-龥]+)\s*\(([A-Za-z0-9\-\s&]+)\)$/);
+  if (cjkFirst && /[A-Za-z]/.test(cjkFirst[2])) {
+    return { brand_cn: cjkFirst[1].trim(), brand_en: cjkFirst[2].trim() };
+  }
+  return undefined;
+}
+
+const STATUS_CATEGORY_LABEL: Record<string, string> = {
+  defunct_production_license_frozen_miit_2026: "License frozen (MIIT, 2026)",
+  bankrupt_or_ceased_ev_startups: "Bankrupt/ceased operations",
+  exited_china_market: "Exited China market",
+};
+
+function flattenDeltaReport(report: DeltaReport): PendingBrand[] {
+  const pending: PendingBrand[] = [];
+
+  // Section 1: new independent brands + missing sub-brands, always active.
+  const section1 = report["1_missing_brands_entirely"];
+  if (section1) {
+    for (const entries of Object.values(section1)) {
+      for (const entry of entries) {
+        pending.push({
+          brand_cn: entry.brand_cn,
+          brand_en: entry.brand_en,
+          parent_group_raw: entry.parent_group,
+          status: "active",
+          market_position: entry.market_position,
+        });
+        if (entry.sub_brands) {
+          for (const sub of entry.sub_brands) {
+            pending.push({
+              brand_cn: sub.brand_cn,
+              brand_en: sub.brand_en,
+              parent_group_raw: sub.parent_group,
+              status: "active",
+              market_position: sub.market_position,
+            });
+          }
+        }
+      }
+    }
+  }
+
+  // Section 2: sub-brands grouped by parent, always active. Duplicates entries
+  // already covered in section 1 for some brands — harmless, upsert is idempotent.
+  const section2 = report["2_missing_sub_brands_within_existing_list"];
+  if (section2) {
+    for (const group of section2) {
+      for (const sub of group.missing_sub_brands) {
+        pending.push({
+          brand_cn: sub.brand_cn,
+          brand_en: sub.brand_en,
+          parent_group_raw: group.parent_brand,
+          status: "active",
+          market_position: sub.note,
+        });
+      }
+    }
+  }
+
+  // Section 3: defunct / bankrupt / exited / merged. Status-bearing.
+  const section3 = report["3_defunct_merged_rebranded"];
+  if (section3) {
+    for (const [category, entries] of Object.entries(section3)) {
+      for (const entry of entries) {
+        if (category === "merged_or_restructuring") {
+          // Composite entries like "Avatr + Deepal" reference multiple existing
+          // brands merging operations — not a new single brand, and not
+          // "defunct". Skip rather than create a bogus combined brand row.
+          if (entry.brand_en.includes(" + ") || entry.brand_cn.includes("+")) {
+            console.warn(
+              `[import] Skipping composite merger entry "${entry.brand_en}" — references multiple existing brands; update them manually if desired.`
+            );
+            continue;
+          }
+          // Single-brand restructuring note (e.g. Geely internal consolidation):
+          // the brand itself is still active, just record the note. Because
+          // brand fields are only ever set via $setOnInsert, this is a safe
+          // no-op for brands that already exist (won't flip Geely to inactive).
+          pending.push({
+            brand_cn: entry.brand_cn,
+            brand_en: entry.brand_en,
+            status: "active",
+            status_note: `Restructuring — ${entry.status}`,
+          });
+          continue;
+        }
+
+        const label = STATUS_CATEGORY_LABEL[category] ?? category;
+        pending.push({
+          brand_cn: entry.brand_cn,
+          brand_en: entry.brand_en,
+          status: "discontinued",
+          status_note: `${label} — ${entry.status}`,
+        });
+      }
+    }
+  }
+
+  // Section 4: JV-specific brands, active.
+  const section4 = report["4_joint_venture_specific_brands"];
+  if (section4) {
+    for (const entry of section4) {
+      pending.push({
+        brand_cn: entry.brand_cn,
+        brand_en: entry.brand_en,
+        parent_group_raw: entry.jv_partners,
+        status: "active",
+        market_position: entry.market_position,
+      });
+    }
+  }
+
+  // Section 5: commercial makers with passenger lines, active. The maker
+  // itself, plus any cleanly-name-shaped entries in `passenger_brands`.
+  const section5 = report["5_commercial_vehicle_makers_with_passenger_cars"];
+  if (section5) {
+    for (const entry of section5) {
+      pending.push({
+        brand_cn: entry.brand_cn,
+        brand_en: entry.brand_en,
+        parent_group_raw: entry.parent_group,
+        status: "active",
+        market_position: entry.note,
+      });
+
+      for (const raw of entry.passenger_brands ?? []) {
+        const pair = parseNamePair(raw);
+        if (!pair) {
+          console.warn(
+            `[import] Skipping passenger_brands entry "${raw}" under ${entry.brand_en} — not a clean "Name (Name)" pair, needs manual review.`
+          );
+          continue;
+        }
+        pending.push({
+          brand_cn: pair.brand_cn,
+          brand_en: pair.brand_en,
+          parent_group_raw: entry.brand_en,
+          status: "active",
+        });
+      }
+    }
+  }
+
+  return pending;
+}
+
+async function runDeltaImport(report: DeltaReport, filePath: string) {
+  const pending = flattenDeltaReport(report);
+  console.log(`Importing ${pending.length} brand entries (delta-report shape) from ${filePath}`);
+
+  let created = 0;
+  let touched = 0;
+
+  for (const item of pending) {
+    const resolved = resolveBrandName(item.brand_cn, item.brand_en);
+    const { parent_group, tech_partner } = splitTechPartner(item.parent_group_raw ?? resolved.parent_group);
+
+    const brandFields = stripUndefined({
+      parent_group,
+      tech_partner,
+      country_origin: resolved.country_origin ?? "China",
+      founded_year: resolved.founded_year,
+      website: resolved.website,
+      status: item.status,
+      status_note: item.status_note,
+    });
+
+    const before = await Brand.findOne({ name: resolved.name }).lean();
+    await upsertBrand(brandFields, resolved.name);
+    touched++;
+    if (!before) created++;
+  }
+
+  console.log(`Done. Touched ${touched} brand refs (${created} newly created, ${touched - created} already existed and were left as-is).`);
+}
+
+// ---------------------------------------------------------------------------
+// Shared helpers + entry point
+// ---------------------------------------------------------------------------
+
+function stripUndefined<T extends Record<string, unknown>>(obj: T): T {
+  const out: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(obj)) {
+    if (v === undefined) continue;
+    out[k] = v && typeof v === "object" && !Array.isArray(v) ? stripUndefined(v as Record<string, unknown>) : v;
+  }
+  return out as T;
+}
+
+function loadRaw(filePath: string): unknown {
+  const abs = path.resolve(filePath);
+  if (!fs.existsSync(abs)) {
+    throw new Error(`File not found: ${abs}`);
+  }
+  return JSON.parse(fs.readFileSync(abs, "utf8"));
+}
+
+async function run() {
+  const filePath = process.argv[2];
+  if (!filePath) {
+    console.error("Usage: npm run import -- <path-to-json-file>");
+    process.exit(1);
+  }
+
+  const raw = loadRaw(filePath);
+  await mongoose.connect(MONGODB_URI as string);
+  console.log("Connected to MongoDB.");
+
+  if (Array.isArray(raw)) {
+    await runVariantImport(raw as RawVariantEntry[], filePath);
+  } else if (isDeltaReport(raw)) {
+    await runDeltaImport(raw, filePath);
+  } else {
+    throw new Error(
+      "Unrecognized input shape: expected either an array of model entries or a delta-report object with a '1_missing_brands_entirely' section."
+    );
+  }
+
   await mongoose.disconnect();
 }
 
