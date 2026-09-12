@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connectToDatabase } from "@/lib/db";
+// Side-effect import only: registers "Brand" so .populate("brand_id") below
+// resolves on a cold server regardless of request order.
+import "@/models/Brand";
 import ModelSchema from "@/models/Model";
 import Powertrain from "@/models/Powertrain";
 

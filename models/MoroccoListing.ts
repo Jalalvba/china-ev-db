@@ -25,6 +25,12 @@ const MoroccoListingSchema = new Schema<MoroccoListingDoc>(
     /** Free-text caveat about dealer_morocco, e.g. dual distribution, corporate-structure clarification, or a source discrepancy pending verification. */
     note: { type: String },
     source: { type: String },
+    // Specific to moteur.ma (Morocco's automotive reference site) — kept
+    // distinct from the general price_mad/dealer_morocco fields above, which
+    // may come from other Moroccan sources, so the two can't drift/conflict.
+    moteur_ma_price_dh: { type: Number },
+    moteur_ma_confirmed: { type: Boolean, default: false },
+    moteur_ma_url: { type: String },
     matched: { type: Boolean, required: true, default: false },
     last_updated: { type: Date, required: true, default: Date.now },
   },

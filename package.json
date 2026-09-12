@@ -10,11 +10,19 @@
     "seed": "tsx scripts/seed.ts",
     "import": "tsx scripts/import-deepseek.ts",
     "migrate-schema": "tsx scripts/migrate-schema.ts",
+    "migrate-canonical-powertrain": "tsx scripts/migrate-canonical-powertrain.ts",
+    "migrate-canonical-powertrain-v2": "tsx scripts/migrate-canonical-powertrain-v2.ts",
+    "export-manual-research": "tsx scripts/export-model-for-manual-research.ts",
     "import-morocco": "tsx scripts/import-morocco.ts",
+    "morocco-agent": "tsx scripts/morocco-agent.ts",
+    "tech-spec-agent": "tsx scripts/tech-spec-agent.ts",
     "update-morocco-dealers": "tsx scripts/update-morocco-dealers.ts",
-    "migrate-parent-groups": "tsx scripts/migrate-parent-groups.ts"
+    "sync-prices": "tsx scripts/sync-morocco-prices.ts",
+    "migrate-parent-groups": "tsx scripts/migrate-parent-groups.ts",
+    "fix-deepseek-audit": "tsx scripts/fix-deepseek-audit-corrections.ts"
   },
   "dependencies": {
+    "@google/genai": "^2.22.0",
     "dotenv": "^17.4.2",
     "mongoose": "^9.10.0",
     "next": "16.3.4",

@@ -4,13 +4,15 @@
 //
 // Usage: npm run import-morocco -- raw-data/morocco_availability.json
 
-import "dotenv/config";
+import dotenv from "dotenv";
+dotenv.config({ quiet: true });
 import fs from "fs";
 import path from "path";
 import mongoose from "mongoose";
 import Brand from "../models/Brand";
 import ModelSchema from "../models/Model";
 import MoroccoListing from "../models/MoroccoListing";
+import { MOROCCO_BRAND_ALIAS } from "../lib/moroccoBrandAlias";
 
 const MONGODB_URI = process.env.MONGODB_URI;
 if (!MONGODB_URI) {
@@ -26,25 +28,15 @@ interface RawListing {
   price_mad_max: number | null;
   autonomie_km?: number | null;
   powertrain: string | null;
+  moteur_ma_price_dh?: number | null;
+  moteur_ma_confirmed?: boolean | null;
+  moteur_ma_url?: string | null;
   dealer_morocco: string | null;
   dealer_confidence: string | null;
   source: string | null;
   /** Model confirmed to exist in-market but no published price found — kept with price null rather than dropped. */
   price_unverified?: boolean;
 }
-
-// Our DB structures a few Chinese OEMs' sub-brands as a model-name prefix
-// under one parent Brand (e.g. GWM's Haval/ORA/WEY/Tank, Chery's Omoda),
-// rather than as separate Brand docs. Map the Morocco source's brand_en to
-// the Brand name to search under for these known cases.
-const BRAND_ALIAS: Record<string, string> = {
-  Haval: "GWM (Great Wall Motor)",
-  ORA: "GWM (Great Wall Motor)",
-  WEY: "GWM (Great Wall Motor)",
-  Tank: "GWM (Great Wall Motor)",
-  GWM: "GWM (Great Wall Motor)",
-  Omoda: "Chery",
-};
 
 // One explicit, human-verified alias rather than generic fuzzy matching,
 // which risks false-positive merges (e.g. a blind substring match would
@@ -79,7 +71,7 @@ async function run() {
   const unmatchedLog: string[] = [];
 
   for (const entry of raw) {
-    const brandName = BRAND_ALIAS[entry.brand_en] ?? entry.brand_en;
+    const brandName = MOROCCO_BRAND_ALIAS[entry.brand_en] ?? entry.brand_en;
     const brand = await Brand.findOne({ name: new RegExp(`^${escapeRegex(brandName)}$`, "i") }).lean();
 
     let modelDoc = null;
@@ -109,6 +101,9 @@ async function run() {
       price_mad_max: entry.price_mad_max ?? undefined,
       autonomie_km: entry.autonomie_km ?? undefined,
       powertrain: entry.powertrain ?? undefined,
+      moteur_ma_price_dh: entry.moteur_ma_price_dh ?? undefined,
+      moteur_ma_confirmed: entry.moteur_ma_confirmed ?? undefined,
+      moteur_ma_url: entry.moteur_ma_url ?? undefined,
       dealer_morocco: entry.dealer_morocco ?? undefined, // explicitly left unset when null — never guessed
       dealer_confidence,
       source: entry.source ?? undefined,

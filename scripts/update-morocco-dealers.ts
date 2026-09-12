@@ -5,7 +5,8 @@
 //
 // Usage: npm run update-morocco-dealers -- raw-data/morocco_dealers_final.json
 
-import "dotenv/config";
+import dotenv from "dotenv";
+dotenv.config({ quiet: true });
 import fs from "fs";
 import path from "path";
 import mongoose from "mongoose";

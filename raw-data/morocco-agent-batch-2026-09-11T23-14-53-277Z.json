@@ -1,0 +1,186 @@
+[
+  {
+    "brand_en": "Lotus",
+    "model_en": "Eletre",
+    "dealer_morocco": "AEK Holding (LK Automotive)",
+    "dealer_confidence": "confirmed",
+    "source": "Gemini-grounded research (3 sources)",
+    "source_url": [
+      "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQFp7ifDLQNNGnGu9qnzBsX8lcHgw0LoT7-Mh2YK8ZqXL4BDyx-oadaHrV3RWT0c0JloMOSorPFdgWS-po_jgz4wzeRr9IwR3hz8jPFSca8Z3pJbOAFQ0ubKXl4VmBJnM15-LT1hwPJtpp1sG2ozwhWtL2SkR-R7_s3IsTKDn1ZQt6LXjVuTclg=",
+      "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQH25vCPEzJzs0Gnlb8UGTiivWEZffYGxuUnWGRUUA3lbUiUZ5G4BCompJDhTIPmFQz_nva0uNnBiG27jnDcSDgUArzsG8XKaqQ8UragB29f6nDcprVWySYyoEM6dCDPCIO5pM39PcN8zcWamjAMkAT3lNBHbRpRmClBaC1kO0vwyGADPb-JlKfgYLKK0WGa2kKG6c9NcueSQDY=",
+      "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQFTOnYjRD87aRIeiVlT4SblVvalTeL1lphUzld7Iz7EH5ACO1pNbLvEN4UzDGYW7DVg3ZM4jMN0drHPv5BVesFG8q7iLqIEedDK7OmTnHlB8nsHWqw2mm2sHqUI3RbY8XLjj02RWMG6S-Lp54KbYjsiO3dXF7I-q8qPylCN6ZMUqilgSTVwg0hC"
+    ],
+    "agent_notes": "In April and May 2026, Moroccan press outlets (Le Desk, LesÉco, Auto Trends) reported that AEK Holding, through its subsidiary LK Automotive, was appointed as the exclusive official importer and distributor for Lotus in Morocco. Models highlighted in press coverage for the market launch include the Eletre, Emeya, and Emira, though official retail prices in MAD have not yet been published.",
+    "agent_query_brand_db_name": "Lotus",
+    "agent_query_parent_group": "Geely",
+    "agent_query_time": "2026-09-11T23:31:11.755Z",
+    "agent_model_used": "gemini-3.6-flash"
+  },
+  {
+    "brand_en": "Lotus",
+    "model_en": "Emeya",
+    "dealer_morocco": "AEK Holding (LK Automotive)",
+    "dealer_confidence": "confirmed",
+    "source": "Gemini-grounded research (3 sources)",
+    "source_url": [
+      "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQFp7ifDLQNNGnGu9qnzBsX8lcHgw0LoT7-Mh2YK8ZqXL4BDyx-oadaHrV3RWT0c0JloMOSorPFdgWS-po_jgz4wzeRr9IwR3hz8jPFSca8Z3pJbOAFQ0ubKXl4VmBJnM15-LT1hwPJtpp1sG2ozwhWtL2SkR-R7_s3IsTKDn1ZQt6LXjVuTclg=",
+      "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQH25vCPEzJzs0Gnlb8UGTiivWEZffYGxuUnWGRUUA3lbUiUZ5G4BCompJDhTIPmFQz_nva0uNnBiG27jnDcSDgUArzsG8XKaqQ8UragB29f6nDcprVWySYyoEM6dCDPCIO5pM39PcN8zcWamjAMkAT3lNBHbRpRmClBaC1kO0vwyGADPb-JlKfgYLKK0WGa2kKG6c9NcueSQDY=",
+      "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQFTOnYjRD87aRIeiVlT4SblVvalTeL1lphUzld7Iz7EH5ACO1pNbLvEN4UzDGYW7DVg3ZM4jMN0drHPv5BVesFG8q7iLqIEedDK7OmTnHlB8nsHWqw2mm2sHqUI3RbY8XLjj02RWMG6S-Lp54KbYjsiO3dXF7I-q8qPylCN6ZMUqilgSTVwg0hC"
+    ],
+    "agent_notes": "In April and May 2026, Moroccan press outlets (Le Desk, LesÉco, Auto Trends) reported that AEK Holding, through its subsidiary LK Automotive, was appointed as the exclusive official importer and distributor for Lotus in Morocco. Models highlighted in press coverage for the market launch include the Eletre, Emeya, and Emira, though official retail prices in MAD have not yet been published.",
+    "agent_query_brand_db_name": "Lotus",
+    "agent_query_parent_group": "Geely",
+    "agent_query_time": "2026-09-11T23:31:11.755Z",
+    "agent_model_used": "gemini-3.6-flash"
+  },
+  {
+    "brand_en": "Lotus",
+    "model_en": "Emira",
+    "dealer_morocco": "AEK Holding (LK Automotive)",
+    "dealer_confidence": "confirmed",
+    "source": "Gemini-grounded research (3 sources)",
+    "source_url": [
+      "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQFp7ifDLQNNGnGu9qnzBsX8lcHgw0LoT7-Mh2YK8ZqXL4BDyx-oadaHrV3RWT0c0JloMOSorPFdgWS-po_jgz4wzeRr9IwR3hz8jPFSca8Z3pJbOAFQ0ubKXl4VmBJnM15-LT1hwPJtpp1sG2ozwhWtL2SkR-R7_s3IsTKDn1ZQt6LXjVuTclg=",
+      "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQH25vCPEzJzs0Gnlb8UGTiivWEZffYGxuUnWGRUUA3lbUiUZ5G4BCompJDhTIPmFQz_nva0uNnBiG27jnDcSDgUArzsG8XKaqQ8UragB29f6nDcprVWySYyoEM6dCDPCIO5pM39PcN8zcWamjAMkAT3lNBHbRpRmClBaC1kO0vwyGADPb-JlKfgYLKK0WGa2kKG6c9NcueSQDY=",
+      "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQFTOnYjRD87aRIeiVlT4SblVvalTeL1lphUzld7Iz7EH5ACO1pNbLvEN4UzDGYW7DVg3ZM4jMN0drHPv5BVesFG8q7iLqIEedDK7OmTnHlB8nsHWqw2mm2sHqUI3RbY8XLjj02RWMG6S-Lp54KbYjsiO3dXF7I-q8qPylCN6ZMUqilgSTVwg0hC"
+    ],
+    "agent_notes": "In April and May 2026, Moroccan press outlets (Le Desk, LesÉco, Auto Trends) reported that AEK Holding, through its subsidiary LK Automotive, was appointed as the exclusive official importer and distributor for Lotus in Morocco. Models highlighted in press coverage for the market launch include the Eletre, Emeya, and Emira, though official retail prices in MAD have not yet been published.",
+    "agent_query_brand_db_name": "Lotus",
+    "agent_query_parent_group": "Geely",
+    "agent_query_time": "2026-09-11T23:31:11.755Z",
+    "agent_model_used": "gemini-3.6-flash"
+  },
+  {
+    "brand_en": "Škoda",
+    "model_en": "Fabia",
+    "price_mad_min": 171900,
+    "price_mad_max": 241000,
+    "dealer_morocco": "Centrale Automobile Chérifienne (CAC)",
+    "dealer_confidence": "confirmed",
+    "source": "Gemini-grounded research (4 sources)",
+    "source_url": [
+      "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQHN2qS2UaFJppGUBOQ3JRB2NNSDcJA3Azy89dq40TpElxOwBDgr-nUE1WebshifZ8VhMSmbmhC8zHQ3F2Y_VIQjviBvyaTnE4C-HiWJpkpw-C4ejEk=",
+      "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQFv5Tf5-yUQutuWrSGUbd8Islp9VPBOs9mGTquVZlH30aiyogEKNA2PwREhMPcVABgPcZ2L2smte9UXIkKOqeyvRR82jic7hSSzjwQ=",
+      "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQHRRCfepW4dnb9Aa2jq6q7Qe2JhqK425S1pn4VfMAH7ZgsalEpY7fnjsUjtZbU-_LPDCYE_9L92Ot5ywEDIEVS9Tch7BB7D23cBF6QE-xXAs3uhd-5D_ehqhDG9YBg=",
+      "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQG5Hx5YHbXKerFU5QROTjyaEbFDOky4kFDNImcThX7m-9l_dwgvWM_KXo7fCQz22zk6BOhdncR9N5iVxp-nUF2gOk9OLpaWQ2mDrRDlbhVv-ikWxnqXL4f8qIzLpMyuHjK00XMdIk5o5trh1rXHFxrOWXQPjQ=="
+    ],
+    "agent_notes": "Škoda is officially imported and distributed in Morocco by Centrale Automobile Chérifienne (CAC). Prices and current model lineup are confirmed via Moroccan automotive platforms Wandaloo.com and Autonews.ma.",
+    "agent_query_brand_db_name": "Škoda",
+    "agent_query_time": "2026-09-11T23:43:06.640Z",
+    "agent_model_used": "gemini-3.6-flash"
+  },
+  {
+    "brand_en": "Škoda",
+    "model_en": "Kamiq",
+    "price_mad_min": 228900,
+    "price_mad_max": 296000,
+    "dealer_morocco": "Centrale Automobile Chérifienne (CAC)",
+    "dealer_confidence": "confirmed",
+    "source": "Gemini-grounded research (4 sources)",
+    "source_url": [
+      "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQHN2qS2UaFJppGUBOQ3JRB2NNSDcJA3Azy89dq40TpElxOwBDgr-nUE1WebshifZ8VhMSmbmhC8zHQ3F2Y_VIQjviBvyaTnE4C-HiWJpkpw-C4ejEk=",
+      "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQFv5Tf5-yUQutuWrSGUbd8Islp9VPBOs9mGTquVZlH30aiyogEKNA2PwREhMPcVABgPcZ2L2smte9UXIkKOqeyvRR82jic7hSSzjwQ=",
+      "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQHRRCfepW4dnb9Aa2jq6q7Qe2JhqK425S1pn4VfMAH7ZgsalEpY7fnjsUjtZbU-_LPDCYE_9L92Ot5ywEDIEVS9Tch7BB7D23cBF6QE-xXAs3uhd-5D_ehqhDG9YBg=",
+      "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQG5Hx5YHbXKerFU5QROTjyaEbFDOky4kFDNImcThX7m-9l_dwgvWM_KXo7fCQz22zk6BOhdncR9N5iVxp-nUF2gOk9OLpaWQ2mDrRDlbhVv-ikWxnqXL4f8qIzLpMyuHjK00XMdIk5o5trh1rXHFxrOWXQPjQ=="
+    ],
+    "agent_notes": "Škoda is officially imported and distributed in Morocco by Centrale Automobile Chérifienne (CAC). Prices and current model lineup are confirmed via Moroccan automotive platforms Wandaloo.com and Autonews.ma.",
+    "agent_query_brand_db_name": "Škoda",
+    "agent_query_time": "2026-09-11T23:43:06.640Z",
+    "agent_model_used": "gemini-3.6-flash"
+  },
+  {
+    "brand_en": "Škoda",
+    "model_en": "Karoq",
+    "price_mad_min": 316195,
+    "price_mad_max": 405000,
+    "dealer_morocco": "Centrale Automobile Chérifienne (CAC)",
+    "dealer_confidence": "confirmed",
+    "source": "Gemini-grounded research (4 sources)",
+    "source_url": [
+      "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQHN2qS2UaFJppGUBOQ3JRB2NNSDcJA3Azy89dq40TpElxOwBDgr-nUE1WebshifZ8VhMSmbmhC8zHQ3F2Y_VIQjviBvyaTnE4C-HiWJpkpw-C4ejEk=",
+      "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQFv5Tf5-yUQutuWrSGUbd8Islp9VPBOs9mGTquVZlH30aiyogEKNA2PwREhMPcVABgPcZ2L2smte9UXIkKOqeyvRR82jic7hSSzjwQ=",
+      "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQHRRCfepW4dnb9Aa2jq6q7Qe2JhqK425S1pn4VfMAH7ZgsalEpY7fnjsUjtZbU-_LPDCYE_9L92Ot5ywEDIEVS9Tch7BB7D23cBF6QE-xXAs3uhd-5D_ehqhDG9YBg=",
+      "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQG5Hx5YHbXKerFU5QROTjyaEbFDOky4kFDNImcThX7m-9l_dwgvWM_KXo7fCQz22zk6BOhdncR9N5iVxp-nUF2gOk9OLpaWQ2mDrRDlbhVv-ikWxnqXL4f8qIzLpMyuHjK00XMdIk5o5trh1rXHFxrOWXQPjQ=="
+    ],
+    "agent_notes": "Škoda is officially imported and distributed in Morocco by Centrale Automobile Chérifienne (CAC). Prices and current model lineup are confirmed via Moroccan automotive platforms Wandaloo.com and Autonews.ma.",
+    "agent_query_brand_db_name": "Škoda",
+    "agent_query_time": "2026-09-11T23:43:06.640Z",
+    "agent_model_used": "gemini-3.6-flash"
+  },
+  {
+    "brand_en": "Škoda",
+    "model_en": "Kodiaq",
+    "price_mad_min": 354900,
+    "price_mad_max": 491000,
+    "dealer_morocco": "Centrale Automobile Chérifienne (CAC)",
+    "dealer_confidence": "confirmed",
+    "source": "Gemini-grounded research (4 sources)",
+    "source_url": [
+      "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQHN2qS2UaFJppGUBOQ3JRB2NNSDcJA3Azy89dq40TpElxOwBDgr-nUE1WebshifZ8VhMSmbmhC8zHQ3F2Y_VIQjviBvyaTnE4C-HiWJpkpw-C4ejEk=",
+      "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQFv5Tf5-yUQutuWrSGUbd8Islp9VPBOs9mGTquVZlH30aiyogEKNA2PwREhMPcVABgPcZ2L2smte9UXIkKOqeyvRR82jic7hSSzjwQ=",
+      "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQHRRCfepW4dnb9Aa2jq6q7Qe2JhqK425S1pn4VfMAH7ZgsalEpY7fnjsUjtZbU-_LPDCYE_9L92Ot5ywEDIEVS9Tch7BB7D23cBF6QE-xXAs3uhd-5D_ehqhDG9YBg=",
+      "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQG5Hx5YHbXKerFU5QROTjyaEbFDOky4kFDNImcThX7m-9l_dwgvWM_KXo7fCQz22zk6BOhdncR9N5iVxp-nUF2gOk9OLpaWQ2mDrRDlbhVv-ikWxnqXL4f8qIzLpMyuHjK00XMdIk5o5trh1rXHFxrOWXQPjQ=="
+    ],
+    "agent_notes": "Škoda is officially imported and distributed in Morocco by Centrale Automobile Chérifienne (CAC). Prices and current model lineup are confirmed via Moroccan automotive platforms Wandaloo.com and Autonews.ma.",
+    "agent_query_brand_db_name": "Škoda",
+    "agent_query_time": "2026-09-11T23:43:06.640Z",
+    "agent_model_used": "gemini-3.6-flash"
+  },
+  {
+    "brand_en": "Škoda",
+    "model_en": "Octavia",
+    "price_mad_min": 297900,
+    "price_mad_max": 385000,
+    "dealer_morocco": "Centrale Automobile Chérifienne (CAC)",
+    "dealer_confidence": "confirmed",
+    "source": "Gemini-grounded research (4 sources)",
+    "source_url": [
+      "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQHN2qS2UaFJppGUBOQ3JRB2NNSDcJA3Azy89dq40TpElxOwBDgr-nUE1WebshifZ8VhMSmbmhC8zHQ3F2Y_VIQjviBvyaTnE4C-HiWJpkpw-C4ejEk=",
+      "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQFv5Tf5-yUQutuWrSGUbd8Islp9VPBOs9mGTquVZlH30aiyogEKNA2PwREhMPcVABgPcZ2L2smte9UXIkKOqeyvRR82jic7hSSzjwQ=",
+      "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQHRRCfepW4dnb9Aa2jq6q7Qe2JhqK425S1pn4VfMAH7ZgsalEpY7fnjsUjtZbU-_LPDCYE_9L92Ot5ywEDIEVS9Tch7BB7D23cBF6QE-xXAs3uhd-5D_ehqhDG9YBg=",
+      "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQG5Hx5YHbXKerFU5QROTjyaEbFDOky4kFDNImcThX7m-9l_dwgvWM_KXo7fCQz22zk6BOhdncR9N5iVxp-nUF2gOk9OLpaWQ2mDrRDlbhVv-ikWxnqXL4f8qIzLpMyuHjK00XMdIk5o5trh1rXHFxrOWXQPjQ=="
+    ],
+    "agent_notes": "Škoda is officially imported and distributed in Morocco by Centrale Automobile Chérifienne (CAC). Prices and current model lineup are confirmed via Moroccan automotive platforms Wandaloo.com and Autonews.ma.",
+    "agent_query_brand_db_name": "Škoda",
+    "agent_query_time": "2026-09-11T23:43:06.640Z",
+    "agent_model_used": "gemini-3.6-flash"
+  },
+  {
+    "brand_en": "Škoda",
+    "model_en": "Scala",
+    "price_mad_min": 194900,
+    "price_mad_max": 281000,
+    "dealer_morocco": "Centrale Automobile Chérifienne (CAC)",
+    "dealer_confidence": "confirmed",
+    "source": "Gemini-grounded research (4 sources)",
+    "source_url": [
+      "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQHN2qS2UaFJppGUBOQ3JRB2NNSDcJA3Azy89dq40TpElxOwBDgr-nUE1WebshifZ8VhMSmbmhC8zHQ3F2Y_VIQjviBvyaTnE4C-HiWJpkpw-C4ejEk=",
+      "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQFv5Tf5-yUQutuWrSGUbd8Islp9VPBOs9mGTquVZlH30aiyogEKNA2PwREhMPcVABgPcZ2L2smte9UXIkKOqeyvRR82jic7hSSzjwQ=",
+      "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQHRRCfepW4dnb9Aa2jq6q7Qe2JhqK425S1pn4VfMAH7ZgsalEpY7fnjsUjtZbU-_LPDCYE_9L92Ot5ywEDIEVS9Tch7BB7D23cBF6QE-xXAs3uhd-5D_ehqhDG9YBg=",
+      "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQG5Hx5YHbXKerFU5QROTjyaEbFDOky4kFDNImcThX7m-9l_dwgvWM_KXo7fCQz22zk6BOhdncR9N5iVxp-nUF2gOk9OLpaWQ2mDrRDlbhVv-ikWxnqXL4f8qIzLpMyuHjK00XMdIk5o5trh1rXHFxrOWXQPjQ=="
+    ],
+    "agent_notes": "Škoda is officially imported and distributed in Morocco by Centrale Automobile Chérifienne (CAC). Prices and current model lineup are confirmed via Moroccan automotive platforms Wandaloo.com and Autonews.ma.",
+    "agent_query_brand_db_name": "Škoda",
+    "agent_query_time": "2026-09-11T23:43:06.640Z",
+    "agent_model_used": "gemini-3.6-flash"
+  },
+  {
+    "brand_en": "Škoda",
+    "model_en": "Superb",
+    "price_mad_min": 379900,
+    "price_mad_max": 493000,
+    "dealer_morocco": "Centrale Automobile Chérifienne (CAC)",
+    "dealer_confidence": "confirmed",
+    "source": "Gemini-grounded research (4 sources)",
+    "source_url": [
+      "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQHN2qS2UaFJppGUBOQ3JRB2NNSDcJA3Azy89dq40TpElxOwBDgr-nUE1WebshifZ8VhMSmbmhC8zHQ3F2Y_VIQjviBvyaTnE4C-HiWJpkpw-C4ejEk=",
+      "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQFv5Tf5-yUQutuWrSGUbd8Islp9VPBOs9mGTquVZlH30aiyogEKNA2PwREhMPcVABgPcZ2L2smte9UXIkKOqeyvRR82jic7hSSzjwQ=",
+      "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQHRRCfepW4dnb9Aa2jq6q7Qe2JhqK425S1pn4VfMAH7ZgsalEpY7fnjsUjtZbU-_LPDCYE_9L92Ot5ywEDIEVS9Tch7BB7D23cBF6QE-xXAs3uhd-5D_ehqhDG9YBg=",
+      "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQG5Hx5YHbXKerFU5QROTjyaEbFDOky4kFDNImcThX7m-9l_dwgvWM_KXo7fCQz22zk6BOhdncR9N5iVxp-nUF2gOk9OLpaWQ2mDrRDlbhVv-ikWxnqXL4f8qIzLpMyuHjK00XMdIk5o5trh1rXHFxrOWXQPjQ=="
+    ],
+    "agent_notes": "Škoda is officially imported and distributed in Morocco by Centrale Automobile Chérifienne (CAC). Prices and current model lineup are confirmed via Moroccan automotive platforms Wandaloo.com and Autonews.ma.",
+    "agent_query_brand_db_name": "Škoda",
+    "agent_query_time": "2026-09-11T23:43:06.640Z",
+    "agent_model_used": "gemini-3.6-flash"
+  }
+]

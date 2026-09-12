@@ -29,9 +29,43 @@ export type GearboxType =
 
 export type RangeStandard = "CLTC" | "WLTP" | "NEDC";
 
+/** "n/a" covers BEVs and any other trim with no `engine` block. */
+export type AspirationType = "turbo" | "naturally-aspirated" | "supercharged" | "twin-charged" | "n/a";
+
+/** Deliberately excludes a "range-extender" value — REEV/EREV is captured orthogonally by `ICanonicalEngine.is_range_extender`, not bundled into this enum, so a price-prediction model sees them as independent features. */
+export type FuelType = "gasoline" | "diesel" | "n/a";
+
+/** "other" covers a real but rare/novel chemistry (e.g. sodium-ion) until it's common enough to earn its own value — proprietary product names (e.g. "Blade") go in `ICanonicalBattery.chemistry_variant`, not here. */
+export type BatteryChemistry = "LFP" | "NMC" | "LTO" | "semi-solid-state" | "other";
+
 export type BrandStatus = "active" | "discontinued" | "bankrupt" | "merged";
 
+/**
+ * "confirmed" vs "unconfirmed" describes whether the block's claim — whatever
+ * it actually is, including a free-text `note` when structured numeric
+ * fields are null — is backed by an actual citation. It is NOT a measure of
+ * how many structured fields are populated. A motor block that reports only
+ * `note: "2,448 hp, ~23,000 N·m wheel torque"` with every numeric field null
+ * can legitimately be "confirmed" if that claim came from a real source
+ * (e.g. a press release for a concept car reporting hp/wheel-torque instead
+ * of the standard kW/motor-torque_nm shape) — don't downgrade confidence
+ * just because the numbers didn't fit the structured fields. Conversely, a
+ * block with every structured field populated is "unconfirmed" if nothing
+ * backs it (the zero-citation gate forces this regardless of self-report).
+ * Field emptiness is already visible in the data itself; confidence answers
+ * a different question ("is this sourced?"), so it stays a single field
+ * rather than splitting into "structured-completeness" + "source-backing".
+ */
 export type Confidence = "confirmed" | "unconfirmed";
+
+/** Nature of the parent_group relationship (ownership/control) — distinct from tech_partner, which is about technology/co-development rather than equity. */
+export type BrandRelationshipType =
+  | "equity_subsidiary"
+  | "jv_brand"
+  | "technology_partner"
+  | "minority_controlling"
+  | "contract_manufactured"
+  | "independent";
 
 export interface IBrand {
   _id?: string;
@@ -42,12 +76,24 @@ export interface IBrand {
   name_en?: string;
   logo_url?: string;
   parent_group?: string;
+  /** Nature of the parent_group relationship (ownership/control), not the tech_partner relationship. */
+  relationship_type?: BrandRelationshipType;
+  /** Parent's equity/control stake in this brand, 0-100. */
+  stake_percentage?: number;
   tech_partner?: string;
   country_origin: string;
   founded_year?: number;
   website?: string;
   status?: BrandStatus;
   status_note?: string;
+  /** Whether this brand is confirmed to sell/export outside mainland China. Undefined/uncertain is distinct from `false` — only set false on positive evidence of domestic-only status. */
+  export_relevant?: boolean;
+  /** Set only by the Tier-1 "Research this brand" write path, only when verified as actually applied — same convention as IPowertrain.last_researched_at / IModel.notable_facts_last_researched_at. Undefined means this brand's identity facts have never been touched by the research pipeline. */
+  last_researched_at?: string;
+  /** Flags a brand whose real-world existence as a currently-operating entity could not be confirmed by audit. */
+  data_quality_flag?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface IPriceRange {
@@ -74,73 +120,45 @@ export interface IModel {
   price_range?: IPriceRange;
   production_status: ProductionStatus;
   unverified?: boolean;
+  /** Free-text prose noting anything genuinely unusual about this model as a whole — e.g. battery-swap capability, an award, a production milestone, a controversy, a first-in-class feature. Model-level (not per-trim), and deliberately separate from the structured canonical Powertrain fields. Optional — omitted when nothing stands out. */
+  notable_facts?: string;
+  /** Same source-citation rule as every other researched field: "confirmed" only when backed by an actual citation, "unconfirmed" otherwise. */
+  notable_facts_confidence?: Confidence;
+  /** Set by lib/applySpecUpdates.ts only when a notable_facts write is verified as actually applied (re-fetched and confirmed) — distinct from `updatedAt`, which changes on any write attempt regardless of whether it succeeded. Undefined means notable_facts has never been touched by the research pipeline (or there is none). */
+  notable_facts_last_researched_at?: string;
+  /** Set only by app/api/models/[id]/fetch-morocco-price/route.ts — a deterministic HTTP scrape of moteur.ma/wandaloo.com (see lib/moteurMaScraper.ts, lib/wandalooScraper.ts), never AI research. Undefined/false means this model has never been checked, or was checked and isn't listed on either site — the UI should omit the price chip in that case, not show an empty one. */
+  morocco_price_dh?: number;
+  morocco_price_source?: "moteur.ma" | "wandaloo.com";
+  morocco_price_url?: string;
+  morocco_price_confirmed?: boolean;
+  /** Set by mongoose (`timestamps: true`); not touched by the research pipeline. Used as the "Original import data" fallback timestamp when last_researched_at/notable_facts_last_researched_at is unset. */
+  createdAt?: string;
+  updatedAt?: string;
 }
 
-export interface IEngineDetails {
-  displacement_l?: number;
-  cylinders?: number;
-  /** Discrete induction type, e.g. "turbo" | "naturally aspirated" — kept separate from fuel_type. */
-  induction?: string;
-  fuel_type?: string;
-  power_kw?: number;
-  max_power_hp?: number;
-  max_torque_nm?: number;
-  confidence?: Confidence;
-}
+export type {
+  ICanonicalEngine as IEngineDetails,
+  ICanonicalMotor as IElectricMotorDetails,
+  ICanonicalBattery as IBatteryDetails,
+  ICanonicalTransmission as ITransmission,
+  ICanonicalPerformance as IPerformance,
+} from "./canonicalPowertrain";
 
-export interface IElectricMotorDetails {
-  motor_type?: string;
-  motor_power_kw?: number;
-  motor_torque_nm?: number;
-  motor_count?: MotorCount;
-  drive_type?: DriveType;
-  /** Free-text caveat, e.g. when power/torque figures are reported as system-level rather than motor-only. */
-  note?: string;
-  confidence?: Confidence;
-}
+import type { ICanonicalPowertrain } from "./canonicalPowertrain";
 
-export interface IBatteryDetails {
-  battery_chemistry?: string;
-  battery_variant?: string;
-  battery_capacity_total_kwh?: number;
-  battery_capacity_usable_kwh?: number;
-  battery_supplier?: string;
-  charging_speed_dc_kw?: number;
-  charging_speed_ac_kw?: number;
-  electric_range_km?: number;
-  range_standard?: RangeStandard;
-  confidence?: Confidence;
-}
-
-export interface ITransmission {
-  type?: GearboxType;
-  gears?: number;
-  confidence?: Confidence;
-}
-
-export interface IPerformance {
-  accel_0_100_s?: number;
-  top_speed_kmh?: number;
-  confidence?: Confidence;
-}
-
-export interface IPowertrain {
-  _id?: string;
-  model_id: string;
-  trim_name: string;
-  energy_type: EnergyType;
-  engine_details?: IEngineDetails;
-  electric_motor_details?: IElectricMotorDetails;
-  battery_details?: IBatteryDetails;
-  transmission?: ITransmission;
-  performance?: IPerformance;
-  combined_range_km?: number;
-  /** Free-text caveat about combined_range_km, e.g. a suspected source mislabeling of the test standard. */
-  combined_range_note?: string;
-  /** Attribution, e.g. "Autohome / Dongchedi". */
-  source?: string;
-  unverified?: boolean;
-}
+/**
+ * The canonical AI-facing Powertrain shape, plus operational fields that are
+ * never part of the Gemini prompt/response (see CANONICAL_POWERTRAIN_FIELD_TEMPLATE's
+ * drift guard in canonicalPowertrain.ts) — they're set directly by our own
+ * write path, not researched.
+ */
+export type IPowertrain = ICanonicalPowertrain & {
+  /** Set by lib/applySpecUpdates.ts only when a write to this document is verified as actually applied (re-fetched and confirmed) — distinct from `updatedAt`, which changes on any write attempt regardless of whether it succeeded. Undefined means this document has never been touched by the research pipeline (still original seed/import data). */
+  last_researched_at?: string;
+  /** Set by mongoose (`timestamps: true`); not touched by the research pipeline. Used as the "Original import data" fallback timestamp when last_researched_at is unset. */
+  createdAt?: string;
+  updatedAt?: string;
+};
 
 /**
  * A per-model market listing for an export market (currently Morocco only).
@@ -163,6 +181,11 @@ export interface IMoroccoListing {
   /** Free-text caveat about dealer_morocco, e.g. dual distribution, corporate-structure clarification, or a source discrepancy pending verification. */
   note?: string;
   source?: string;
+  /** This specific model's listed price on moteur.ma (Morocco's automotive reference site) — distinct from price_mad/price_mad_max, which may come from other Moroccan sources. */
+  moteur_ma_price_dh?: number;
+  /** True only if a moteur.ma listing was actually found for this model (not just the general Morocco distributor). */
+  moteur_ma_confirmed?: boolean;
+  moteur_ma_url?: string;
   matched: boolean;
   last_updated: string;
 }

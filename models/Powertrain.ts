@@ -17,16 +17,19 @@ const GEARBOX_TYPES = [
 ];
 const RANGE_STANDARDS = ["CLTC", "WLTP", "NEDC"];
 const CONFIDENCE_VALUES = ["confirmed", "unconfirmed"];
+const ASPIRATION_VALUES = ["turbo", "naturally-aspirated", "supercharged", "twin-charged", "n/a"];
+const FUEL_TYPE_VALUES = ["gasoline", "diesel", "n/a"];
+const BATTERY_CHEMISTRY_VALUES = ["LFP", "NMC", "LTO", "semi-solid-state", "other"];
 
 const EngineDetailsSchema = new Schema(
   {
     displacement_l: Number,
     cylinders: Number,
-    induction: String,
-    fuel_type: String,
+    aspiration: { type: String, enum: ASPIRATION_VALUES },
+    fuel_type: { type: String, enum: FUEL_TYPE_VALUES },
+    is_range_extender: Boolean,
     power_kw: Number,
-    max_power_hp: Number,
-    max_torque_nm: Number,
+    torque_nm: Number,
     confidence: { type: String, enum: CONFIDENCE_VALUES },
   },
   { _id: false }
@@ -34,11 +37,11 @@ const EngineDetailsSchema = new Schema(
 
 const ElectricMotorDetailsSchema = new Schema(
   {
-    motor_type: String,
-    motor_power_kw: Number,
-    motor_torque_nm: Number,
-    motor_count: { type: String, enum: MOTOR_COUNTS },
-    drive_type: { type: String, enum: DRIVE_TYPES },
+    type: String,
+    power_kw: Number,
+    torque_nm: Number,
+    count: { type: String, enum: MOTOR_COUNTS },
+    drive: { type: String, enum: DRIVE_TYPES },
     note: String,
     confidence: { type: String, enum: CONFIDENCE_VALUES },
   },
@@ -47,15 +50,15 @@ const ElectricMotorDetailsSchema = new Schema(
 
 const BatteryDetailsSchema = new Schema(
   {
-    battery_chemistry: String,
+    chemistry: { type: String, enum: BATTERY_CHEMISTRY_VALUES },
     battery_variant: String,
-    battery_capacity_total_kwh: Number,
-    battery_capacity_usable_kwh: Number,
-    battery_supplier: String,
-    charging_speed_dc_kw: Number,
-    charging_speed_ac_kw: Number,
-    electric_range_km: Number,
-    range_standard: { type: String, enum: RANGE_STANDARDS },
+    capacity_total_kwh: Number,
+    capacity_usable_kwh: Number,
+    supplier: String,
+    dc_charge_kw: Number,
+    ac_charge_kw: Number,
+    ev_range_km: Number,
+    ev_range_standard: { type: String, enum: RANGE_STANDARDS },
     confidence: { type: String, enum: CONFIDENCE_VALUES },
   },
   { _id: false }
@@ -64,7 +67,7 @@ const BatteryDetailsSchema = new Schema(
 const TransmissionSchema = new Schema(
   {
     type: { type: String, enum: GEARBOX_TYPES },
-    gears: Number,
+    speed_count: Number,
     confidence: { type: String, enum: CONFIDENCE_VALUES },
   },
   { _id: false }
@@ -84,19 +87,27 @@ const PowertrainSchema = new Schema<PowertrainDoc>(
     model_id: { type: Schema.Types.ObjectId, ref: "Model", required: true },
     trim_name: { type: String, required: true },
     energy_type: { type: String, enum: ENERGY_TYPES, required: true },
-    engine_details: { type: EngineDetailsSchema },
-    electric_motor_details: { type: ElectricMotorDetailsSchema },
-    battery_details: { type: BatteryDetailsSchema },
+    engine: { type: EngineDetailsSchema },
+    motor: { type: ElectricMotorDetailsSchema },
+    battery: { type: BatteryDetailsSchema },
     transmission: { type: TransmissionSchema },
     performance: { type: PerformanceSchema },
     combined_range_km: { type: Number },
     combined_range_note: { type: String },
     source: { type: String },
+    confidence: { type: String, enum: CONFIDENCE_VALUES },
     unverified: { type: Boolean, default: false },
+    /** Set only by lib/applySpecUpdates.ts, only when a write is verified as actually applied — see the comment on IPowertrain.last_researched_at in types/index.ts. */
+    last_researched_at: { type: Date },
   },
   { timestamps: true }
 );
 
 PowertrainSchema.index({ model_id: 1 });
 
+// See the matching comment in models/Model.ts: `models.Powertrain || model(...)`
+// reuses whatever schema is already cached in mongoose's process-global
+// registry, and Next.js Fast Refresh does not clear that cache in dev — a
+// field added here needs a full dev-server restart before writes to it will
+// actually persist, or they silently no-op under strict mode.
 export default models.Powertrain || model<PowertrainDoc>("Powertrain", PowertrainSchema);

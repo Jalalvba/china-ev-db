@@ -4,6 +4,11 @@ import type { IBrand } from "@/types";
  * parent_group/tech_partner are canonicalized at the source (see
  * scripts/migrate-parent-groups.ts) — this module just decides how to
  * cluster already-clean brands for the homepage, not how to spell anything.
+ *
+ * Grouping is strictly by ownership (parent_group), never by tech_partner.
+ * tech_partner (e.g. Huawei) is display-only — a badge on the brand card,
+ * not a clustering axis — so a brand's group never changes based on who
+ * co-develops its tech.
  */
 
 /** Brands whose own name IS the canonical group label, even though they have no parent_group of their own (they're the flagship the sub-brands point to). */
@@ -12,23 +17,18 @@ const ANCHOR_BRAND_TO_GROUP: Record<string, string> = {
   Geely: "Geely Holding Group",
 };
 
-const TECH_ECOSYSTEM_LABEL: Record<string, string> = {
-  Huawei: "Huawei / HIMA Ecosystem",
-};
-
 export interface BrandGroup {
   key: string;
   label: string;
-  isEcosystem: boolean;
   brands: IBrand[];
 }
 
 /**
- * Groups brands by manufacturer for the homepage. Priority: a Huawei/HIMA-style
- * tech ecosystem groups across manufacturers first (since that's the more
- * relevant cluster for those brands), then parent_group as stored, then a
- * brand's own name if other brands point to it as their parent, else the
- * brand stands alone.
+ * Groups brands by manufacturer (parent_group) for the homepage. Priority:
+ * parent_group as stored (walking the chain when it points at another brand
+ * that itself belongs to a bigger group, e.g. Foton Pickup -> "Foton" ->
+ * "BAIC"), then a brand's own name if other brands point to it as their
+ * parent, else the brand stands alone.
  */
 export function groupBrands(brands: IBrand[]): { groups: BrandGroup[]; standalone: IBrand[] } {
   const names = new Set(brands.map((b) => b.name));
@@ -39,7 +39,6 @@ export function groupBrands(brands: IBrand[]): { groups: BrandGroup[]; standalon
   // conglomerate label directly — walk the chain instead of stopping one
   // level up, with a depth cap as a defensive measure against any cycle.
   const keyFor = (b: IBrand, depth = 0): string | undefined => {
-    if (b.tech_partner) return TECH_ECOSYSTEM_LABEL[b.tech_partner] ?? `${b.tech_partner} Ecosystem`;
     if (b.parent_group) {
       if (depth < 5) {
         const parentBrand = byName.get(b.parent_group);
@@ -81,14 +80,13 @@ export function groupBrands(brands: IBrand[]): { groups: BrandGroup[]; standalon
       standalone.push(...groupBrandsList);
       continue;
     }
-    const isEcosystem = Object.values(TECH_ECOSYSTEM_LABEL).includes(key) || key.endsWith(" Ecosystem");
     groupBrandsList.sort((a, b) => {
       const aAnchor = a.name === key || ANCHOR_BRAND_TO_GROUP[a.name] === key;
       const bAnchor = b.name === key || ANCHOR_BRAND_TO_GROUP[b.name] === key;
       if (aAnchor !== bAnchor) return aAnchor ? -1 : 1;
       return a.name.localeCompare(b.name);
     });
-    groups.push({ key, label: key, isEcosystem, brands: groupBrandsList });
+    groups.push({ key, label: key, brands: groupBrandsList });
   }
 
   groups.sort((a, b) => b.brands.length - a.brands.length || a.label.localeCompare(b.label));

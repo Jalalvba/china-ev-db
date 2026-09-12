@@ -13,7 +13,8 @@
 //   npm run migrate-parent-groups -- --dry-run   (prints the diff, writes nothing)
 //   npm run migrate-parent-groups                (prints the diff, then applies it)
 
-import "dotenv/config";
+import dotenv from "dotenv";
+dotenv.config({ quiet: true });
 import mongoose from "mongoose";
 import Brand from "../models/Brand";
 

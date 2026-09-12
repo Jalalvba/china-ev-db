@@ -1,10 +1,20 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { connectToDatabase } from "@/lib/db";
+// Side-effect import only: registers the "Brand" model so .populate("brand_id")
+// below can resolve it on a cold server, regardless of request order (see the
+// same fix/explanation in scripts/tech-spec-agent.ts).
+import "@/models/Brand";
 import ModelSchema from "@/models/Model";
 import Powertrain from "@/models/Powertrain";
 import MoroccoListing from "@/models/MoroccoListing";
 import type { IBrand, IModel, IMoroccoListing, IPowertrain } from "@/types";
+import { kwToHp } from "@/lib/units";
+import { formatRelativeTime } from "@/lib/relativeTime";
+import TechSpecUpdater from "@/app/TechSpecUpdater";
+import ManualResearchImporter from "@/app/ManualResearchImporter";
+import ExportForManualResearchButton from "@/app/ExportForManualResearchButton";
+import MoroccoPriceFetcher from "@/app/MoroccoPriceFetcher";
 
 export const dynamic = "force-dynamic";
 
@@ -19,6 +29,19 @@ async function getData(
   const powertrains = await Powertrain.find({ model_id: id }).lean();
   const moroccoListing = await MoroccoListing.findOne({ model_id: id }).lean();
   return JSON.parse(JSON.stringify({ model, powertrains, moroccoListing }));
+}
+
+/** True if `block` has at least one populated field among `keys` — a block that's merely `{ confidence: "confirmed" }` or `{}` (no meaningful data, e.g. an ICE-only trim's motor/battery) should render as absent, not as a row full of "?" placeholders. */
+function hasFields<T extends object>(block: T | undefined | null, keys: (keyof T)[]): boolean {
+  if (!block) return false;
+  return keys.some((k) => block[k] !== undefined && block[k] !== null && block[k] !== "");
+}
+
+/** Distinguishes AI-researched data from data that's never been touched by the research pipeline (still whatever scripts/seed.ts or scripts/import-deepseek.ts originally wrote). */
+function provenanceLabel(p: IPowertrain): string {
+  if (p.last_researched_at) return `Researched ${formatRelativeTime(p.last_researched_at)}`;
+  if (p.createdAt) return `Original import data (${formatRelativeTime(p.createdAt)})`;
+  return "Original import data";
 }
 
 function Row({ label, values }: { label: string; values: (string | number | undefined)[] }) {
@@ -47,9 +70,20 @@ export default async function ModelPage({ params }: { params: Promise<{ id: stri
       <Link href={`/brands/${brand._id}`} className="text-sm text-zinc-500 dark:text-zinc-400 hover:underline">
         ← {brand.name}
       </Link>
-      <h1 className="text-2xl font-bold mt-2">
+      <h1 className="text-2xl font-bold mt-2 flex items-center gap-2 flex-wrap">
         {brand.name} {model.name}
         {model.generation ? ` (${model.generation})` : ""}
+        {model.morocco_price_confirmed && model.morocco_price_dh && (
+          <a
+            href={model.morocco_price_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            title={model.morocco_price_source}
+            className="text-sm font-normal px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400 hover:underline"
+          >
+            💰 {model.morocco_price_dh.toLocaleString()} DH
+          </a>
+        )}
       </h1>
       <div className="text-sm text-zinc-600 dark:text-zinc-400 flex flex-wrap gap-x-4 gap-y-1 mt-1">
         <span>{model.segment}</span>
@@ -76,6 +110,30 @@ export default async function ModelPage({ params }: { params: Promise<{ id: stri
           )}
         </p>
       )}
+      {model.notable_facts && (
+        <div className="mt-3 p-3 rounded-lg bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-sm">
+          <span className="font-medium">Notable:</span> {model.notable_facts}
+          {model.notable_facts_confidence === "unconfirmed" && (
+            <span className="ml-2 px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400 text-xs">
+              unconfirmed
+            </span>
+          )}
+          <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
+            {model.notable_facts_last_researched_at
+              ? `Researched ${formatRelativeTime(model.notable_facts_last_researched_at)}`
+              : `Original import data${model.createdAt ? ` (${formatRelativeTime(model.createdAt)})` : ""}`}
+          </p>
+        </div>
+      )}
+
+      <div className="flex items-center gap-2 flex-wrap">
+        <TechSpecUpdater scope="model" id={model._id as string} />
+        <MoroccoPriceFetcher id={model._id as string} />
+        <ExportForManualResearchButton modelDbId={model._id as string} />
+      </div>
+
+      <ManualResearchImporter modelDbId={model._id as string} />
+
       {moroccoListing && (
         <div className="mt-3 p-3 rounded-lg bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-sm">
           <span className="font-medium">🇲🇦 Available in Morocco:</span>{" "}
@@ -93,6 +151,24 @@ export default async function ModelPage({ params }: { params: Promise<{ id: stri
           )}
           {moroccoListing.note && (
             <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">{moroccoListing.note}</p>
+          )}
+          {moroccoListing.moteur_ma_confirmed && moroccoListing.moteur_ma_price_dh && (
+            <p className="mt-2">
+              {moroccoListing.moteur_ma_url ? (
+                <a
+                  href={moroccoListing.moteur_ma_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-block px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400 text-xs hover:underline"
+                >
+                  🇲🇦 moteur.ma: {moroccoListing.moteur_ma_price_dh.toLocaleString()} DH
+                </a>
+              ) : (
+                <span className="inline-block px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400 text-xs">
+                  🇲🇦 moteur.ma: {moroccoListing.moteur_ma_price_dh.toLocaleString()} DH
+                </span>
+              )}
+            </p>
           )}
         </div>
       )}
@@ -113,66 +189,71 @@ export default async function ModelPage({ params }: { params: Promise<{ id: stri
               <Row
                 label="Engine"
                 values={powertrains.map((p) =>
-                  p.engine_details
-                    ? `${p.engine_details.displacement_l ?? "?"}L ${p.engine_details.cylinders ?? "?"}-cyl ${p.engine_details.induction ?? ""} ${p.engine_details.fuel_type ?? ""}${
-                        p.engine_details.confidence === "unconfirmed" ? " ⚠" : ""
-                      }`
+                  hasFields(p.engine, ["displacement_l", "cylinders", "aspiration", "fuel_type"])
+                    ? `${p.engine!.displacement_l ?? "?"}L ${p.engine!.cylinders ?? "?"}-cyl ${p.engine!.aspiration ?? ""} ${p.engine!.fuel_type ?? ""}${
+                        p.engine!.is_range_extender ? " (range extender)" : ""
+                      }${p.engine!.confidence === "unconfirmed" ? " ⚠" : ""}`
                     : undefined
                 )}
               />
               <Row
                 label="Engine Power / Torque"
                 values={powertrains.map((p) =>
-                  p.engine_details
-                    ? `${p.engine_details.power_kw ?? "?"} kW / ${p.engine_details.max_power_hp ?? "?"} hp / ${p.engine_details.max_torque_nm ?? "?"} Nm`
+                  hasFields(p.engine, ["power_kw", "torque_nm"])
+                    ? `${p.engine!.power_kw ?? "?"} kW / ${kwToHp(p.engine!.power_kw) ?? "?"} hp / ${p.engine!.torque_nm ?? "?"} Nm`
                     : undefined
                 )}
               />
               <Row
                 label="Motor"
                 values={powertrains.map((p) =>
-                  p.electric_motor_details
-                    ? `${p.electric_motor_details.motor_count ?? ""} ${p.electric_motor_details.motor_type ?? ""} (${p.electric_motor_details.drive_type ?? ""})`
+                  // "drive" (FWD/RWD/AWD) alone does NOT imply an electric motor exists —
+                  // it's a drivetrain-layout fact Gemini reports even for pure-ICE trims
+                  // (our schema has no better place to put it), so it's deliberately
+                  // excluded from this check: only count/type/power/torque indicate a
+                  // real motor block worth showing under a "Motor" heading.
+                  hasFields(p.motor, ["count", "type", "power_kw", "torque_nm"])
+                    ? `${p.motor!.count ?? ""} ${p.motor!.type ?? ""} (${p.motor!.drive ?? ""})`
                     : undefined
                 )}
               />
               <Row
                 label="Motor Power / Torque"
                 values={powertrains.map((p) =>
-                  p.electric_motor_details
-                    ? `${p.electric_motor_details.motor_power_kw ?? "?"} kW / ${p.electric_motor_details.motor_torque_nm ?? "?"} Nm${
-                        p.electric_motor_details.note ? " ⚠" : ""
+                  hasFields(p.motor, ["power_kw", "torque_nm"])
+                    ? `${p.motor!.power_kw ?? "?"} kW / ${p.motor!.torque_nm ?? "?"} Nm${
+                        p.motor!.note ? " ⚠" : ""
                       }`
                     : undefined
                 )}
               />
               <Row
                 label="Motor Note"
-                values={powertrains.map((p) => p.electric_motor_details?.note)}
+                values={powertrains.map((p) => p.motor?.note)}
               />
               <Row
                 label="Battery"
                 values={powertrains.map((p) =>
-                  p.battery_details
-                    ? `${p.battery_details.battery_capacity_total_kwh ?? "?"} kWh ${p.battery_details.battery_chemistry ?? ""}${
-                        p.battery_details.battery_variant ? ` (${p.battery_details.battery_variant})` : ""
-                      } (${p.battery_details.battery_supplier ?? "?"})`
+                  hasFields(p.battery, ["capacity_total_kwh", "chemistry", "battery_variant", "supplier"])
+                    ? `${p.battery!.capacity_total_kwh ?? "?"} kWh ${p.battery!.chemistry ?? ""}${
+                        p.battery!.battery_variant ? ` (${p.battery!.battery_variant})` : ""
+                      } (${p.battery!.supplier ?? "?"})`
                     : undefined
                 )}
               />
               <Row
                 label="Charging DC / AC"
                 values={powertrains.map((p) =>
-                  p.battery_details
-                    ? `${p.battery_details.charging_speed_dc_kw ?? "?"} kW / ${p.battery_details.charging_speed_ac_kw ?? "?"} kW`
+                  hasFields(p.battery, ["dc_charge_kw", "ac_charge_kw"])
+                    ? `${p.battery!.dc_charge_kw ?? "?"} kW / ${p.battery!.ac_charge_kw ?? "?"} kW`
                     : undefined
                 )}
               />
               <Row
                 label="Electric Range"
                 values={powertrains.map((p) =>
-                  p.battery_details?.electric_range_km
-                    ? `${p.battery_details.electric_range_km} km (${p.battery_details.range_standard ?? "?"})`
+                  p.battery?.ev_range_km
+                    ? `${p.battery.ev_range_km} km (${p.battery.ev_range_standard ?? "?"})`
                     : undefined
                 )}
               />
@@ -180,7 +261,7 @@ export default async function ModelPage({ params }: { params: Promise<{ id: stri
                 label="Gearbox"
                 values={powertrains.map((p) =>
                   p.transmission?.type
-                    ? `${p.transmission.type}${p.transmission.gears ? ` (${p.transmission.gears}-spd)` : ""}`
+                    ? `${p.transmission.type}${p.transmission.speed_count ? ` (${p.transmission.speed_count}-spd)` : ""}`
                     : undefined
                 )}
               />
@@ -207,6 +288,7 @@ export default async function ModelPage({ params }: { params: Promise<{ id: stri
                 )}
               />
               <Row label="Source" values={powertrains.map((p) => p.source)} />
+              <Row label="Provenance" values={powertrains.map((p) => provenanceLabel(p))} />
             </tbody>
           </table>
         </div>

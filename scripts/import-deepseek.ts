@@ -20,7 +20,8 @@
 //   via $setOnInsert), existing models/powertrains are matched by name/trim and
 //   updated in place, new ones are inserted. Nothing is deleted.
 
-import "dotenv/config";
+import dotenv from "dotenv";
+dotenv.config({ quiet: true });
 import fs from "fs";
 import path from "path";
 import mongoose from "mongoose";
@@ -37,7 +38,6 @@ import {
   parseDcKw,
   parseCombinedRange,
   num,
-  kwToHp,
   correctRangeStandard,
   correctGearbox,
   motorCountFromNumber,
@@ -73,8 +73,8 @@ interface RawVariant {
     cylinders?: number;
     induction?: string;
     max_power_kw?: number;
-    max_power_hp?: number;
-    max_torque_nm?: number;
+    
+    torque_nm?: number;
   }) | null;
   motor?: (RawDetailBlock & {
     type?: string;
@@ -146,19 +146,18 @@ function normalizeVariant(v: RawVariant) {
         induction: resolveInduction(v.engine.induction),
         fuel_type: "Gasoline",
         power_kw: num(v.engine.max_power_kw),
-        max_power_hp: num(v.engine.max_power_hp) ?? kwToHp(num(v.engine.max_power_kw)),
-        max_torque_nm: num(v.engine.max_torque_nm),
+        torque_nm: num(v.engine.torque_nm),
         confidence: normalizeConfidence(v.engine.confidence),
       }
     : undefined;
 
   const motor = v.motor
     ? {
-        motor_type: resolveMotorType(v.motor.type),
-        motor_power_kw: num(v.motor.power_kw),
-        motor_torque_nm: num(v.motor.torque_nm),
-        motor_count: motorCountFromNumber(v.motor.count),
-        drive_type: v.motor.drive,
+        type: resolveMotorType(v.motor.type),
+        power_kw: num(v.motor.power_kw),
+        torque_nm: num(v.motor.torque_nm),
+        count: motorCountFromNumber(v.motor.count),
+        drive: v.motor.drive,
         note: v.motor.note,
         confidence: normalizeConfidence(v.motor.confidence),
       }
@@ -168,15 +167,15 @@ function normalizeVariant(v: RawVariant) {
 
   const battery = v.battery
     ? {
-        battery_chemistry: chemParsed.chemistry,
+        chemistry: chemParsed.chemistry,
         battery_variant: chemParsed.battery_variant,
-        battery_capacity_total_kwh: num(v.battery.capacity_total_kwh),
-        battery_capacity_usable_kwh: num(v.battery.capacity_usable_kwh),
-        battery_supplier: translateBatteryTerms(v.battery.supplier) ?? chemParsed.supplier_hint,
-        charging_speed_dc_kw: parseDcKw(v.battery.dc_charge_kw),
-        charging_speed_ac_kw: parseDcKw(v.battery.ac_charge_kw),
-        electric_range_km: num(v.battery.ev_range_km),
-        range_standard: correctRangeStandard(v.battery.ev_range_standard),
+        capacity_total_kwh: num(v.battery.capacity_total_kwh),
+        capacity_usable_kwh: num(v.battery.capacity_usable_kwh),
+        supplier: translateBatteryTerms(v.battery.supplier) ?? chemParsed.supplier_hint,
+        dc_charge_kw: parseDcKw(v.battery.dc_charge_kw),
+        ac_charge_kw: parseDcKw(v.battery.ac_charge_kw),
+        ev_range_km: num(v.battery.ev_range_km),
+        ev_range_standard: correctRangeStandard(v.battery.ev_range_standard),
         confidence: normalizeConfidence(v.battery.confidence),
       }
     : undefined;
@@ -209,14 +208,15 @@ function normalizeVariant(v: RawVariant) {
   return {
     trim_name: v.trim,
     energy_type,
-    engine_details: engine,
-    electric_motor_details: motor,
-    battery_details: battery,
+    engine,
+    motor,
+    battery,
     transmission,
     performance,
     combined_range_km: parseCombinedRange(v.battery?.combined_range_km),
     combined_range_note: v.battery?.combined_range_note,
     source: v.source,
+    confidence: normalizeConfidence(v.confidence),
     unverified: isUnverified,
   };
 }

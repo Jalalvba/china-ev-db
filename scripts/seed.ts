@@ -1,4 +1,5 @@
-import "dotenv/config";
+import dotenv from "dotenv";
+dotenv.config({ quiet: true });
 import mongoose from "mongoose";
 import Brand from "../models/Brand";
 import ModelSchema from "../models/Model";
@@ -63,24 +64,23 @@ const DATA: SeedBrand[] = [
           {
             trim_name: "DM-i 128KM 进取型",
             energy_type: "PHEV",
-            engine_details: {
+            engine: {
               displacement_l: 1.5,
               cylinders: 4,
               fuel_type: "Gasoline (naturally aspirated)",
-              max_power_hp: 101,
             },
-            electric_motor_details: {
-              motor_type: "PMSM",
-              motor_power_kw: 120,
-              motor_count: "single",
-              drive_type: "FWD",
+            motor: {
+              type: "PMSM",
+              power_kw: 120,
+              count: "single",
+              drive: "FWD",
             },
-            battery_details: {
-              battery_chemistry: "LFP (Blade)",
-              battery_capacity_total_kwh: 15.87,
-              battery_supplier: "BYD FinDreams",
-              electric_range_km: 128,
-              range_standard: "CLTC",
+            battery: {
+              chemistry: "LFP (Blade)",
+              capacity_total_kwh: 15.87,
+              supplier: "BYD FinDreams",
+              ev_range_km: 128,
+              ev_range_standard: "CLTC",
             },
             gearbox: "CVT",
             gearbox_gears: 1,
@@ -90,24 +90,23 @@ const DATA: SeedBrand[] = [
           {
             trim_name: "DM-i 210KM 进取型",
             energy_type: "PHEV",
-            engine_details: {
+            engine: {
               displacement_l: 1.5,
               cylinders: 4,
               fuel_type: "Gasoline (naturally aspirated)",
-              max_power_hp: 101,
             },
-            electric_motor_details: {
-              motor_type: "PMSM",
-              motor_power_kw: 120,
-              motor_count: "single",
-              drive_type: "FWD",
+            motor: {
+              type: "PMSM",
+              power_kw: 120,
+              count: "single",
+              drive: "FWD",
             },
-            battery_details: {
-              battery_chemistry: "LFP (Blade)",
-              battery_capacity_total_kwh: 25.28,
-              battery_supplier: "BYD FinDreams",
-              electric_range_km: 210,
-              range_standard: "CLTC",
+            battery: {
+              chemistry: "LFP (Blade)",
+              capacity_total_kwh: 25.28,
+              supplier: "BYD FinDreams",
+              ev_range_km: 210,
+              ev_range_standard: "CLTC",
             },
             gearbox: "CVT",
             gearbox_gears: 1,
@@ -133,19 +132,19 @@ const DATA: SeedBrand[] = [
           {
             trim_name: "605KM 领先型",
             energy_type: "BEV",
-            electric_motor_details: {
-              motor_type: "PMSM",
-              motor_power_kw: 240,
-              motor_count: "single",
-              drive_type: "FWD",
+            motor: {
+              type: "PMSM",
+              power_kw: 240,
+              count: "single",
+              drive: "FWD",
             },
-            battery_details: {
-              battery_chemistry: "LFP (Blade, 2nd gen)",
-              battery_capacity_total_kwh: 75.616,
-              battery_supplier: "BYD FinDreams",
-              charging_speed_dc_kw: 1000,
-              electric_range_km: 620,
-              range_standard: "CLTC",
+            battery: {
+              chemistry: "LFP (Blade, 2nd gen)",
+              capacity_total_kwh: 75.616,
+              supplier: "BYD FinDreams",
+              dc_charge_kw: 1000,
+              ev_range_km: 620,
+              ev_range_standard: "CLTC",
             },
             gearbox: "single-speed reducer",
             gearbox_gears: 1,
@@ -156,20 +155,20 @@ const DATA: SeedBrand[] = [
           {
             trim_name: "710KM 卓越型",
             energy_type: "BEV",
-            electric_motor_details: {
-              motor_type: "PMSM",
-              motor_power_kw: 270,
-              motor_torque_nm: 305,
-              motor_count: "single",
-              drive_type: "FWD",
+            motor: {
+              type: "PMSM",
+              power_kw: 270,
+              torque_nm: 305,
+              count: "single",
+              drive: "FWD",
             },
-            battery_details: {
-              battery_chemistry: "LFP (Blade, 2nd gen)",
-              battery_capacity_total_kwh: 82.732,
-              battery_supplier: "BYD FinDreams",
-              charging_speed_dc_kw: 1000,
-              electric_range_km: 710,
-              range_standard: "CLTC",
+            battery: {
+              chemistry: "LFP (Blade, 2nd gen)",
+              capacity_total_kwh: 82.732,
+              supplier: "BYD FinDreams",
+              dc_charge_kw: 1000,
+              ev_range_km: 710,
+              ev_range_standard: "CLTC",
             },
             gearbox: "single-speed reducer",
             gearbox_gears: 1,
@@ -197,23 +196,22 @@ const DATA: SeedBrand[] = [
           {
             trim_name: "205KM 领先型",
             energy_type: "PHEV",
-            engine_details: {
+            engine: {
               displacement_l: 1.5,
               cylinders: 4,
               fuel_type: "Gasoline (naturally aspirated)",
-              max_power_hp: 101,
             },
-            electric_motor_details: {
-              motor_type: "PMSM",
-              motor_power_kw: 175,
-              motor_count: "single",
-              drive_type: "FWD",
+            motor: {
+              type: "PMSM",
+              power_kw: 175,
+              count: "single",
+              drive: "FWD",
             },
-            battery_details: {
-              battery_chemistry: "LFP (Blade)",
-              battery_supplier: "BYD FinDreams",
-              electric_range_km: 205,
-              range_standard: "CLTC",
+            battery: {
+              chemistry: "LFP (Blade)",
+              supplier: "BYD FinDreams",
+              ev_range_km: 205,
+              ev_range_standard: "CLTC",
             },
             gearbox: "CVT",
             gearbox_gears: 1,
@@ -223,23 +221,22 @@ const DATA: SeedBrand[] = [
           {
             trim_name: "310KM 卓越型",
             energy_type: "PHEV",
-            engine_details: {
+            engine: {
               displacement_l: 1.5,
               cylinders: 4,
               fuel_type: "Gasoline (naturally aspirated)",
-              max_power_hp: 101,
             },
-            electric_motor_details: {
-              motor_type: "PMSM",
-              motor_power_kw: 175,
-              motor_count: "single",
-              drive_type: "FWD",
+            motor: {
+              type: "PMSM",
+              power_kw: 175,
+              count: "single",
+              drive: "FWD",
             },
-            battery_details: {
-              battery_chemistry: "LFP (Blade)",
-              battery_supplier: "BYD FinDreams",
-              electric_range_km: 310,
-              range_standard: "CLTC",
+            battery: {
+              chemistry: "LFP (Blade)",
+              supplier: "BYD FinDreams",
+              ev_range_km: 310,
+              ev_range_standard: "CLTC",
             },
             gearbox: "CVT",
             gearbox_gears: 1,
@@ -266,19 +263,19 @@ const DATA: SeedBrand[] = [
           {
             trim_name: "705KM 闪充尊贵型",
             energy_type: "BEV",
-            electric_motor_details: {
-              motor_type: "PMSM",
-              motor_power_kw: 240,
-              motor_torque_nm: 305,
-              motor_count: "single",
-              drive_type: "FWD",
+            motor: {
+              type: "PMSM",
+              power_kw: 240,
+              torque_nm: 305,
+              count: "single",
+              drive: "FWD",
             },
-            battery_details: {
-              battery_chemistry: "LFP (Blade, 2nd gen)",
-              battery_capacity_total_kwh: 69.07,
-              battery_supplier: "BYD FinDreams",
-              electric_range_km: 705,
-              range_standard: "CLTC",
+            battery: {
+              chemistry: "LFP (Blade, 2nd gen)",
+              capacity_total_kwh: 69.07,
+              supplier: "BYD FinDreams",
+              ev_range_km: 705,
+              ev_range_standard: "CLTC",
             },
             gearbox: "single-speed reducer",
             gearbox_gears: 1,
@@ -305,17 +302,17 @@ const DATA: SeedBrand[] = [
           {
             trim_name: "701KM 激光雷达尊享型",
             energy_type: "BEV",
-            electric_motor_details: {
-              motor_type: "PMSM",
-              motor_count: "single",
-              drive_type: "RWD",
+            motor: {
+              type: "PMSM",
+              count: "single",
+              drive: "RWD",
             },
-            battery_details: {
-              battery_chemistry: "LFP (Blade)",
-              battery_supplier: "BYD FinDreams",
-              charging_speed_dc_kw: 1000,
-              electric_range_km: 701,
-              range_standard: "CLTC",
+            battery: {
+              chemistry: "LFP (Blade)",
+              supplier: "BYD FinDreams",
+              dc_charge_kw: 1000,
+              ev_range_km: 701,
+              ev_range_standard: "CLTC",
             },
             gearbox: "single-speed reducer",
             gearbox_gears: 1,
@@ -325,16 +322,16 @@ const DATA: SeedBrand[] = [
           {
             trim_name: "四驱激光雷达旗舰型",
             energy_type: "BEV",
-            electric_motor_details: {
-              motor_type: "PMSM",
-              motor_count: "dual",
-              drive_type: "AWD",
+            motor: {
+              type: "PMSM",
+              count: "dual",
+              drive: "AWD",
             },
-            battery_details: {
-              battery_chemistry: "LFP (Blade)",
-              battery_supplier: "BYD FinDreams",
-              charging_speed_dc_kw: 1000,
-              range_standard: "CLTC",
+            battery: {
+              chemistry: "LFP (Blade)",
+              supplier: "BYD FinDreams",
+              dc_charge_kw: 1000,
+              ev_range_standard: "CLTC",
             },
             gearbox: "single-speed reducer",
             gearbox_gears: 1,
@@ -361,19 +358,19 @@ const DATA: SeedBrand[] = [
           {
             trim_name: "670KM 激光雷达尊享型",
             energy_type: "BEV",
-            electric_motor_details: {
-              motor_type: "PMSM",
-              motor_power_kw: 580,
-              motor_count: "single",
-              drive_type: "RWD",
+            motor: {
+              type: "PMSM",
+              power_kw: 580,
+              count: "single",
+              drive: "RWD",
             },
-            battery_details: {
-              battery_chemistry: "LFP (Blade)",
-              battery_capacity_total_kwh: 100.531,
-              battery_supplier: "BYD FinDreams",
-              charging_speed_dc_kw: 1000,
-              electric_range_km: 670,
-              range_standard: "CLTC",
+            battery: {
+              chemistry: "LFP (Blade)",
+              capacity_total_kwh: 100.531,
+              supplier: "BYD FinDreams",
+              dc_charge_kw: 1000,
+              ev_range_km: 670,
+              ev_range_standard: "CLTC",
             },
             gearbox: "single-speed reducer",
             gearbox_gears: 1,
@@ -382,18 +379,18 @@ const DATA: SeedBrand[] = [
           {
             trim_name: "四驱激光雷达旗舰型",
             energy_type: "BEV",
-            electric_motor_details: {
-              motor_type: "PMSM",
-              motor_count: "dual",
-              drive_type: "AWD",
+            motor: {
+              type: "PMSM",
+              count: "dual",
+              drive: "AWD",
             },
-            battery_details: {
-              battery_chemistry: "LFP (Blade)",
-              battery_capacity_total_kwh: 100.531,
-              battery_supplier: "BYD FinDreams",
-              charging_speed_dc_kw: 1000,
-              electric_range_km: 600,
-              range_standard: "CLTC",
+            battery: {
+              chemistry: "LFP (Blade)",
+              capacity_total_kwh: 100.531,
+              supplier: "BYD FinDreams",
+              dc_charge_kw: 1000,
+              ev_range_km: 600,
+              ev_range_standard: "CLTC",
             },
             gearbox: "single-speed reducer",
             gearbox_gears: 1,
@@ -421,19 +418,19 @@ const DATA: SeedBrand[] = [
           {
             trim_name: "305km 自由版",
             energy_type: "BEV",
-            electric_motor_details: {
-              motor_type: "PMSM",
-              motor_power_kw: 55,
-              motor_torque_nm: 135,
-              motor_count: "single",
-              drive_type: "FWD",
+            motor: {
+              type: "PMSM",
+              power_kw: 55,
+              torque_nm: 135,
+              count: "single",
+              drive: "FWD",
             },
-            battery_details: {
-              battery_chemistry: "LFP (Blade)",
-              battery_capacity_total_kwh: 30.08,
-              battery_supplier: "BYD FinDreams",
-              electric_range_km: 305,
-              range_standard: "CLTC",
+            battery: {
+              chemistry: "LFP (Blade)",
+              capacity_total_kwh: 30.08,
+              supplier: "BYD FinDreams",
+              ev_range_km: 305,
+              ev_range_standard: "CLTC",
             },
             gearbox: "single-speed reducer",
             gearbox_gears: 1,
@@ -442,19 +439,19 @@ const DATA: SeedBrand[] = [
           {
             trim_name: "405km 飞翔版",
             energy_type: "BEV",
-            electric_motor_details: {
-              motor_type: "PMSM",
-              motor_power_kw: 55,
-              motor_torque_nm: 135,
-              motor_count: "single",
-              drive_type: "FWD",
+            motor: {
+              type: "PMSM",
+              power_kw: 55,
+              torque_nm: 135,
+              count: "single",
+              drive: "FWD",
             },
-            battery_details: {
-              battery_chemistry: "LFP (Blade)",
-              battery_capacity_total_kwh: 38.88,
-              battery_supplier: "BYD FinDreams",
-              electric_range_km: 405,
-              range_standard: "CLTC",
+            battery: {
+              chemistry: "LFP (Blade)",
+              capacity_total_kwh: 38.88,
+              supplier: "BYD FinDreams",
+              ev_range_km: 405,
+              ev_range_standard: "CLTC",
             },
             gearbox: "single-speed reducer",
             gearbox_gears: 1,
@@ -480,19 +477,19 @@ const DATA: SeedBrand[] = [
           {
             trim_name: "420KM 自由版",
             energy_type: "BEV",
-            electric_motor_details: {
-              motor_type: "PMSM",
-              motor_power_kw: 70,
-              motor_count: "single",
-              drive_type: "FWD",
+            motor: {
+              type: "PMSM",
+              power_kw: 70,
+              count: "single",
+              drive: "FWD",
             },
-            battery_details: {
-              battery_chemistry: "LFP (Blade)",
-              battery_capacity_total_kwh: 45.12,
-              battery_supplier: "BYD FinDreams",
-              charging_speed_dc_kw: 80,
-              electric_range_km: 420,
-              range_standard: "CLTC",
+            battery: {
+              chemistry: "LFP (Blade)",
+              capacity_total_kwh: 45.12,
+              supplier: "BYD FinDreams",
+              dc_charge_kw: 80,
+              ev_range_km: 420,
+              ev_range_standard: "CLTC",
             },
             gearbox: "single-speed reducer",
             gearbox_gears: 1,
@@ -501,17 +498,17 @@ const DATA: SeedBrand[] = [
           {
             trim_name: "410KM 时尚版",
             energy_type: "BEV",
-            electric_motor_details: {
-              motor_type: "PMSM",
-              motor_power_kw: 130,
-              motor_count: "single",
-              drive_type: "FWD",
+            motor: {
+              type: "PMSM",
+              power_kw: 130,
+              count: "single",
+              drive: "FWD",
             },
-            battery_details: {
-              battery_chemistry: "LFP (Blade)",
-              battery_supplier: "BYD FinDreams",
-              electric_range_km: 410,
-              range_standard: "CLTC",
+            battery: {
+              chemistry: "LFP (Blade)",
+              supplier: "BYD FinDreams",
+              ev_range_km: 410,
+              ev_range_standard: "CLTC",
             },
             gearbox: "single-speed reducer",
             gearbox_gears: 1,
@@ -537,18 +534,18 @@ const DATA: SeedBrand[] = [
           {
             trim_name: "540KM 领先型",
             energy_type: "BEV",
-            electric_motor_details: {
-              motor_type: "PMSM",
-              motor_power_kw: 200,
-              motor_count: "single",
-              drive_type: "RWD",
+            motor: {
+              type: "PMSM",
+              power_kw: 200,
+              count: "single",
+              drive: "RWD",
             },
-            battery_details: {
-              battery_chemistry: "LFP (Blade, 2nd gen)",
-              battery_capacity_total_kwh: 57.5,
-              battery_supplier: "BYD FinDreams",
-              electric_range_km: 540,
-              range_standard: "CLTC",
+            battery: {
+              chemistry: "LFP (Blade, 2nd gen)",
+              capacity_total_kwh: 57.5,
+              supplier: "BYD FinDreams",
+              ev_range_km: 540,
+              ev_range_standard: "CLTC",
             },
             gearbox: "single-speed reducer",
             gearbox_gears: 1,
@@ -559,18 +556,18 @@ const DATA: SeedBrand[] = [
           {
             trim_name: "630KM 旗舰型",
             energy_type: "BEV",
-            electric_motor_details: {
-              motor_type: "PMSM",
-              motor_power_kw: 240,
-              motor_count: "single",
-              drive_type: "RWD",
+            motor: {
+              type: "PMSM",
+              power_kw: 240,
+              count: "single",
+              drive: "RWD",
             },
-            battery_details: {
-              battery_chemistry: "LFP (Blade, 2nd gen)",
-              battery_capacity_total_kwh: 68.5,
-              battery_supplier: "BYD FinDreams",
-              electric_range_km: 630,
-              range_standard: "CLTC",
+            battery: {
+              chemistry: "LFP (Blade, 2nd gen)",
+              capacity_total_kwh: 68.5,
+              supplier: "BYD FinDreams",
+              ev_range_km: 630,
+              ev_range_standard: "CLTC",
             },
             gearbox: "single-speed reducer",
             gearbox_gears: 1,
@@ -596,16 +593,16 @@ const DATA: SeedBrand[] = [
           {
             trim_name: "520km 海浪版",
             energy_type: "BEV",
-            electric_motor_details: {
-              motor_type: "PMSM",
-              motor_count: "single",
-              drive_type: "FWD",
+            motor: {
+              type: "PMSM",
+              count: "single",
+              drive: "FWD",
             },
-            battery_details: {
-              battery_chemistry: "LFP (Blade, 2nd gen)",
-              battery_supplier: "BYD FinDreams",
-              electric_range_km: 520,
-              range_standard: "CLTC",
+            battery: {
+              chemistry: "LFP (Blade, 2nd gen)",
+              supplier: "BYD FinDreams",
+              ev_range_km: 520,
+              ev_range_standard: "CLTC",
             },
             gearbox: "single-speed reducer",
             gearbox_gears: 1,
@@ -614,17 +611,17 @@ const DATA: SeedBrand[] = [
           {
             trim_name: "620km 热浪Max版",
             energy_type: "BEV",
-            electric_motor_details: {
-              motor_type: "PMSM",
-              motor_power_kw: 240,
-              motor_count: "single",
-              drive_type: "FWD",
+            motor: {
+              type: "PMSM",
+              power_kw: 240,
+              count: "single",
+              drive: "FWD",
             },
-            battery_details: {
-              battery_chemistry: "LFP (Blade, 2nd gen)",
-              battery_supplier: "BYD FinDreams",
-              electric_range_km: 620,
-              range_standard: "CLTC",
+            battery: {
+              chemistry: "LFP (Blade, 2nd gen)",
+              supplier: "BYD FinDreams",
+              ev_range_km: 620,
+              ev_range_standard: "CLTC",
             },
             gearbox: "single-speed reducer",
             gearbox_gears: 1,
@@ -651,17 +648,17 @@ const DATA: SeedBrand[] = [
           {
             trim_name: "605领航版",
             energy_type: "BEV",
-            electric_motor_details: {
-              motor_type: "PMSM",
-              motor_power_kw: 240,
-              motor_count: "single",
-              drive_type: "RWD",
+            motor: {
+              type: "PMSM",
+              power_kw: 240,
+              count: "single",
+              drive: "RWD",
             },
-            battery_details: {
-              battery_chemistry: "LFP (Blade)",
-              battery_supplier: "BYD FinDreams",
-              electric_range_km: 605,
-              range_standard: "CLTC",
+            battery: {
+              chemistry: "LFP (Blade)",
+              supplier: "BYD FinDreams",
+              ev_range_km: 605,
+              ev_range_standard: "CLTC",
             },
             gearbox: "single-speed reducer",
             gearbox_gears: 1,
@@ -671,17 +668,17 @@ const DATA: SeedBrand[] = [
           {
             trim_name: "710远航旗舰版",
             energy_type: "BEV",
-            electric_motor_details: {
-              motor_type: "PMSM",
-              motor_power_kw: 240,
-              motor_count: "single",
-              drive_type: "RWD",
+            motor: {
+              type: "PMSM",
+              power_kw: 240,
+              count: "single",
+              drive: "RWD",
             },
-            battery_details: {
-              battery_chemistry: "LFP (Blade)",
-              battery_supplier: "BYD FinDreams",
-              electric_range_km: 710,
-              range_standard: "CLTC",
+            battery: {
+              chemistry: "LFP (Blade)",
+              supplier: "BYD FinDreams",
+              ev_range_km: 710,
+              ev_range_standard: "CLTC",
             },
             gearbox: "single-speed reducer",
             gearbox_gears: 1,
@@ -708,22 +705,22 @@ const DATA: SeedBrand[] = [
           {
             trim_name: "100KM 进取型",
             energy_type: "PHEV",
-            engine_details: {
+            engine: {
               displacement_l: 1.5,
               cylinders: 4,
               fuel_type: "Gasoline (turbo)",
             },
-            electric_motor_details: {
-              motor_type: "PMSM",
-              motor_count: "single",
-              drive_type: "FWD",
+            motor: {
+              type: "PMSM",
+              count: "single",
+              drive: "FWD",
             },
-            battery_details: {
-              battery_chemistry: "LFP (Blade)",
-              battery_capacity_total_kwh: 20.39,
-              battery_supplier: "BYD FinDreams",
-              electric_range_km: 100,
-              range_standard: "CLTC",
+            battery: {
+              chemistry: "LFP (Blade)",
+              capacity_total_kwh: 20.39,
+              supplier: "BYD FinDreams",
+              ev_range_km: 100,
+              ev_range_standard: "CLTC",
             },
             gearbox: "CVT",
             gearbox_gears: 1,
@@ -734,22 +731,21 @@ const DATA: SeedBrand[] = [
           {
             trim_name: "218KM 超越型",
             energy_type: "PHEV",
-            engine_details: {
+            engine: {
               displacement_l: 1.5,
               cylinders: 4,
               fuel_type: "Gasoline (turbo)",
-              max_power_hp: 156,
             },
-            electric_motor_details: {
-              motor_type: "PMSM",
-              motor_count: "single",
-              drive_type: "FWD",
+            motor: {
+              type: "PMSM",
+              count: "single",
+              drive: "FWD",
             },
-            battery_details: {
-              battery_chemistry: "LFP (Blade)",
-              battery_supplier: "BYD FinDreams",
-              electric_range_km: 218,
-              range_standard: "CLTC",
+            battery: {
+              chemistry: "LFP (Blade)",
+              supplier: "BYD FinDreams",
+              ev_range_km: 218,
+              ev_range_standard: "CLTC",
             },
             gearbox: "CVT",
             gearbox_gears: 1,
@@ -786,24 +782,23 @@ const DATA: SeedBrand[] = [
           {
             trim_name: "DM-i 四驱闪充尊荣型",
             energy_type: "PHEV",
-            engine_details: {
+            engine: {
               displacement_l: 1.5,
               cylinders: 4,
               fuel_type: "Gasoline (turbo)",
-              max_power_hp: 156,
             },
-            electric_motor_details: {
-              motor_type: "PMSM",
-              motor_power_kw: 245,
-              motor_torque_nm: 445,
-              motor_count: "dual",
-              drive_type: "AWD",
+            motor: {
+              type: "PMSM",
+              power_kw: 245,
+              torque_nm: 445,
+              count: "dual",
+              drive: "AWD",
             },
-            battery_details: {
-              battery_chemistry: "LFP (Blade, 2nd gen)",
-              battery_supplier: "BYD FinDreams",
-              electric_range_km: 401,
-              range_standard: "CLTC",
+            battery: {
+              chemistry: "LFP (Blade, 2nd gen)",
+              supplier: "BYD FinDreams",
+              ev_range_km: 401,
+              ev_range_standard: "CLTC",
             },
             gearbox: "CVT",
             gearbox_gears: 1,
@@ -840,25 +835,24 @@ const DATA: SeedBrand[] = [
           {
             trim_name: "豪华版",
             energy_type: "PHEV",
-            engine_details: {
+            engine: {
               displacement_l: 2,
               cylinders: 4,
               fuel_type: "Gasoline (turbo)",
-              max_power_hp: 272,
             },
-            electric_motor_details: {
-              motor_type: "PMSM",
-              motor_power_kw: 880,
-              motor_torque_nm: 1520,
-              motor_count: "quad-motor",
-              drive_type: "AWD",
+            motor: {
+              type: "PMSM",
+              power_kw: 880,
+              torque_nm: 1520,
+              count: "quad-motor",
+              drive: "AWD",
             },
-            battery_details: {
-              battery_chemistry: "LFP (Blade, 2nd gen)",
-              battery_supplier: "BYD FinDreams",
-              charging_speed_dc_kw: 574,
-              electric_range_km: 230,
-              range_standard: "CLTC",
+            battery: {
+              chemistry: "LFP (Blade, 2nd gen)",
+              supplier: "BYD FinDreams",
+              dc_charge_kw: 574,
+              ev_range_km: 230,
+              ev_range_standard: "CLTC",
             },
             gearbox: "single-speed reducer",
             gearbox_gears: 1,
@@ -895,25 +889,24 @@ const DATA: SeedBrand[] = [
           {
             trim_name: "210KM 天神Max版",
             energy_type: "PHEV",
-            engine_details: {
+            engine: {
               displacement_l: 1.5,
               cylinders: 4,
               fuel_type: "Gasoline (turbo)",
-              max_power_hp: 194,
             },
-            electric_motor_details: {
-              motor_type: "PMSM",
-              motor_power_kw: 485,
-              motor_torque_nm: 760,
-              motor_count: "dual",
-              drive_type: "AWD",
+            motor: {
+              type: "PMSM",
+              power_kw: 485,
+              torque_nm: 760,
+              count: "dual",
+              drive: "AWD",
             },
-            battery_details: {
-              battery_chemistry: "LFP (Blade)",
-              battery_capacity_total_kwh: 46,
-              battery_supplier: "BYD FinDreams",
-              electric_range_km: 210,
-              range_standard: "CLTC",
+            battery: {
+              chemistry: "LFP (Blade)",
+              capacity_total_kwh: 46,
+              supplier: "BYD FinDreams",
+              ev_range_km: 210,
+              ev_range_standard: "CLTC",
             },
             gearbox: "CVT",
             gearbox_gears: 1,
@@ -941,25 +934,24 @@ const DATA: SeedBrand[] = [
           {
             trim_name: "2.0T 200km 闪充 5座",
             energy_type: "PHEV",
-            engine_details: {
+            engine: {
               displacement_l: 2,
               cylinders: 4,
               fuel_type: "Gasoline (turbo)",
-              max_power_hp: 245,
             },
-            electric_motor_details: {
-              motor_type: "PMSM",
-              motor_power_kw: 550,
-              motor_torque_nm: 760,
-              motor_count: "dual",
-              drive_type: "AWD",
+            motor: {
+              type: "PMSM",
+              power_kw: 550,
+              torque_nm: 760,
+              count: "dual",
+              drive: "AWD",
             },
-            battery_details: {
-              battery_chemistry: "LFP (Blade, 2nd gen)",
-              battery_capacity_total_kwh: 46.704,
-              battery_supplier: "BYD FinDreams",
-              electric_range_km: 200,
-              range_standard: "WLTP",
+            battery: {
+              chemistry: "LFP (Blade, 2nd gen)",
+              capacity_total_kwh: 46.704,
+              supplier: "BYD FinDreams",
+              ev_range_km: 200,
+              ev_range_standard: "WLTP",
             },
             gearbox: "CVT",
             gearbox_gears: 1,
@@ -989,7 +981,7 @@ const DATA: SeedBrand[] = [
           {
             trim_name: "2.0T AWD",
             energy_type: "ICE",
-            engine_details: { displacement_l: 2.0, cylinders: 4, fuel_type: "Gasoline (Turbo)", max_power_hp: 238, max_torque_nm: 385 },
+            engine: { displacement_l: 2.0, cylinders: 4, fuel_type: "Gasoline (Turbo)", torque_nm: 385 },
             gearbox: "AT",
             gearbox_gears: 8,
             accel_0_100_kmh_s: 6.9,
@@ -1008,8 +1000,8 @@ const DATA: SeedBrand[] = [
           {
             trim_name: "Long Range",
             energy_type: "BEV",
-            electric_motor_details: { motor_type: "PMSM", motor_power_kw: 200, motor_torque_nm: 320, motor_count: "single", drive_type: "FWD" },
-            battery_details: { battery_chemistry: "NMC", battery_capacity_total_kwh: 87, battery_capacity_usable_kwh: 87, battery_supplier: "CATL", charging_speed_dc_kw: 300, charging_speed_ac_kw: 11, electric_range_km: 650, range_standard: "CLTC" },
+            motor: { type: "PMSM", power_kw: 200, torque_nm: 320, count: "single", drive: "FWD" },
+            battery: { chemistry: "NMC", capacity_total_kwh: 87, capacity_usable_kwh: 87, supplier: "CATL", dc_charge_kw: 300, ac_charge_kw: 11, ev_range_km: 650, ev_range_standard: "CLTC" },
             gearbox: "single-speed reducer",
             gearbox_gears: 1,
             accel_0_100_kmh_s: 6.9,
@@ -1037,7 +1029,7 @@ const DATA: SeedBrand[] = [
           {
             trim_name: "1.6T",
             energy_type: "ICE",
-            engine_details: { displacement_l: 1.6, cylinders: 4, fuel_type: "Gasoline (Turbo)", max_power_hp: 197, max_torque_nm: 290 },
+            engine: { displacement_l: 1.6, cylinders: 4, fuel_type: "Gasoline (Turbo)", torque_nm: 290 },
             gearbox: "DCT",
             gearbox_gears: 7,
             accel_0_100_kmh_s: 9.5,
@@ -1055,7 +1047,7 @@ const DATA: SeedBrand[] = [
           {
             trim_name: "1.5T",
             energy_type: "ICE",
-            engine_details: { displacement_l: 1.5, cylinders: 4, fuel_type: "Gasoline (Turbo)", max_power_hp: 156, max_torque_nm: 230 },
+            engine: { displacement_l: 1.5, cylinders: 4, fuel_type: "Gasoline (Turbo)", torque_nm: 230 },
             gearbox: "CVT",
             accel_0_100_kmh_s: 10.1,
             top_speed_kmh: 185,
@@ -1063,8 +1055,8 @@ const DATA: SeedBrand[] = [
           {
             trim_name: "EX BEV",
             energy_type: "BEV",
-            electric_motor_details: { motor_type: "PMSM", motor_power_kw: 150, motor_torque_nm: 340, motor_count: "single", drive_type: "FWD" },
-            battery_details: { battery_chemistry: "LFP", battery_capacity_total_kwh: 61, battery_capacity_usable_kwh: 61, battery_supplier: "Gotion", charging_speed_dc_kw: 80, charging_speed_ac_kw: 6.6, electric_range_km: 425, range_standard: "CLTC" },
+            motor: { type: "PMSM", power_kw: 150, torque_nm: 340, count: "single", drive: "FWD" },
+            battery: { chemistry: "LFP", capacity_total_kwh: 61, capacity_usable_kwh: 61, supplier: "Gotion", dc_charge_kw: 80, ac_charge_kw: 6.6, ev_range_km: 425, ev_range_standard: "CLTC" },
             gearbox: "single-speed reducer",
             gearbox_gears: 1,
             accel_0_100_kmh_s: 7.7,
@@ -1091,9 +1083,9 @@ const DATA: SeedBrand[] = [
           {
             trim_name: "HEV",
             energy_type: "HEV",
-            engine_details: { displacement_l: 1.5, cylinders: 4, fuel_type: "Gasoline", max_power_hp: 150, max_torque_nm: 230 },
-            electric_motor_details: { motor_type: "PMSM", motor_power_kw: 130, motor_torque_nm: 300, motor_count: "single", drive_type: "FWD" },
-            battery_details: { battery_chemistry: "NMC", battery_capacity_total_kwh: 1.7, battery_capacity_usable_kwh: 1.7, battery_supplier: "CATL" },
+            engine: { displacement_l: 1.5, cylinders: 4, fuel_type: "Gasoline", torque_nm: 230 },
+            motor: { type: "PMSM", power_kw: 130, torque_nm: 300, count: "single", drive: "FWD" },
+            battery: { chemistry: "NMC", capacity_total_kwh: 1.7, capacity_usable_kwh: 1.7, supplier: "CATL" },
             gearbox: "DCT",
             gearbox_gears: 2,
             accel_0_100_kmh_s: 8.7,
@@ -1111,8 +1103,8 @@ const DATA: SeedBrand[] = [
           {
             trim_name: "500 Long Range",
             energy_type: "BEV",
-            electric_motor_details: { motor_type: "PMSM", motor_power_kw: 105, motor_torque_nm: 210, motor_count: "single", drive_type: "FWD" },
-            battery_details: { battery_chemistry: "NMC", battery_capacity_total_kwh: 59.1, battery_capacity_usable_kwh: 59.1, battery_supplier: "CATL", charging_speed_dc_kw: 66, charging_speed_ac_kw: 6.6, electric_range_km: 500, range_standard: "NEDC" },
+            motor: { type: "PMSM", power_kw: 105, torque_nm: 210, count: "single", drive: "FWD" },
+            battery: { chemistry: "NMC", capacity_total_kwh: 59.1, capacity_usable_kwh: 59.1, supplier: "CATL", dc_charge_kw: 66, ac_charge_kw: 6.6, ev_range_km: 500, ev_range_standard: "NEDC" },
             gearbox: "single-speed reducer",
             gearbox_gears: 1,
             accel_0_100_kmh_s: 8.5,
@@ -1130,7 +1122,7 @@ const DATA: SeedBrand[] = [
           {
             trim_name: "2.0T",
             energy_type: "ICE",
-            engine_details: { displacement_l: 2.0, cylinders: 4, fuel_type: "Gasoline (Turbo)", max_power_hp: 218, max_torque_nm: 387 },
+            engine: { displacement_l: 2.0, cylinders: 4, fuel_type: "Gasoline (Turbo)", torque_nm: 387 },
             gearbox: "AT",
             gearbox_gears: 8,
             accel_0_100_kmh_s: 8.7,
@@ -1157,9 +1149,9 @@ const DATA: SeedBrand[] = [
           {
             trim_name: "EREV",
             energy_type: "REEV/EREV",
-            engine_details: { displacement_l: 1.5, cylinders: 4, fuel_type: "Gasoline (range extender)", max_power_hp: 95, max_torque_nm: 130 },
-            electric_motor_details: { motor_type: "PMSM", motor_power_kw: 160, motor_torque_nm: 320, motor_count: "single", drive_type: "FWD" },
-            battery_details: { battery_chemistry: "LFP", battery_capacity_total_kwh: 30, battery_capacity_usable_kwh: 30, battery_supplier: "CATL", charging_speed_dc_kw: 60, charging_speed_ac_kw: 6.6, electric_range_km: 200, range_standard: "CLTC" },
+            engine: { displacement_l: 1.5, cylinders: 4, fuel_type: "Gasoline (range extender)", torque_nm: 130 },
+            motor: { type: "PMSM", power_kw: 160, torque_nm: 320, count: "single", drive: "FWD" },
+            battery: { chemistry: "LFP", capacity_total_kwh: 30, capacity_usable_kwh: 30, supplier: "CATL", dc_charge_kw: 60, ac_charge_kw: 6.6, ev_range_km: 200, ev_range_standard: "CLTC" },
             gearbox: "single-speed reducer",
             gearbox_gears: 1,
             combined_range_km: 1100,
@@ -1180,8 +1172,8 @@ const DATA: SeedBrand[] = [
           {
             trim_name: "Performance AWD",
             energy_type: "BEV",
-            electric_motor_details: { motor_type: "PMSM", motor_power_kw: 425, motor_torque_nm: 650, motor_count: "dual", drive_type: "AWD" },
-            battery_details: { battery_chemistry: "NMC", battery_capacity_total_kwh: 94.5, battery_capacity_usable_kwh: 94.5, battery_supplier: "CATL", charging_speed_dc_kw: 240, charging_speed_ac_kw: 11, electric_range_km: 635, range_standard: "CLTC" },
+            motor: { type: "PMSM", power_kw: 425, torque_nm: 650, count: "dual", drive: "AWD" },
+            battery: { chemistry: "NMC", capacity_total_kwh: 94.5, capacity_usable_kwh: 94.5, supplier: "CATL", dc_charge_kw: 240, ac_charge_kw: 11, ev_range_km: 635, ev_range_standard: "CLTC" },
             gearbox: "single-speed reducer",
             gearbox_gears: 1,
             accel_0_100_kmh_s: 3.7,
@@ -1208,8 +1200,8 @@ const DATA: SeedBrand[] = [
           {
             trim_name: "100 kWh AWD",
             energy_type: "BEV",
-            electric_motor_details: { motor_type: "PMSM + Induction", motor_power_kw: 360, motor_torque_nm: 700, motor_count: "dual", drive_type: "AWD" },
-            battery_details: { battery_chemistry: "NMC", battery_capacity_total_kwh: 100, battery_capacity_usable_kwh: 94, battery_supplier: "CATL", charging_speed_dc_kw: 140, charging_speed_ac_kw: 11, electric_range_km: 710, range_standard: "CLTC" },
+            motor: { type: "PMSM + Induction", power_kw: 360, torque_nm: 700, count: "dual", drive: "AWD" },
+            battery: { chemistry: "NMC", capacity_total_kwh: 100, capacity_usable_kwh: 94, supplier: "CATL", dc_charge_kw: 140, ac_charge_kw: 11, ev_range_km: 710, ev_range_standard: "CLTC" },
             gearbox: "single-speed reducer",
             gearbox_gears: 1,
             accel_0_100_kmh_s: 4.3,
@@ -1227,8 +1219,8 @@ const DATA: SeedBrand[] = [
           {
             trim_name: "75 kWh AWD",
             energy_type: "BEV",
-            electric_motor_details: { motor_type: "PMSM + Induction", motor_power_kw: 320, motor_torque_nm: 610, motor_count: "dual", drive_type: "AWD" },
-            battery_details: { battery_chemistry: "NMC", battery_capacity_total_kwh: 75, battery_capacity_usable_kwh: 70, battery_supplier: "CATL", charging_speed_dc_kw: 130, charging_speed_ac_kw: 11, electric_range_km: 490, range_standard: "CLTC" },
+            motor: { type: "PMSM + Induction", power_kw: 320, torque_nm: 610, count: "dual", drive: "AWD" },
+            battery: { chemistry: "NMC", capacity_total_kwh: 75, capacity_usable_kwh: 70, supplier: "CATL", dc_charge_kw: 130, ac_charge_kw: 11, ev_range_km: 490, ev_range_standard: "CLTC" },
             gearbox: "single-speed reducer",
             gearbox_gears: 1,
             accel_0_100_kmh_s: 4.7,
@@ -1254,8 +1246,8 @@ const DATA: SeedBrand[] = [
           {
             trim_name: "RWD Long Range",
             energy_type: "BEV",
-            electric_motor_details: { motor_type: "PMSM", motor_power_kw: 196, motor_torque_nm: 390, motor_count: "single", drive_type: "RWD" },
-            battery_details: { battery_chemistry: "NMC", battery_capacity_total_kwh: 80.9, battery_capacity_usable_kwh: 76.3, battery_supplier: "CATL", charging_speed_dc_kw: 155, charging_speed_ac_kw: 11, electric_range_km: 670, range_standard: "CLTC" },
+            motor: { type: "PMSM", power_kw: 196, torque_nm: 390, count: "single", drive: "RWD" },
+            battery: { chemistry: "NMC", capacity_total_kwh: 80.9, capacity_usable_kwh: 76.3, supplier: "CATL", dc_charge_kw: 155, ac_charge_kw: 11, ev_range_km: 670, ev_range_standard: "CLTC" },
             gearbox: "single-speed reducer",
             gearbox_gears: 1,
             accel_0_100_kmh_s: 6.5,
@@ -1273,8 +1265,8 @@ const DATA: SeedBrand[] = [
           {
             trim_name: "Performance AWD",
             energy_type: "BEV",
-            electric_motor_details: { motor_type: "PMSM", motor_power_kw: 315, motor_torque_nm: 660, motor_count: "dual", drive_type: "AWD" },
-            battery_details: { battery_chemistry: "NMC (800V)", battery_capacity_total_kwh: 87.5, battery_capacity_usable_kwh: 83, battery_supplier: "CATL", charging_speed_dc_kw: 300, charging_speed_ac_kw: 11, electric_range_km: 580, range_standard: "CLTC" },
+            motor: { type: "PMSM", power_kw: 315, torque_nm: 660, count: "dual", drive: "AWD" },
+            battery: { chemistry: "NMC (800V)", capacity_total_kwh: 87.5, capacity_usable_kwh: 83, supplier: "CATL", dc_charge_kw: 300, ac_charge_kw: 11, ev_range_km: 580, ev_range_standard: "CLTC" },
             gearbox: "single-speed reducer",
             gearbox_gears: 1,
             accel_0_100_kmh_s: 3.9,
@@ -1300,9 +1292,9 @@ const DATA: SeedBrand[] = [
           {
             trim_name: "Max",
             energy_type: "REEV/EREV",
-            engine_details: { displacement_l: 1.5, cylinders: 4, fuel_type: "Gasoline (range extender)", max_power_hp: 150, max_torque_nm: 245 },
-            electric_motor_details: { motor_type: "PMSM", motor_power_kw: 330, motor_torque_nm: 620, motor_count: "dual", drive_type: "AWD" },
-            battery_details: { battery_chemistry: "NMC", battery_capacity_total_kwh: 44.5, battery_capacity_usable_kwh: 42.8, battery_supplier: "CATL", charging_speed_dc_kw: 135, charging_speed_ac_kw: 7, electric_range_km: 215, range_standard: "CLTC" },
+            engine: { displacement_l: 1.5, cylinders: 4, fuel_type: "Gasoline (range extender)", torque_nm: 245 },
+            motor: { type: "PMSM", power_kw: 330, torque_nm: 620, count: "dual", drive: "AWD" },
+            battery: { chemistry: "NMC", capacity_total_kwh: 44.5, capacity_usable_kwh: 42.8, supplier: "CATL", dc_charge_kw: 135, ac_charge_kw: 7, ev_range_km: 215, ev_range_standard: "CLTC" },
             gearbox: "single-speed reducer",
             gearbox_gears: 1,
             combined_range_km: 1315,
@@ -1321,9 +1313,9 @@ const DATA: SeedBrand[] = [
           {
             trim_name: "Pro",
             energy_type: "REEV/EREV",
-            engine_details: { displacement_l: 1.5, cylinders: 4, fuel_type: "Gasoline (range extender)", max_power_hp: 150, max_torque_nm: 245 },
-            electric_motor_details: { motor_type: "PMSM", motor_power_kw: 250, motor_torque_nm: 450, motor_count: "dual", drive_type: "AWD" },
-            battery_details: { battery_chemistry: "LFP", battery_capacity_total_kwh: 33.1, battery_capacity_usable_kwh: 32.3, battery_supplier: "CATL", charging_speed_dc_kw: 90, charging_speed_ac_kw: 7, electric_range_km: 210, range_standard: "CLTC" },
+            engine: { displacement_l: 1.5, cylinders: 4, fuel_type: "Gasoline (range extender)", torque_nm: 245 },
+            motor: { type: "PMSM", power_kw: 250, torque_nm: 450, count: "dual", drive: "AWD" },
+            battery: { chemistry: "LFP", capacity_total_kwh: 33.1, capacity_usable_kwh: 32.3, supplier: "CATL", dc_charge_kw: 90, ac_charge_kw: 7, ev_range_km: 210, ev_range_standard: "CLTC" },
             gearbox: "single-speed reducer",
             gearbox_gears: 1,
             combined_range_km: 1300,
@@ -1351,8 +1343,8 @@ const DATA: SeedBrand[] = [
           {
             trim_name: "WE AWD",
             energy_type: "BEV",
-            electric_motor_details: { motor_type: "PMSM", motor_power_kw: 400, motor_torque_nm: 686, motor_count: "dual", drive_type: "AWD" },
-            battery_details: { battery_chemistry: "NMC", battery_capacity_total_kwh: 100, battery_capacity_usable_kwh: 95, battery_supplier: "CATL", charging_speed_dc_kw: 200, charging_speed_ac_kw: 11, electric_range_km: 620, range_standard: "CLTC" },
+            motor: { type: "PMSM", power_kw: 400, torque_nm: 686, count: "dual", drive: "AWD" },
+            battery: { chemistry: "NMC", capacity_total_kwh: 100, capacity_usable_kwh: 95, supplier: "CATL", dc_charge_kw: 200, ac_charge_kw: 11, ev_range_km: 620, ev_range_standard: "CLTC" },
             gearbox: "single-speed reducer",
             gearbox_gears: 1,
             accel_0_100_kmh_s: 3.8,
@@ -1379,8 +1371,8 @@ const DATA: SeedBrand[] = [
           {
             trim_name: "Long Range",
             energy_type: "BEV",
-            electric_motor_details: { motor_type: "PMSM", motor_power_kw: 160, motor_torque_nm: 320, motor_count: "single", drive_type: "RWD" },
-            battery_details: { battery_chemistry: "LFP", battery_capacity_total_kwh: 69.9, battery_capacity_usable_kwh: 67.1, battery_supplier: "CALB", charging_speed_dc_kw: 84, charging_speed_ac_kw: 6.6, electric_range_km: 420, range_standard: "CLTC" },
+            motor: { type: "PMSM", power_kw: 160, torque_nm: 320, count: "single", drive: "RWD" },
+            battery: { chemistry: "LFP", capacity_total_kwh: 69.9, capacity_usable_kwh: 67.1, supplier: "CALB", dc_charge_kw: 84, ac_charge_kw: 6.6, ev_range_km: 420, ev_range_standard: "CLTC" },
             gearbox: "single-speed reducer",
             gearbox_gears: 1,
             accel_0_100_kmh_s: 7.5,
@@ -1409,9 +1401,9 @@ const DATA: SeedBrand[] = [
           {
             trim_name: "Ultra AWD",
             energy_type: "REEV/EREV",
-            engine_details: { displacement_l: 1.5, cylinders: 4, fuel_type: "Gasoline (range extender, turbo)", max_power_hp: 174, max_torque_nm: 285 },
-            electric_motor_details: { motor_type: "PMSM", motor_power_kw: 330, motor_torque_nm: 675, motor_count: "tri-motor", drive_type: "AWD" },
-            battery_details: { battery_chemistry: "LFP", battery_capacity_total_kwh: 52, battery_capacity_usable_kwh: 50, battery_supplier: "CATL", charging_speed_dc_kw: 76, charging_speed_ac_kw: 6.6, electric_range_km: 275, range_standard: "CLTC" },
+            engine: { displacement_l: 1.5, cylinders: 4, fuel_type: "Gasoline (range extender, turbo)", torque_nm: 285 },
+            motor: { type: "PMSM", power_kw: 330, torque_nm: 675, count: "tri-motor", drive: "AWD" },
+            battery: { chemistry: "LFP", capacity_total_kwh: 52, capacity_usable_kwh: 50, supplier: "CATL", dc_charge_kw: 76, ac_charge_kw: 6.6, ev_range_km: 275, ev_range_standard: "CLTC" },
             gearbox: "single-speed reducer",
             gearbox_gears: 1,
             combined_range_km: 1402,
@@ -1441,8 +1433,8 @@ const DATA: SeedBrand[] = [
           {
             trim_name: "AWD",
             energy_type: "BEV",
-            electric_motor_details: { motor_type: "PMSM", motor_power_kw: 330, motor_torque_nm: 720, motor_count: "dual", drive_type: "AWD" },
-            battery_details: { battery_chemistry: "NMC", battery_capacity_total_kwh: 99, battery_capacity_usable_kwh: 96, battery_supplier: "CATL", charging_speed_dc_kw: 105, charging_speed_ac_kw: 7, electric_range_km: 465, range_standard: "NEDC" },
+            motor: { type: "PMSM", power_kw: 330, torque_nm: 720, count: "dual", drive: "AWD" },
+            battery: { chemistry: "NMC", capacity_total_kwh: 99, capacity_usable_kwh: 96, supplier: "CATL", dc_charge_kw: 105, ac_charge_kw: 7, ev_range_km: 465, ev_range_standard: "NEDC" },
             gearbox: "single-speed reducer",
             gearbox_gears: 1,
             accel_0_100_kmh_s: 6.9,
@@ -1470,8 +1462,8 @@ const DATA: SeedBrand[] = [
           {
             trim_name: "Long Range 600",
             energy_type: "BEV",
-            electric_motor_details: { motor_type: "PMSM", motor_power_kw: 135, motor_torque_nm: 225, motor_count: "single", drive_type: "FWD" },
-            battery_details: { battery_chemistry: "LFP", battery_capacity_total_kwh: 63.2, battery_capacity_usable_kwh: 63.2, battery_supplier: "CATL", charging_speed_dc_kw: 90, charging_speed_ac_kw: 6.6, electric_range_km: 600, range_standard: "CLTC" },
+            motor: { type: "PMSM", power_kw: 135, torque_nm: 225, count: "single", drive: "FWD" },
+            battery: { chemistry: "LFP", capacity_total_kwh: 63.2, capacity_usable_kwh: 63.2, supplier: "CATL", dc_charge_kw: 90, ac_charge_kw: 6.6, ev_range_km: 600, ev_range_standard: "CLTC" },
             gearbox: "single-speed reducer",
             gearbox_gears: 1,
             accel_0_100_kmh_s: 8.8,
@@ -1490,8 +1482,8 @@ const DATA: SeedBrand[] = [
           {
             trim_name: "Max",
             energy_type: "BEV",
-            electric_motor_details: { motor_type: "PMSM", motor_power_kw: 250, motor_torque_nm: 430, motor_count: "single", drive_type: "RWD" },
-            battery_details: { battery_chemistry: "NMC", battery_capacity_total_kwh: 82, battery_capacity_usable_kwh: 79, battery_supplier: "CATL", charging_speed_dc_kw: 168, charging_speed_ac_kw: 11, electric_range_km: 650, range_standard: "CLTC" },
+            motor: { type: "PMSM", power_kw: 250, torque_nm: 430, count: "single", drive: "RWD" },
+            battery: { chemistry: "NMC", capacity_total_kwh: 82, capacity_usable_kwh: 79, supplier: "CATL", dc_charge_kw: 168, ac_charge_kw: 11, ev_range_km: 650, ev_range_standard: "CLTC" },
             gearbox: "single-speed reducer",
             gearbox_gears: 1,
             accel_0_100_kmh_s: 6.5,
@@ -1520,8 +1512,8 @@ const DATA: SeedBrand[] = [
           {
             trim_name: "Standard",
             energy_type: "BEV",
-            electric_motor_details: { motor_type: "PMSM", motor_power_kw: 150, motor_torque_nm: 310, motor_count: "single", drive_type: "RWD" },
-            battery_details: { battery_chemistry: "LFP", battery_capacity_total_kwh: 56.6, battery_capacity_usable_kwh: 56.6, battery_supplier: "CATL", charging_speed_dc_kw: 90, charging_speed_ac_kw: 6.6, electric_range_km: 450, range_standard: "CLTC" },
+            motor: { type: "PMSM", power_kw: 150, torque_nm: 310, count: "single", drive: "RWD" },
+            battery: { chemistry: "LFP", capacity_total_kwh: 56.6, capacity_usable_kwh: 56.6, supplier: "CATL", dc_charge_kw: 90, ac_charge_kw: 6.6, ev_range_km: 450, ev_range_standard: "CLTC" },
             gearbox: "single-speed reducer",
             gearbox_gears: 1,
             accel_0_100_kmh_s: 7.9,
@@ -1549,8 +1541,8 @@ const DATA: SeedBrand[] = [
           {
             trim_name: "Standard Range",
             energy_type: "BEV",
-            electric_motor_details: { motor_type: "PMSM", motor_power_kw: 125, motor_torque_nm: 250, motor_count: "single", drive_type: "RWD" },
-            battery_details: { battery_chemistry: "LFP", battery_capacity_total_kwh: 51, battery_capacity_usable_kwh: 49.9, battery_supplier: "CATL", charging_speed_dc_kw: 117, charging_speed_ac_kw: 6.6, electric_range_km: 425, range_standard: "CLTC" },
+            motor: { type: "PMSM", power_kw: 125, torque_nm: 250, count: "single", drive: "RWD" },
+            battery: { chemistry: "LFP", capacity_total_kwh: 51, capacity_usable_kwh: 49.9, supplier: "CATL", dc_charge_kw: 117, ac_charge_kw: 6.6, ev_range_km: 425, ev_range_standard: "CLTC" },
             gearbox: "single-speed reducer",
             gearbox_gears: 1,
             accel_0_100_kmh_s: 7.7,
@@ -1565,6 +1557,19 @@ const DATA: SeedBrand[] = [
 async function seed() {
   await mongoose.connect(MONGODB_URI as string);
   console.log("Connected to MongoDB");
+
+  const existingBrandCount = await Brand.countDocuments();
+  const hasConfirmFlag = process.argv.includes("--confirm");
+  if (existingBrandCount > 0 && !hasConfirmFlag) {
+    console.error(
+      `\nRefusing to run: this would wipe and replace ${existingBrandCount} existing brand(s) ` +
+        `(plus all models/powertrains) with this script's small hardcoded fixture dataset.\n` +
+        `If you really want to reset the database to the base seed, re-run with --confirm:\n` +
+        `  npm run seed -- --confirm\n`
+    );
+    await mongoose.disconnect();
+    process.exit(1);
+  }
 
   console.log("Clearing existing collections...");
   await Powertrain.deleteMany({});

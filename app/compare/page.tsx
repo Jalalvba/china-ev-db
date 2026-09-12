@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import type { IBrand, IModel, IPowertrain } from "@/types";
+import { kwToHp } from "@/lib/units";
 
 type PopulatedModel = Omit<IModel, "brand_id"> & { brand_id: IBrand };
 type PopulatedPowertrain = Omit<IPowertrain, "model_id"> & { model_id: PopulatedModel };
@@ -43,31 +44,31 @@ export default function ComparePage() {
     {
       label: "Engine",
       get: (p) =>
-        p?.engine_details
-          ? `${p.engine_details.displacement_l ?? "?"}L, ${p.engine_details.max_power_hp ?? "?"} hp, ${p.engine_details.max_torque_nm ?? "?"} Nm`
+        p?.engine
+          ? `${p.engine.displacement_l ?? "?"}L, ${kwToHp(p.engine.power_kw) ?? "?"} hp, ${p.engine.torque_nm ?? "?"} Nm`
           : "—",
     },
     {
       label: "Motor",
       get: (p) =>
-        p?.electric_motor_details
-          ? `${p.electric_motor_details.motor_power_kw ?? "?"} kW, ${p.electric_motor_details.motor_torque_nm ?? "?"} Nm, ${p.electric_motor_details.drive_type ?? "?"}`
+        p?.motor
+          ? `${p.motor.power_kw ?? "?"} kW, ${p.motor.torque_nm ?? "?"} Nm, ${p.motor.drive ?? "?"}`
           : "—",
     },
     {
       label: "Battery",
       get: (p) =>
-        p?.battery_details
-          ? `${p.battery_details.battery_capacity_total_kwh ?? "?"} kWh ${p.battery_details.battery_chemistry ?? ""}${
-              p.battery_details.battery_variant ? ` (${p.battery_details.battery_variant})` : ""
+        p?.battery
+          ? `${p.battery.capacity_total_kwh ?? "?"} kWh ${p.battery.chemistry ?? ""}${
+              p.battery.battery_variant ? ` (${p.battery.battery_variant})` : ""
             }`
           : "—",
     },
     {
       label: "Electric Range",
       get: (p) =>
-        p?.battery_details?.electric_range_km
-          ? `${p.battery_details.electric_range_km} km (${p.battery_details.range_standard ?? "?"})`
+        p?.battery?.ev_range_km
+          ? `${p.battery.ev_range_km} km (${p.battery.ev_range_standard ?? "?"})`
           : "—",
     },
     { label: "Gearbox", get: (p) => p?.transmission?.type ?? "—" },

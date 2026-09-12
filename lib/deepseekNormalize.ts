@@ -52,6 +52,14 @@ export const KNOWN_BRANDS: Record<
   "享界": { name: "Stelato", parent_group: "BAIC / Huawei", founded_year: 2024 },
   "尊界": { name: "Maestro", parent_group: "JAC / Huawei", founded_year: 2025 },
   "尚界": { name: "Shangjie", parent_group: "SAIC / Huawei", founded_year: 2025 },
+  "昊铂": { name: "Hyptec", parent_group: "GAC", founded_year: 2025 },
+  Hyptec: { name: "Hyptec", parent_group: "GAC", founded_year: 2025 },
+  "传祺": { name: "Trumpchi", parent_group: "GAC" },
+  Trumpchi: { name: "Trumpchi", parent_group: "GAC" },
+  "雷达": { name: "Radar", parent_group: "Geely Holding Group" },
+  Radar: { name: "Radar", parent_group: "Geely Holding Group" },
+  "远程": { name: "Farizon", parent_group: "Geely Holding Group", founded_year: 2016 },
+  Farizon: { name: "Farizon", parent_group: "Geely Holding Group", founded_year: 2016 },
 };
 
 /**
@@ -550,16 +558,12 @@ export function num(v: unknown): number | undefined {
   return v === null || v === undefined ? undefined : (v as number);
 }
 
-export function kwToHp(kw: number | undefined): number | undefined {
-  return kw === undefined ? undefined : Math.round(kw * 1.341);
-}
-
 export function correctRangeStandard(v: unknown): string | undefined {
   if (!v) return undefined;
   const s = String(v).toUpperCase();
   const corrected = RANGE_STANDARD_CORRECTIONS[s] ?? s;
   if (!VALID_RANGE_STANDARDS.has(corrected)) {
-    console.warn(`[import] Unknown range_standard "${v}" — dropping field.`);
+    console.warn(`[import] Unknown ev_range_standard "${v}" — dropping field.`);
     return undefined;
   }
   return corrected;

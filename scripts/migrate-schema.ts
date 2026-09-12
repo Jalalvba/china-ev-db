@@ -4,7 +4,8 @@
 //
 // Usage: npm run migrate-schema
 
-import "dotenv/config";
+import dotenv from "dotenv";
+dotenv.config({ quiet: true });
 import mongoose from "mongoose";
 import Brand from "../models/Brand";
 import ModelSchema from "../models/Model";
@@ -100,13 +101,13 @@ async function migratePowertrains() {
       performanceMoved++;
     }
 
-    // engine_details.fuel_type "Gasoline (turbo)" -> induction: "turbo", fuel_type: "Gasoline"
-    const engine = doc.engine_details as Record<string, unknown> | undefined;
+    // engine.fuel_type "Gasoline (turbo)" -> induction: "turbo", fuel_type: "Gasoline"
+    const engine = doc.engine as Record<string, unknown> | undefined;
     if (engine?.fuel_type && typeof engine.fuel_type === "string" && !engine.induction) {
       const m = engine.fuel_type.match(INDUCTION_SUFFIX);
       if (m) {
-        set["engine_details.induction"] = m[1];
-        set["engine_details.fuel_type"] = "Gasoline";
+        set["engine.induction"] = m[1];
+        set["engine.fuel_type"] = "Gasoline";
         inductionSplit++;
       }
     }

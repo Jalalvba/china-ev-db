@@ -19,11 +19,11 @@ export async function GET(req: NextRequest) {
   if (gearbox) filter["transmission.type"] = gearbox;
   if (ids) filter._id = { $in: ids.split(",") };
   if (minBattery || maxBattery) {
-    filter["battery_details.battery_capacity_total_kwh"] = {};
+    filter["battery.capacity_total_kwh"] = {};
     if (minBattery)
-      (filter["battery_details.battery_capacity_total_kwh"] as Record<string, unknown>).$gte = Number(minBattery);
+      (filter["battery.capacity_total_kwh"] as Record<string, unknown>).$gte = Number(minBattery);
     if (maxBattery)
-      (filter["battery_details.battery_capacity_total_kwh"] as Record<string, unknown>).$lte = Number(maxBattery);
+      (filter["battery.capacity_total_kwh"] as Record<string, unknown>).$lte = Number(maxBattery);
   }
 
   const powertrains = await Powertrain.find(filter).populate({ path: "model_id", populate: { path: "brand_id" } }).lean();

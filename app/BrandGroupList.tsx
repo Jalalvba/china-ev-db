@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import type { BrandGroup } from "@/lib/brandGrouping";
 import type { IBrand } from "@/types";
+import BrandResearch from "@/app/BrandResearch";
 
 const STATUS_STYLES: Record<string, string> = {
   discontinued: "bg-zinc-200 text-zinc-600 dark:bg-zinc-700 dark:text-zinc-300",
@@ -11,58 +12,66 @@ const STATUS_STYLES: Record<string, string> = {
   merged: "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400",
 };
 
-function BrandCard({ brand }: { brand: IBrand }) {
+function BrandCard({ brand, moroccoDealer }: { brand: IBrand; moroccoDealer?: string }) {
   return (
     <Link
       href={`/brands/${brand._id}`}
       className="block bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-4 hover:border-zinc-400 dark:hover:border-zinc-600 hover:shadow-sm transition"
     >
       <div className="flex items-start justify-between gap-2">
-        <h3 className="font-semibold">{brand.name}</h3>
-        {brand.status && brand.status !== "active" && (
-          <span className={`shrink-0 px-2 py-0.5 rounded-full text-xs ${STATUS_STYLES[brand.status] ?? ""}`}>
-            {brand.status}
-          </span>
-        )}
+        <div className="flex items-center gap-1.5 min-w-0">
+          <h3 className="font-semibold truncate">{brand.name}</h3>
+          {brand.tech_partner && (
+            <span
+              title={`Technology partner: ${brand.tech_partner}`}
+              className="shrink-0 px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300"
+            >
+              ⚡ {brand.tech_partner}
+            </span>
+          )}
+        </div>
+        <div className="flex items-center gap-1.5 shrink-0">
+          {brand.status && brand.status !== "active" && (
+            <span className={`px-2 py-0.5 rounded-full text-xs ${STATUS_STYLES[brand.status] ?? ""}`}>
+              {brand.status}
+            </span>
+          )}
+          <BrandResearch brandId={brand._id as string} compact />
+        </div>
       </div>
-      {(brand.parent_group || brand.tech_partner) && (
-        <p className="text-sm text-zinc-500 dark:text-zinc-400">
-          {brand.parent_group}
-          {brand.parent_group && brand.tech_partner && " · "}
-          {brand.tech_partner && `powered by ${brand.tech_partner}`}
-        </p>
+      {brand.parent_group && (
+        <p className="text-sm text-zinc-500 dark:text-zinc-400">{brand.parent_group}</p>
       )}
       <div className="mt-2 text-xs text-zinc-500 dark:text-zinc-400 flex gap-3">
         <span>{brand.country_origin}</span>
         {brand.founded_year && <span>Founded {brand.founded_year}</span>}
       </div>
+      {moroccoDealer && (
+        <p className="mt-2 text-xs text-green-600 dark:text-green-400">
+          🇲🇦 {moroccoDealer}
+        </p>
+      )}
     </Link>
   );
 }
 
-function GroupSection({ group }: { group: BrandGroup }) {
+function GroupSection({
+  group,
+  moroccoDealersByBrandName,
+}: {
+  group: BrandGroup;
+  moroccoDealersByBrandName: Record<string, string>;
+}) {
   const [open, setOpen] = useState(true);
 
   return (
-    <section
-      className={`rounded-xl border ${
-        group.isEcosystem
-          ? "border-indigo-200 bg-indigo-50/40 dark:border-indigo-900 dark:bg-indigo-950/30"
-          : "border-zinc-200 bg-zinc-50/60 dark:border-zinc-800 dark:bg-zinc-900/40"
-      }`}
-    >
+    <section className="rounded-xl border border-zinc-200 bg-zinc-50/60 dark:border-zinc-800 dark:bg-zinc-900/40">
       <button
         onClick={() => setOpen((v) => !v)}
         className="w-full flex items-center justify-between gap-3 px-4 py-3 text-left"
       >
         <div className="flex items-baseline gap-2 min-w-0">
-          <h2
-            className={`text-lg font-bold truncate ${
-              group.isEcosystem ? "text-indigo-900 dark:text-indigo-300" : "text-zinc-900 dark:text-zinc-100"
-            }`}
-          >
-            {group.label}
-          </h2>
+          <h2 className="text-lg font-bold truncate text-zinc-900 dark:text-zinc-100">{group.label}</h2>
           <span className="shrink-0 text-xs font-medium text-zinc-500 dark:text-zinc-400 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-full px-2 py-0.5">
             {group.brands.length} brands
           </span>
@@ -79,7 +88,11 @@ function GroupSection({ group }: { group: BrandGroup }) {
       {open && (
         <div className="px-4 pb-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {group.brands.map((brand) => (
-            <BrandCard key={brand._id} brand={brand} />
+            <BrandCard
+              key={brand._id}
+              brand={brand}
+              moroccoDealer={moroccoDealersByBrandName[brand.name.toLowerCase()]}
+            />
           ))}
         </div>
       )}
@@ -90,14 +103,16 @@ function GroupSection({ group }: { group: BrandGroup }) {
 export default function BrandGroupList({
   groups,
   standalone,
+  moroccoDealersByBrandName,
 }: {
   groups: BrandGroup[];
   standalone: IBrand[];
+  moroccoDealersByBrandName: Record<string, string>;
 }) {
   return (
     <div className="space-y-4">
       {groups.map((group) => (
-        <GroupSection key={group.key} group={group} />
+        <GroupSection key={group.key} group={group} moroccoDealersByBrandName={moroccoDealersByBrandName} />
       ))}
 
       {standalone.length > 0 && (
@@ -107,7 +122,11 @@ export default function BrandGroupList({
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {standalone.map((brand) => (
-              <BrandCard key={brand._id} brand={brand} />
+              <BrandCard
+                key={brand._id}
+                brand={brand}
+                moroccoDealer={moroccoDealersByBrandName[brand.name.toLowerCase()]}
+              />
             ))}
           </div>
         </section>
