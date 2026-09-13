@@ -16,6 +16,7 @@
     "import-morocco": "tsx scripts/import-morocco.ts",
     "morocco-agent": "tsx scripts/morocco-agent.ts",
     "tech-spec-agent": "tsx scripts/tech-spec-agent.ts",
+    "import-tech-spec-batch": "tsx scripts/import-tech-spec-batch.ts",
     "update-morocco-dealers": "tsx scripts/update-morocco-dealers.ts",
     "sync-prices": "tsx scripts/sync-morocco-prices.ts",
     "backfill-price-usd": "tsx scripts/backfill-price-usd.ts",
