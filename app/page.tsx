@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { connectToDatabase } from "@/lib/db";
 import Brand from "@/models/Brand";
+import ModelSchema from "@/models/Model";
 import MoroccoListing from "@/models/MoroccoListing";
 import { groupBrands } from "@/lib/brandGrouping";
 import { MOROCCO_BRAND_ALIAS } from "@/lib/moroccoBrandAlias";
@@ -48,6 +49,13 @@ async function getMoroccoDealersByBrandName(): Promise<Record<string, string>> {
   return result;
 }
 
+/** Brand _ids (as strings) with at least one Model carrying a confirmed Morocco price — used to hide brands with no Morocco pricing data by default, same "hidden unless asked for" pattern as discontinued/bankrupt brands below. */
+async function getBrandIdsWithMoroccoPrice(): Promise<Set<string>> {
+  await connectToDatabase();
+  const brandIds = await ModelSchema.distinct("brand_id", { morocco_price_confirmed: true });
+  return new Set(brandIds.map((id) => String(id)));
+}
+
 export default async function Home({
   searchParams,
 }: {
@@ -55,13 +63,15 @@ export default async function Home({
 }) {
   const { all } = await searchParams;
   const showAll = all === "1";
-  const [allBrands, moroccoDealersByBrandName] = await Promise.all([
+  const [allBrands, moroccoDealersByBrandName, brandIdsWithMoroccoPrice] = await Promise.all([
     getBrands(),
     getMoroccoDealersByBrandName(),
+    getBrandIdsWithMoroccoPrice(),
   ]);
   const activeBrands = allBrands.filter((b) => !b.status || b.status === "active");
-  const brands = showAll ? allBrands : activeBrands;
-  const inactiveCount = allBrands.length - activeBrands.length;
+  const activeBrandsWithMoroccoPrice = activeBrands.filter((b) => b._id && brandIdsWithMoroccoPrice.has(b._id));
+  const brands = showAll ? allBrands : activeBrandsWithMoroccoPrice;
+  const hiddenCount = allBrands.length - activeBrandsWithMoroccoPrice.length;
 
   const { groups, standalone } = groupBrands(brands);
 
@@ -69,15 +79,15 @@ export default async function Home({
     <div>
       <h1 className="text-2xl font-bold mb-1">Chinese Automotive Brands</h1>
       <p className="text-zinc-600 dark:text-zinc-400 mb-1">
-        Browse {brands.length} {showAll ? "" : "active "}Chinese automotive brands, grouped by
+        Browse {brands.length} Chinese automotive brands{showAll ? "" : " with a confirmed Morocco price"}, grouped by
         manufacturer.
       </p>
-      {inactiveCount > 0 && (
+      {hiddenCount > 0 && (
         <p className="text-sm mb-6">
           <Link href={showAll ? "/" : "/?all=1"} className="text-blue-600 dark:text-blue-400 hover:underline">
             {showAll
-              ? "Hide discontinued/bankrupt brands"
-              : `Show ${inactiveCount} discontinued/bankrupt brands (kept for reference)`}
+              ? "Hide brands with no Morocco price / discontinued brands"
+              : `Show ${hiddenCount} more brand(s) (no confirmed Morocco price yet, or discontinued/bankrupt)`}
           </Link>
         </p>
       )}
