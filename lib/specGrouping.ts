@@ -114,16 +114,21 @@ export function compactSpecLabel(p: SpecFields): string {
   if (p.energy_type) {
     parts.push(p.energy_type === "REEV/EREV" ? "REEV" : p.energy_type);
   }
-  if (hasFields(p.engine, ["power_kw"])) {
+  if (hasFields(p.engine, ["power_kw", "displacement_l"])) {
     const aspiration = p.engine!.aspiration === "turbo" ? "Turbo " : "";
     const fuel = p.engine!.fuel_type ? (FUEL_ABBR[p.engine!.fuel_type] ?? p.engine!.fuel_type) : "";
+    const displacement = p.engine!.displacement_l != null ? `${p.engine!.displacement_l}L ` : "";
     // hp, not kW — every power figure in this app displays as hp (with kW
     // in parens where there's room, e.g. specGroupLabel below); this label
     // has no room for both and stays hp-only to fit a narrow mobile picker.
-    parts.push(`${kwToHp(p.engine!.power_kw)} hp ${aspiration}${fuel}`.replace(/\s+/g, " ").trim());
+    const hp = p.engine!.power_kw != null ? `${kwToHp(p.engine!.power_kw)} hp ` : "";
+    const torque = p.engine!.torque_nm != null ? `${p.engine!.torque_nm} Nm ` : "";
+    parts.push(`${displacement}${hp}${torque}${aspiration}${fuel}`.replace(/\s+/g, " ").trim());
   }
   if (hasFields(p.motor, ["power_kw"])) {
-    parts.push(`${kwToHp(p.motor!.power_kw)} hp motor`);
+    const hp = p.motor!.power_kw != null ? `${kwToHp(p.motor!.power_kw)} hp` : "";
+    const torque = p.motor!.torque_nm != null ? ` ${p.motor!.torque_nm} Nm` : "";
+    parts.push(`${hp}${torque} motor`.trim());
   }
   if (hasFields(p.battery, ["capacity_total_kwh"])) {
     parts.push(`${p.battery!.capacity_total_kwh} kWh`);

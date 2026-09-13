@@ -15,12 +15,14 @@ import type {
   BatteryChemistry,
   HybridType,
   EmissionsStandard,
+  HybridArchitecture,
 } from "./index";
 
 export const ENERGY_TYPE_VALUES: EnergyType[] = ["ICE", "HEV", "PHEV", "BEV", "REEV/EREV", "MHEV"];
 export const DRIVE_TYPE_VALUES: DriveType[] = ["FWD", "RWD", "AWD", "4WD"];
 export const HYBRID_TYPE_VALUES: HybridType[] = ["HEV", "PHEV", "EREV", "Mild hybrid", "Not applicable"];
 export const EMISSIONS_STANDARD_VALUES: EmissionsStandard[] = ["Euro 5", "Euro 6", "Euro 6d", "China 5", "China 6"];
+export const HYBRID_ARCHITECTURE_VALUES: HybridArchitecture[] = ["parallel", "series_erev", "power_split", "mild"];
 export const MOTOR_COUNT_VALUES: MotorCount[] = ["single", "dual", "tri-motor", "quad-motor"];
 export const GEARBOX_TYPE_VALUES: GearboxType[] = [
   "single-speed reducer",
@@ -47,6 +49,10 @@ export interface ICanonicalEngine {
   is_range_extender?: boolean;
   power_kw?: number;
   torque_nm?: number;
+  /** Diesel-only. Undefined for a non-diesel engine rather than false, since the question doesn't apply. */
+  adblue_required?: boolean;
+  /** Diesel particulate filter present — diesel-only, same undefined-vs-false convention as adblue_required. */
+  dpf_present?: boolean;
   confidence?: Confidence;
 }
 
@@ -81,6 +87,9 @@ export interface ICanonicalTransmission {
   confidence?: Confidence;
 }
 
+// gearCount from the task spec maps onto the existing transmission.speed_count
+// field above rather than a new top-level field — no schema change needed.
+
 export interface ICanonicalPerformance {
   accel_0_100_s?: number;
   top_speed_kmh?: number;
@@ -103,6 +112,12 @@ export interface ICanonicalPowertrain {
   /** Combined ICE+motor system output — only meaningful for a hybrid (HEV/PHEV/REEV). Left unset for a pure ICE or pure BEV trim rather than backfilled with engine_kw+motor_kw, since that arithmetic sum isn't always the real published system figure. */
   combined_system_power_kw?: number;
   hybrid_type?: HybridType;
+  /** Powertrain-mechanism classification (parallel/series_erev/power_split/mild) — see HybridArchitecture's doc comment in types/index.ts. Only meaningful when energy_type/hybrid_type indicates a hybrid/PHEV/EREV. Derive from hybrid_system_name via lib/hybridArchitecture.ts's lookup table; never guess from battery size, and never default to "parallel" when unmapped — leave null and set architecture_unverified instead. */
+  hybrid_architecture?: HybridArchitecture | null;
+  /** Manufacturer's proprietary hybrid system brand name, e.g. "DM-i", "DHT", "EM-i", "C-DM", "Hi4" — extracted from trim name/spec text so it's a structured, filterable field rather than only readable inside trim_name. */
+  hybrid_system_name?: string;
+  /** True when this is a hybrid/PHEV/EREV trim whose hybrid_architecture could not be determined from hybrid_system_name (unmapped or missing) — flags it for manual verification against manufacturer spec sheets rather than a guessed value. */
+  architecture_unverified?: boolean;
   emissions_standard?: EmissionsStandard;
   /** Attribution, e.g. "Autohome / Dongchedi". */
   source?: string;
@@ -129,6 +144,8 @@ export const CANONICAL_POWERTRAIN_FIELD_TEMPLATE = {
     is_range_extender: "boolean | null (true only for a REEV/EREV whose engine drives a generator, not the wheels — independent of fuel_type)",
     power_kw: "number | null",
     torque_nm: "number | null",
+    adblue_required: "boolean | null (diesel only)",
+    dpf_present: "boolean | null (diesel only)",
     confidence: CONFIDENCE_VALUES.join(" | ") + " | null",
   },
   motor: {
@@ -166,6 +183,11 @@ export const CANONICAL_POWERTRAIN_FIELD_TEMPLATE = {
   combined_range_note: "string | null (if combined_range_km was computed rather than directly published, this MUST start with \"Computed:\" and show the arithmetic plus both source inputs — never leave a computed value indistinguishable from a directly-published one)",
   combined_system_power_kw: "number | null (combined ICE+motor system output — only for a hybrid HEV/PHEV/REEV; null for a pure ICE or pure BEV trim, and do not compute as engine_kw+motor_kw — only use a directly-published system figure)",
   hybrid_type: HYBRID_TYPE_VALUES.join(" | ") + " | null",
+  hybrid_architecture:
+    HYBRID_ARCHITECTURE_VALUES.join(" | ") +
+    " | null (only for hybrid/PHEV/EREV trims; derive from hybrid_system_name, never from battery size, never default to \"parallel\" when unmapped)",
+  hybrid_system_name: "string | null (e.g. \"DM-i\", \"DHT\", \"EM-i\", \"C-DM\", \"Hi4\")",
+  architecture_unverified: "boolean | null (true when hybrid_architecture could not be determined)",
   emissions_standard: EMISSIONS_STANDARD_VALUES.join(" | ") + " | null (China-market trims: use the China 5/China 6 values; export/GCC-market trims: Euro 5/6/6d)",
   source: "string | null (e.g. \"Autohome\", \"official manufacturer site\")",
   confidence: CONFIDENCE_VALUES.join(" | ") + " | null",

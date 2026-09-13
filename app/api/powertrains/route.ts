@@ -31,6 +31,7 @@ export async function GET(req: NextRequest) {
   const aspiration = searchParams.get("aspiration");
   const drive = searchParams.get("drive");
   const hybrid_type = searchParams.get("hybrid_type");
+  const hybrid_architecture = searchParams.get("hybrid_architecture");
   const emissions_standard = searchParams.get("emissions_standard");
   const ids = searchParams.get("ids");
 
@@ -41,6 +42,7 @@ export async function GET(req: NextRequest) {
   if (aspiration) filter["engine.aspiration"] = aspiration;
   if (drive) filter["motor.drive"] = drive;
   if (hybrid_type) filter.hybrid_type = hybrid_type;
+  if (hybrid_architecture) filter.hybrid_architecture = hybrid_architecture;
   if (emissions_standard) filter.emissions_standard = emissions_standard;
   if (ids) filter._id = { $in: ids.split(",") };
 

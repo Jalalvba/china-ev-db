@@ -21,6 +21,9 @@ export type HybridType = "HEV" | "PHEV" | "EREV" | "Mild hybrid" | "Not applicab
 
 export type EmissionsStandard = "Euro 5" | "Euro 6" | "Euro 6d" | "China 5" | "China 6";
 
+/** Powertrain-mechanism classification for a hybrid/PHEV/EREV trim — distinct from HybridType (a coarser HEV/PHEV/EREV/Mild-hybrid label) and from EnergyType. Derived primarily from hybridSystemName via a lookup table (see lib/hybridArchitecture.ts), NOT from battery size (a large battery does not imply series_erev — e.g. Denza D9's DM-i is power_split despite a 66.5 kWh pack). Null until sourced; never guess-defaulted to "parallel". */
+export type HybridArchitecture = "parallel" | "series_erev" | "power_split" | "mild";
+
 export type MotorCount = "single" | "dual" | "tri-motor" | "quad-motor";
 
 export type GearboxType =

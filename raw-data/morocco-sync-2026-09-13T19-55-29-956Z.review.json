@@ -1,0 +1,101 @@
+[
+  {
+    "brandName": "Dongfeng",
+    "modelName": "007",
+    "outcome": "not-found",
+    "note": "Brand page found on at least one site but no price parsed for this model — needs manual check."
+  },
+  {
+    "brandName": "Dongfeng",
+    "modelName": "Dongfeng AX4",
+    "outcome": "not-found",
+    "note": "Brand page found on at least one site but no price parsed for this model — needs manual check."
+  },
+  {
+    "brandName": "Dongfeng",
+    "modelName": "008",
+    "outcome": "not-found",
+    "note": "Brand page found on at least one site but no price parsed for this model — needs manual check."
+  },
+  {
+    "brandName": "Dongfeng",
+    "modelName": "Dongfeng Aeolus L7",
+    "outcome": "not-found",
+    "note": "Brand page found on at least one site but no price parsed for this model — needs manual check."
+  },
+  {
+    "brandName": "Dongfeng",
+    "modelName": "Dongfeng Aeolus L8",
+    "outcome": "not-found",
+    "note": "Brand page found on at least one site but no price parsed for this model — needs manual check."
+  },
+  {
+    "brandName": "Dongfeng",
+    "modelName": "Dongfeng AX7",
+    "outcome": "not-found",
+    "note": "Brand page found on at least one site but no price parsed for this model — needs manual check."
+  },
+  {
+    "brandName": "Dongfeng",
+    "modelName": "Dongfeng Forthing T5 EVO",
+    "outcome": "not-found",
+    "note": "Brand page found on at least one site but no price parsed for this model — needs manual check."
+  },
+  {
+    "brandName": "Dongfeng",
+    "modelName": "Dongfeng E70",
+    "outcome": "not-found",
+    "note": "Brand page found on at least one site but no price parsed for this model — needs manual check."
+  },
+  {
+    "brandName": "Dongfeng",
+    "modelName": "Dongfeng S30",
+    "outcome": "not-found",
+    "note": "Brand page found on at least one site but no price parsed for this model — needs manual check."
+  },
+  {
+    "brandName": "Dongfeng",
+    "modelName": "Dongfeng SKY EV01",
+    "outcome": "not-found",
+    "note": "Brand page found on at least one site but no price parsed for this model — needs manual check."
+  },
+  {
+    "brandName": "Dongfeng",
+    "modelName": "Dongfeng Shine GS",
+    "outcome": "non-exact-match",
+    "moteurPriceDh": 179000,
+    "wandalooPriceDh": 179000,
+    "diffPct": 0,
+    "note": "At least one source matched via substring fallback, not an exact name match — needs manual confirmation."
+  },
+  {
+    "brandName": "Dongfeng",
+    "modelName": "Dongfeng Vigo",
+    "outcome": "not-found",
+    "note": "Brand page found on at least one site but no price parsed for this model — needs manual check."
+  },
+  {
+    "brandName": "Dongfeng",
+    "modelName": "Rich 6",
+    "outcome": "not-found",
+    "note": "Brand page found on at least one site but no price parsed for this model — needs manual check."
+  },
+  {
+    "brandName": "Dongfeng",
+    "modelName": "Rich 7",
+    "outcome": "not-found",
+    "note": "Brand page found on at least one site but no price parsed for this model — needs manual check."
+  },
+  {
+    "brandName": "Dongfeng",
+    "modelName": "SX6",
+    "outcome": "not-found",
+    "note": "Brand page found on at least one site but no price parsed for this model — needs manual check."
+  },
+  {
+    "brandName": "Dongfeng",
+    "modelName": "Z9",
+    "outcome": "not-found",
+    "note": "Brand page found on at least one site but no price parsed for this model — needs manual check."
+  }
+]

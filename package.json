@@ -26,7 +26,8 @@
     "analyze-price-fetch": "tsx scripts/analyze-price-fetch.ts",
     "import-price-fetch": "tsx scripts/import-price-fetch.ts",
     "migrate-parent-groups": "tsx scripts/migrate-parent-groups.ts",
-    "fix-deepseek-audit": "tsx scripts/fix-deepseek-audit-corrections.ts"
+    "fix-deepseek-audit": "tsx scripts/fix-deepseek-audit-corrections.ts",
+    "backfill-hybrid-architecture": "tsx scripts/backfill-hybrid-architecture.ts"
   },
   "dependencies": {
     "@google/genai": "^2.22.0",

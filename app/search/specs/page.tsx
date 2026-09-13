@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import type { IBrand, IModel, IPowertrain } from "@/types";
 import { compactSpecLabel } from "@/lib/specGrouping";
-import { hpToKw } from "@/lib/units";
+import { hpToKw, kwToHp } from "@/lib/units";
+import { bestMatchScores } from "@/lib/bestMatchScore";
 
 type PopulatedModel = Omit<IModel, "brand_id"> & { brand_id: IBrand };
 type PopulatedPowertrain = Omit<IPowertrain, "model_id"> & { model_id: PopulatedModel };
@@ -15,7 +16,28 @@ const ASPIRATIONS = ["turbo", "naturally-aspirated", "supercharged", "twin-charg
 const GEARBOX_TYPES = ["single-speed reducer", "CVT", "DCT", "AT", "MT", "AMT", "multi-speed EV transmission"];
 const DRIVE_TYPES = ["FWD", "RWD", "AWD", "4WD"];
 const HYBRID_TYPES = ["HEV", "PHEV", "EREV", "Mild hybrid", "Not applicable"];
+const HYBRID_ARCHITECTURES = ["parallel", "power_split", "series_erev", "mild"];
 const EMISSIONS_STANDARDS = ["Euro 5", "Euro 6", "Euro 6d", "China 5", "China 6"];
+const HYBRID_ARCHITECTURE_LABELS: Record<string, string> = {
+  parallel: "Parallel",
+  power_split: "Power-split",
+  series_erev: "EREV",
+  mild: "Mild hybrid",
+};
+
+type SortMode = "best_match" | "price" | "hp" | "range" | "battery";
+
+/** Manufacturer-published combined-system hp when available, else the ICE engine's or the motor's own hp — never a summed engine+motor figure (see combinedSystemHp's schema comment: that sum is mathematically wrong for parallel/power-split systems). Used for the "HP" sort and as the Best Match combinedHp input. */
+function effectiveHp(pt: PopulatedPowertrain): number | undefined {
+  if (pt.combined_system_power_kw != null) return kwToHp(pt.combined_system_power_kw);
+  if (pt.engine?.power_kw != null) return kwToHp(pt.engine.power_kw);
+  if (pt.motor?.power_kw != null) return kwToHp(pt.motor.power_kw);
+  return undefined;
+}
+
+function effectiveRangeKm(pt: PopulatedPowertrain): number | undefined {
+  return pt.battery?.ev_range_km ?? pt.combined_range_km ?? undefined;
+}
 
 const selectClass =
   "border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 rounded px-3 py-2 text-sm w-full";
@@ -37,7 +59,9 @@ export default function SpecSearchPage() {
   const [gearbox, setGearbox] = useState("");
   const [driveType, setDriveType] = useState("");
   const [hybridType, setHybridType] = useState("");
+  const [hybridArchitecture, setHybridArchitecture] = useState("");
   const [emissionsStandard, setEmissionsStandard] = useState("");
+  const [sortBy, setSortBy] = useState<SortMode>("best_match");
   const [minEnginePower, setMinEnginePower] = useState("");
   const [maxEnginePower, setMaxEnginePower] = useState("");
   const [minMotorPower, setMinMotorPower] = useState("");
@@ -66,6 +90,7 @@ export default function SpecSearchPage() {
     gearbox ||
     driveType ||
     hybridType ||
+    hybridArchitecture ||
     emissionsStandard ||
     minEnginePower ||
     maxEnginePower ||
@@ -92,6 +117,7 @@ export default function SpecSearchPage() {
   if (gearbox) activeFilters.push(`Transmission: ${gearbox}`);
   if (driveType) activeFilters.push(`Drive type: ${driveType}`);
   if (hybridType) activeFilters.push(`Hybrid type: ${hybridType}`);
+  if (hybridArchitecture) activeFilters.push(`Hybrid architecture: ${HYBRID_ARCHITECTURE_LABELS[hybridArchitecture] ?? hybridArchitecture}`);
   if (emissionsStandard) activeFilters.push(`Emissions standard: ${emissionsStandard}`);
   if (minEnginePower || maxEnginePower) activeFilters.push(`Engine power: ${minEnginePower || "0"}–${maxEnginePower || "∞"} hp`);
   if (minMotorPower || maxMotorPower) activeFilters.push(`Motor power: ${minMotorPower || "0"}–${maxMotorPower || "∞"} hp`);
@@ -114,6 +140,7 @@ export default function SpecSearchPage() {
     if (gearbox) params.set("gearbox", gearbox);
     if (driveType) params.set("drive", driveType);
     if (hybridType) params.set("hybrid_type", hybridType);
+    if (hybridArchitecture) params.set("hybrid_architecture", hybridArchitecture);
     if (emissionsStandard) params.set("emissions_standard", emissionsStandard);
     // Power (engine/motor/combined-system) is entered in hp (matching how
     // it's displayed everywhere else in the app — see lib/units.ts) but
@@ -141,6 +168,9 @@ export default function SpecSearchPage() {
       const res = await fetch(`/api/powertrains?${params.toString()}`);
       if (!res.ok) throw new Error(`Request failed with status ${res.status}`);
       const data = await res.json();
+      // A fresh search always defaults back to Best Match — the previous
+      // sort choice was scoped to the previous result set.
+      setSortBy("best_match");
       setResults(data);
     } catch (err) {
       setError((err as Error).message);
@@ -149,6 +179,36 @@ export default function SpecSearchPage() {
       setLoading(false);
     }
   }
+
+  /** Recomputed whenever `results` or `sortBy` changes — Best Match scores are always relative to the CURRENTLY FILTERED set (Part 5), never a fixed global range, so this can't be cached across a different search. */
+  const sortedResults = useMemo(() => {
+    if (!results) return null;
+    if (sortBy === "best_match") {
+      const scores = bestMatchScores(results);
+      return results
+        .map((pt, i) => ({ pt, score: scores[i] }))
+        .sort((a, b) => b.score - a.score)
+        .map((x) => x.pt);
+    }
+    const copy = [...results];
+    if (sortBy === "price") {
+      copy.sort((a, b) => {
+        const pa = a.model_id?.price_range?.min;
+        const pb = b.model_id?.price_range?.min;
+        if (pa == null && pb == null) return 0;
+        if (pa == null) return 1;
+        if (pb == null) return -1;
+        return pa - pb;
+      });
+    } else if (sortBy === "hp") {
+      copy.sort((a, b) => (effectiveHp(b) ?? -1) - (effectiveHp(a) ?? -1));
+    } else if (sortBy === "range") {
+      copy.sort((a, b) => (effectiveRangeKm(b) ?? -1) - (effectiveRangeKm(a) ?? -1));
+    } else if (sortBy === "battery") {
+      copy.sort((a, b) => (b.battery?.capacity_total_kwh ?? -1) - (a.battery?.capacity_total_kwh ?? -1));
+    }
+    return copy;
+  }, [results, sortBy]);
 
   return (
     <div>
@@ -203,6 +263,14 @@ export default function SpecSearchPage() {
           {HYBRID_TYPES.map((t) => (
             <option key={t} value={t}>
               {t}
+            </option>
+          ))}
+        </select>
+        <select className={selectClass} value={hybridArchitecture} onChange={(e) => setHybridArchitecture(e.target.value)}>
+          <option value="">Hybrid architecture…</option>
+          {HYBRID_ARCHITECTURES.map((t) => (
+            <option key={t} value={t}>
+              {HYBRID_ARCHITECTURE_LABELS[t]}
             </option>
           ))}
         </select>
@@ -395,25 +463,93 @@ export default function SpecSearchPage() {
 
       {error && <p className="text-sm text-red-600 dark:text-red-400 mb-4">{error}</p>}
 
-      {results !== null && (
+      {sortedResults !== null && (
         <>
-          <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-3">
-            {results.length} trim(s) match.
-          </p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {results.map((pt) => (
-              <Link
-                key={pt._id}
-                href={`/models/${pt.model_id?._id}`}
-                className="block bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-4 hover:border-zinc-400 dark:hover:border-zinc-600 hover:shadow-sm transition"
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-sm text-zinc-500 dark:text-zinc-400">{sortedResults.length} trim(s) match.</p>
+            <label className="flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-400">
+              Sort by
+              <select
+                className="border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 rounded px-2 py-1 text-sm"
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as SortMode)}
               >
-                <h3 className="font-semibold">
-                  {pt.model_id?.brand_id?.name} {pt.model_id?.name}
-                </h3>
-                <p className="text-sm text-zinc-500 dark:text-zinc-400">{pt.trim_name}</p>
-                <p className="mt-2 text-xs text-zinc-600 dark:text-zinc-400">{compactSpecLabel(pt)}</p>
-              </Link>
-            ))}
+                <option value="best_match">Best match</option>
+                <option value="price">Price</option>
+                <option value="hp">HP</option>
+                <option value="range">Range</option>
+                <option value="battery">Battery</option>
+              </select>
+            </label>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {sortedResults.map((pt) => {
+              const evRange = pt.battery?.ev_range_km;
+              const batteryKwh = pt.battery?.capacity_total_kwh;
+              const hp = effectiveHp(pt);
+              const archLabel = pt.hybrid_architecture ? HYBRID_ARCHITECTURE_LABELS[pt.hybrid_architecture] : undefined;
+              const engineHp = kwToHp(pt.engine?.power_kw);
+              const motorHp = kwToHp(pt.motor?.power_kw);
+
+              return (
+                <Link
+                  key={pt._id}
+                  href={`/models/${pt.model_id?._id}`}
+                  className="block bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-4 hover:border-zinc-400 dark:hover:border-zinc-600 hover:shadow-sm transition"
+                >
+                  <h3 className="font-semibold">
+                    {pt.model_id?.brand_id?.name} {pt.model_id?.name}
+                  </h3>
+                  <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-2">{pt.trim_name}</p>
+
+                  <div className="space-y-1 text-xs text-zinc-600 dark:text-zinc-400">
+                    {evRange != null && (
+                      <p>
+                        <span className="font-medium text-zinc-800 dark:text-zinc-200">{evRange} km</span> EV-only range
+                      </p>
+                    )}
+                    {batteryKwh != null && (
+                      <p>
+                        <span className="font-medium text-zinc-800 dark:text-zinc-200">{batteryKwh} kWh</span> battery
+                      </p>
+                    )}
+                    {hp != null && (
+                      <p>
+                        <span className="font-medium text-zinc-800 dark:text-zinc-200">{hp} hp</span> combined system
+                      </p>
+                    )}
+                    {archLabel && (
+                      <span className="inline-block mt-0.5 px-1.5 py-0.5 rounded bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-300 text-[11px] font-medium">
+                        {archLabel}
+                      </span>
+                    )}
+                    {pt.engine?.power_kw != null && (
+                      <p>
+                        Engine: {pt.engine.displacement_l ? `${pt.engine.displacement_l}L ` : ""}
+                        {pt.engine.aspiration === "turbo" ? "Turbo " : ""}
+                        {engineHp != null ? `${engineHp} hp` : ""}
+                        {pt.engine.torque_nm != null ? ` · ${pt.engine.torque_nm} Nm` : ""}
+                      </p>
+                    )}
+                    {pt.motor?.power_kw != null && (
+                      <p>
+                        Motor: {motorHp != null ? `${motorHp} hp` : ""}
+                        {pt.motor.torque_nm != null ? ` · ${pt.motor.torque_nm} Nm` : ""}
+                      </p>
+                    )}
+                    {pt.transmission?.type && (
+                      <p>
+                        {pt.transmission.type}
+                        {pt.transmission.speed_count ? ` ${pt.transmission.speed_count}-spd` : ""}
+                      </p>
+                    )}
+                  </div>
+                  <p className="mt-2 pt-2 border-t border-zinc-100 dark:border-zinc-800 text-[11px] text-zinc-500 dark:text-zinc-500">
+                    {compactSpecLabel(pt)}
+                  </p>
+                </Link>
+              );
+            })}
           </div>
         </>
       )}
