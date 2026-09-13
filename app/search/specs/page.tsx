@@ -6,6 +6,7 @@ import type { IBrand, IModel, IPowertrain } from "@/types";
 import { hpToKw, kwToHp } from "@/lib/units";
 import { bestMatchScores } from "@/lib/bestMatchScore";
 import { formatChinaPriceUsd } from "@/lib/priceDisplay";
+import { compactSpecLabel } from "@/lib/specGrouping";
 
 type PopulatedModel = Omit<IModel, "brand_id"> & { brand_id: IBrand };
 type PopulatedPowertrain = Omit<IPowertrain, "model_id"> & { model_id: PopulatedModel };
@@ -549,7 +550,8 @@ export default function SpecSearchPage() {
                   <h3 className="font-semibold">
                     {pt.model_id?.brand_id?.name} {pt.model_id?.name}
                   </h3>
-                  <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-2">{pt.trim_name}</p>
+                  <p className="text-sm text-zinc-500 dark:text-zinc-400">{pt.trim_name}</p>
+                  <p className="text-xs text-zinc-500 dark:text-zinc-500 mb-2">{compactSpecLabel(pt)}</p>
 
                   <div className="space-y-1 text-xs text-zinc-600 dark:text-zinc-400">
                     {chinaPriceUsdLabel ? (
