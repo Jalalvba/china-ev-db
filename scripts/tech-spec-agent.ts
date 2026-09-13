@@ -19,6 +19,10 @@
 //   npm run tech-spec-agent                  (full run over every incomplete model)
 //   npm run tech-spec-agent -- --limit 5     (only the first 5, for a quick test)
 //   npm run tech-spec-agent -- --model gemini-pro-latest  (override the default flash model)
+//   npm run tech-spec-agent -- --brand-ids <id1>,<id2>    (only these brands)
+//   npm run tech-spec-agent -- --zero-only   (only models with zero Powertrain docs — skip
+//                                              re-researching models that already have some,
+//                                              even incomplete, data)
 
 import dotenv from "dotenv";
 dotenv.config({ path: [".env.local", ".env"], quiet: true });
@@ -59,6 +63,10 @@ if (!GEMINI_API_KEY) {
 interface CliOptions {
   limit?: number;
   model: string;
+  /** Restrict targets to these Brand _ids (comma-separated). Unset = every brand, same as before. */
+  brandIds?: string[];
+  /** Only models with ZERO Powertrain docs — skips the needsResearch() "has some data but it's incomplete/unconfirmed" case entirely, rather than also re-researching partially-populated models. */
+  zeroOnly?: boolean;
 }
 
 function parseArgs(): CliOptions {
@@ -69,6 +77,10 @@ function parseArgs(): CliOptions {
       options.limit = Number(args[++i]);
     } else if (args[i] === "--model") {
       options.model = args[++i];
+    } else if (args[i] === "--brand-ids") {
+      options.brandIds = args[++i].split(",").map((s) => s.trim()).filter(Boolean);
+    } else if (args[i] === "--zero-only") {
+      options.zeroOnly = true;
     }
   }
   return options;
@@ -93,7 +105,7 @@ interface RejectedBatchEntry extends TechSpecBatchEntry {
 }
 
 async function run() {
-  const { limit, model } = parseArgs();
+  const { limit, model, brandIds, zeroOnly } = parseArgs();
   const delayMs = Number(process.env.GEMINI_AGENT_DELAY_MS ?? DEFAULT_DELAY_MS);
 
   await mongoose.connect(MONGODB_URI as string);
@@ -117,9 +129,12 @@ async function run() {
     else powertrainsByModel.set(key, [pt]);
   }
 
+  const brandIdSet = brandIds ? new Set(brandIds) : null;
   let targets = allModels.filter((m) => {
+    if (brandIdSet && !brandIdSet.has(String(m.brand_id?._id ?? m.brand_id))) return false;
     const pts = powertrainsByModel.get(String(m._id)) ?? [];
     if (pts.length === 0) return true;
+    if (zeroOnly) return false; // has data — zeroOnly means skip it, don't re-research
     return pts.some(needsResearch);
   });
   if (limit) targets = targets.slice(0, limit);
