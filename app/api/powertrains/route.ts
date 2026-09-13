@@ -1,5 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connectToDatabase } from "@/lib/db";
+// Side-effect imports only: registers "Model" and "Brand" so the nested
+// .populate({ path: "model_id", populate: { path: "brand_id" } }) below
+// resolves on a cold server instance regardless of request order — same
+// reasoning as app/api/models/route.ts's Brand import. Without this, a
+// serverless instance that has never handled /api/models or /api/brands
+// first throws MissingSchemaError on the populate.
+import "@/models/Model";
+import "@/models/Brand";
 import Powertrain from "@/models/Powertrain";
 
 export async function GET(req: NextRequest) {
