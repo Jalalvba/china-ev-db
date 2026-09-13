@@ -592,9 +592,18 @@ export function parseManualImport(
 
     const existing = existingById.get(parsedVariant._id);
     if (!existing) {
-      const err = `powertrains[${index}]._id "${parsedVariant._id}" does not match any existing trim on this model — if this is really a new trim, omit "_id" entirely rather than inventing one.`;
-      errors.push(err);
-      return { status: "new", diff: [], variant: parsedVariant.variant, valid: false, errors: [err] };
+      // A recurring DeepSeek/Kimi mistake: inventing a plausible-looking
+      // ObjectId for a genuinely new trim instead of omitting "_id" as
+      // instructed. Since existingById only covers THIS model's trims, an
+      // unmatched id can never mean "silently overwrite the wrong document"
+      // — the only two possibilities are a fabricated id (this case) or a
+      // stale id from a trim that's since been deleted, and in both cases
+      // treating it as a new trim (identical to what omitting "_id" would
+      // have produced) is the correct, safe fallback rather than blocking
+      // the whole import on a naming mistake the response's actual data
+      // already tells you how to resolve.
+      const diff = buildFieldDiff(null, parsedVariant.variant, parsedVariant.sourceNotes);
+      return { status: "new", diff, variant: parsedVariant.variant, valid: true, errors: [] };
     }
 
     const diff = buildFieldDiff(existing as Record<string, unknown>, parsedVariant.variant, parsedVariant.sourceNotes);
