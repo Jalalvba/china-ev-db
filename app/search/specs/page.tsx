@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import type { IBrand, IModel, IPowertrain } from "@/types";
 import { compactSpecLabel } from "@/lib/specGrouping";
+import { hpToKw } from "@/lib/units";
 
 type PopulatedModel = Omit<IModel, "brand_id"> & { brand_id: IBrand };
 type PopulatedPowertrain = Omit<IPowertrain, "model_id"> & { model_id: PopulatedModel };
@@ -51,8 +52,8 @@ export default function SpecSearchPage() {
   if (fuelType) activeFilters.push(`Fuel type: ${fuelType}`);
   if (aspiration) activeFilters.push(`Aspiration: ${aspiration}`);
   if (gearbox) activeFilters.push(`Transmission: ${gearbox}`);
-  if (minEnginePower || maxEnginePower) activeFilters.push(`Engine power: ${minEnginePower || "0"}–${maxEnginePower || "∞"} kW`);
-  if (minMotorPower || maxMotorPower) activeFilters.push(`Motor power: ${minMotorPower || "0"}–${maxMotorPower || "∞"} kW`);
+  if (minEnginePower || maxEnginePower) activeFilters.push(`Engine power: ${minEnginePower || "0"}–${maxEnginePower || "∞"} hp`);
+  if (minMotorPower || maxMotorPower) activeFilters.push(`Motor power: ${minMotorPower || "0"}–${maxMotorPower || "∞"} hp`);
   if (minBattery || maxBattery) activeFilters.push(`Battery: ${minBattery || "0"}–${maxBattery || "∞"} kWh`);
 
   async function runSearch() {
@@ -64,10 +65,13 @@ export default function SpecSearchPage() {
     if (fuelType) params.set("fuel_type", fuelType);
     if (aspiration) params.set("aspiration", aspiration);
     if (gearbox) params.set("gearbox", gearbox);
-    if (minEnginePower) params.set("min_engine_power_kw", minEnginePower);
-    if (maxEnginePower) params.set("max_engine_power_kw", maxEnginePower);
-    if (minMotorPower) params.set("min_motor_power_kw", minMotorPower);
-    if (maxMotorPower) params.set("max_motor_power_kw", maxMotorPower);
+    // Engine/motor power is entered in hp (matching how it's displayed
+    // everywhere else in the app — see lib/units.ts) but stored/queried in
+    // kW, so it's converted here rather than asking the API to know about hp.
+    if (minEnginePower) params.set("min_engine_power_kw", String(hpToKw(Number(minEnginePower))));
+    if (maxEnginePower) params.set("max_engine_power_kw", String(hpToKw(Number(maxEnginePower))));
+    if (minMotorPower) params.set("min_motor_power_kw", String(hpToKw(Number(minMotorPower))));
+    if (maxMotorPower) params.set("max_motor_power_kw", String(hpToKw(Number(maxMotorPower))));
     if (minBattery) params.set("min_battery_kwh", minBattery);
     if (maxBattery) params.set("max_battery_kwh", maxBattery);
 
@@ -129,7 +133,7 @@ export default function SpecSearchPage() {
           <input
             type="number"
             inputMode="numeric"
-            placeholder="Min engine kW"
+            placeholder="Min engine hp"
             value={minEnginePower}
             onChange={(e) => setMinEnginePower(e.target.value)}
             className={selectClass}
@@ -138,7 +142,7 @@ export default function SpecSearchPage() {
           <input
             type="number"
             inputMode="numeric"
-            placeholder="Max engine kW"
+            placeholder="Max engine hp"
             value={maxEnginePower}
             onChange={(e) => setMaxEnginePower(e.target.value)}
             className={selectClass}
@@ -148,7 +152,7 @@ export default function SpecSearchPage() {
           <input
             type="number"
             inputMode="numeric"
-            placeholder="Min motor kW"
+            placeholder="Min motor hp"
             value={minMotorPower}
             onChange={(e) => setMinMotorPower(e.target.value)}
             className={selectClass}
@@ -157,7 +161,7 @@ export default function SpecSearchPage() {
           <input
             type="number"
             inputMode="numeric"
-            placeholder="Max motor kW"
+            placeholder="Max motor hp"
             value={maxMotorPower}
             onChange={(e) => setMaxMotorPower(e.target.value)}
             className={selectClass}
