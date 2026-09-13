@@ -1,74 +1,73 @@
 # Known Issues
 
-## Duplicate model documents: bare "Dongfeng" vs "Dongfeng Aeolus" (2026-09-13)
+## Duplicate model documents: bare "Dongfeng" vs "Dongfeng Aeolus" (2026-09-13) — RESOLVED
 
-Eight models existed as two separate DB documents each — one correctly filed
-under the **"Dongfeng Aeolus"** brand, one stray duplicate filed under the
-parent **"Dongfeng"** brand. One pair (Huge) has been reconciled; the other
-seven are not — needs a per-pair diff (spec data may differ between the two
-docs, so this isn't a safe blind delete/merge).
+All eight pairs are now resolved. The underlying two-brand split itself was also
+eliminated: the user decided to stop maintaining "Dongfeng Aeolus" as a separate
+brand entirely (it kept causing this exact class of bug faster than upstream
+fixes could keep up) — see `BRAND_TAXONOMY.md`'s Dongfeng Aeolus entry for the
+full reasoning. Every model formerly under "Dongfeng Aeolus" now lives under the
+single `Dongfeng` brand; the "Dongfeng Aeolus" Brand document no longer exists.
 
-**Root cause** (fixed going forward, see below): `resolveBrandName()` in
+**Root cause** (fixed going forward): `resolveBrandName()` in
 `lib/deepseekNormalize.ts` resolves a brand purely from the current import
 entry's own `brand`/`brand_en` fields, with no cross-check against sibling
 brands. `KNOWN_BRANDS["东风"]` maps generically to bare `"Dongfeng"`, and some
 import batches tagged Aeolus-badged models with that generic Chinese string
 instead of the sub-brand-specific one — so those models landed under the wrong
 brand instead of matching the existing "Dongfeng Aeolus" sibling. This was
-still recurring as of tonight's own session (`Dongfeng Aeolus L7` was added
-under bare "Dongfeng" on 2026-09-13 at 14:51:54, alongside an identically-named
-model already correctly filed under "Dongfeng Aeolus" from the day before).
+still recurring as of that same session (`Dongfeng Aeolus L7` was added under
+bare "Dongfeng" on 2026-09-13 at 14:51:54, alongside an identically-named model
+already correctly filed under "Dongfeng Aeolus" from the day before).
 
-**Fix applied** (2026-09-13, commit after `ca573a9`): `scripts/import-deepseek.ts`
-now runs `preflightCheckCrossBrandDuplicates()` after connecting to Mongo and
-before any writes — it aborts the whole import if a model resolves to a brand
-whose sibling (same `parent_group`) already has a model with a matching name
-(checked both ways, `name`/`name_en`, prefix-stripped). Also added
-`"东风风神": { name: "Dongfeng Aeolus", parent_group: "Dongfeng Motor Corporation" }`
-to `KNOWN_BRANDS` so correctly-tagged source data resolves right without
-depending on `explicitEnglish` being supplied every time. This stops new
-duplicates; it does not retroactively fix the seven pairs below.
+**Preflight fix applied** (2026-09-13, commit after `ca573a9`):
+`scripts/import-deepseek.ts` now runs `preflightCheckCrossBrandDuplicates()`
+after connecting to Mongo and before any writes — it aborts the whole import if
+a model resolves to a brand whose sibling (same `parent_group`) already has a
+model with a matching name (checked both ways, `name`/`name_en`,
+prefix-stripped). This guard is now largely moot for Dongfeng specifically
+(there's only one Dongfeng brand to resolve to), but stays in place as a
+general safety net for any other manufacturer with a similar sub-brand split
+(e.g. a future GAC/GAC Aion-style pairing).
 
-### Resolved
+### All eight pairs, resolved
 
-- **Dongfeng Huge**: reconciled 2026-09-13. Canonical doc `6aa58f6c459a4cbe4a9c65d4`
-  ("Dongfeng Huge" / "Dongfeng Aeolus") kept its own `name_cn`/`name_en`/
-  `generation` (more complete than the duplicate's generic "Huge"/"1st
-  Generation"). Merged in from the duplicate: all 11 `Powertrain` docs
-  (re-pointed `model_id`), `notable_facts`, `morocco_to_china_price_ratio`,
-  and a real scraped `morocco_price_source`/`morocco_price_url`
-  (moteur.ma) replacing the earlier `manual-verified` placeholder that had
-  no URL. Duplicate doc `6aa58edb459a4cbe4a9c65c8` (bare "Dongfeng" brand)
-  deleted after the merge — had no other references (checked
-  `moroccolistings` and all other collections).
+For each pair: the doc with richer `name_cn`/`name_en`/`generation`/
+`notable_facts` was kept as canonical; `Powertrain` docs were re-pointed from
+the duplicate's `model_id` to the canonical one; any Morocco-price/
+`morocco_to_china_price_ratio` fields present on the duplicate but missing on
+the canonical were merged in; the duplicate was then deleted. Both docs were
+re-pointed to (or already on) the single surviving `Dongfeng` brand.
 
-### The remaining seven duplicate pairs
+| Model | Canonical doc kept | Duplicate deleted | Notes |
+|---|---|---|---|
+| Huge | `6aa58f6c459a4cbe4a9c65d4` | `6aa58edb459a4cbe4a9c65c8` | Reconciled first (see git history for full detail: 11 powertrains, notable_facts, real moteur.ma source/url merged in) |
+| Shine | `6aa58f6c459a4cbe4a9c65d1` | `6aa58edb459a4cbe4a9c65c4` | Morocco price (179,000 DH) merged in; `morocco_price_confirmed` had to be fixed separately afterward (see below) |
+| Shine GS | `6aa58f6c459a4cbe4a9c65d3` | `6aa58edb459a4cbe4a9c65c6` | No fields to merge |
+| Shine Max | `6aa58f6c459a4cbe4a9c65d2` | `6aa58edb459a4cbe4a9c65c5` | Price-ratio field only; still has no Morocco price on file at all — needs a fresh fetch |
+| Mage | `6aa58f6c459a4cbe4a9c65d5` | `6aa58edb459a4cbe4a9c65c7` | Price-ratio field only; still has no Morocco price on file at all — needs a fresh fetch |
+| E70 | `6aa58f6c459a4cbe4a9c65d8` | `6aa58edb459a4cbe4a9c65cf` | No fields to merge |
+| AX7 | `6aa58f6c459a4cbe4a9c65da` | `6aa58edb459a4cbe4a9c65c9` | No fields to merge |
+| Aeolus L7 | `6aa58f6c459a4cbe4a9c65d6` | `6aa6aa7aa93026dd42b5cb2b` | No fields to merge |
 
-| Aeolus model (correct brand, keep) | Duplicate under bare "Dongfeng" (needs diff before any merge) |
-|---|---|
-| Dongfeng Shine (`6aa58f6c459a4cbe4a9c65d1`) | Shine (`6aa58edb459a4cbe4a9c65c4`) |
-| Dongfeng Shine GS (`6aa58f6c459a4cbe4a9c65d3`) | Shine GS (`6aa58edb459a4cbe4a9c65c6`) |
-| Dongfeng Shine Max (`6aa58f6c459a4cbe4a9c65d2`) | Shine Max (`6aa58edb459a4cbe4a9c65c5`) |
-| Dongfeng Mage (`6aa58f6c459a4cbe4a9c65d5`) | Mage (`6aa58edb459a4cbe4a9c65c7`) |
-| Dongfeng E70 (`6aa58f6c459a4cbe4a9c65d8`) | E70 (`6aa58edb459a4cbe4a9c65cf`) |
-| Dongfeng AX7 (`6aa58f6c459a4cbe4a9c65da`) | AX7 (`6aa58edb459a4cbe4a9c65c9`) |
-| Dongfeng Aeolus L7 (`6aa58f6c459a4cbe4a9c65d6`) | Dongfeng Aeolus L7 (`6aa6aa7aa93026dd42b5cb2b` — created 2026-09-13, identical name, wrong brand) |
+**Bug caught during this merge**: the merge script only copied a field from the
+duplicate onto the canonical doc when the canonical's own value was `undefined`
+— but `morocco_price_confirmed` on the Shine canonical doc was explicitly
+`false` (not `undefined`), so the price merged in but the confirmed flag
+didn't, leaving a priced-but-unconfirmed record. Caught by an audit query
+(`morocco_price_dh` set but `morocco_price_confirmed` not `true`) right after
+the merge and fixed directly; the other 6 pairs were checked the same way and
+came back clean.
 
-Not duplicated (genuinely brand-specific, leave as-is):
-- Aeolus-only: Dongfeng AX4 (`6aa58f6c459a4cbe4a9c65db`), Dongfeng Aeolus L8 (`6aa58f6c459a4cbe4a9c65d7`), Dongfeng S30 (`6aa58f6c459a4cbe4a9c65dc`), Dongfeng SKY EV01 (`6aa58f6c459a4cbe4a9c65d9`)
-- Bare-"Dongfeng"-only (different sub-brands: eπ, Forthing, Joyear, Ruiqi —
-  not Aeolus): 007 (`6aa58edb459a4cbe4a9c65ca`), 008 (`6aa58edb459a4cbe4a9c65cb`), Box (`6aa47dd5ee15cebb2bbd5bc5`),
-  Rich 6 (`6aa58edb459a4cbe4a9c65cc`), Rich 7 (`6aa58edb459a4cbe4a9c65cd`), SX6 (`6aa58edb459a4cbe4a9c65d0`),
-  Z9 (`6aa58edb459a4cbe4a9c65ce`), Dongfeng Forthing T5 EVO (`6aa6aa7aa93026dd42b5cb2c`), Dongfeng Vigo (`6aa6aa7aa93026dd42b5cb2a`)
+Not duplicated (genuinely distinct models, now all just under one `Dongfeng`
+brand): AX4, Aeolus L8, S30, SKY EV01 (formerly Aeolus-only), and 007, 008, Box
+(eπ box), Rich 6, Rich 7, SX6, Z9, Forthing T5 EVO, Vigo (formerly
+bare-Dongfeng-only — different Dongfeng-group sub-brands: eπ, Forthing, Joyear,
+Ruiqi, none of them Aeolus).
 
-### Next steps (future session)
+### Follow-up still open
 
-1. For each pair, diff all fields (spec data, powertrains, Morocco pricing,
-   `unverified`/`confidence` flags) — the two docs may not be identical, so
-   this needs a human decision per field, not a blind overwrite.
-2. Decide which doc is canonical (default assumption: the "Dongfeng Aeolus"
-   one, per `BRAND_TAXONOMY.md`) and merge/delete the other, including any
-   `Powertrain` documents pointing at the deleted `model_id`.
-3. Re-run `preflightCheckCrossBrandDuplicates` logic (or a one-off script
-   using the same matching) across *all* brand groups, not just Dongfeng, to
-   check for other sibling-brand duplicates that predate tonight's fix.
+Mage and Shine Max both currently have **no Morocco price on file at all** —
+confirmed missing from the live moteur.ma listing check on 2026-09-13 (moteur.ma
+shows Mage at 269,000 DH and Shine Max at 269,000 DH, neither yet in our DB).
+Needs a price fetch/confirm pass, same as any other unpriced model.

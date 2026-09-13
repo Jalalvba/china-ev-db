@@ -95,9 +95,18 @@ something below must be treated as a claim to verify, not applied blindly (see �
   standalone `"JAC"` vs `"JAC Group"` split; don't recreate that duplication.
 - **`ROX`** was a duplicate of `Polestones` (parent: Shanghai Luoke Intelligent
   Technology) and was deleted — don't re-add it as a second GWM-adjacent brand.
-- **Dongfeng Aeolus** is a wholly-owned mainstream Dongfeng brand with no PSA/Stellantis
-  `tech_partner` — that relationship belongs to the separate Dongfeng-PSA JV (Shenlong
-  Automobile), not Aeolus.
+- **Dongfeng Aeolus was merged into `Dongfeng` on 2026-09-13** (reversing the entry
+  above this replaces) — this was originally treated as a real, distinct sub-brand
+  (wholly-owned, no PSA/Stellantis `tech_partner`; that relationship belongs to the
+  separate Dongfeng-PSA JV, Shenlong Automobile), but keeping it as a second brand
+  document caused real, recurring duplicate-model bugs (see `KNOWN_ISSUES.md`'s
+  now-resolved Dongfeng section) that kept resurfacing faster than they could be fixed
+  upstream, and the user made an explicit call to stop maintaining the split rather than
+  keep chasing it. Every model formerly under "Dongfeng Aeolus" (Shine, Shine GS, Shine
+  Max, Mage, E70, AX7, Aeolus L7, Huge, plus the Aeolus-only AX4/Aeolus L8/S30/SKY EV01)
+  is now filed under the single `Dongfeng` brand. The "Dongfeng Aeolus" Brand document no
+  longer exists — don't recreate it from a future research pass's own sub-brand claim
+  without re-confirming this decision with the user first, per the process rule below.
 - **Leapmotor** stays independent (no controlling parent) but carries a status_note:
   Stellantis holds ~20% since 2023, with Leapmotor International as the JV handling
   global expansion outside China.
