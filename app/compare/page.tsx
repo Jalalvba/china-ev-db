@@ -509,6 +509,8 @@ function CompareInner() {
   const idB = searchParams.get("b") ?? "";
   const trimIdAParam = searchParams.get("ta") ?? "";
   const trimIdBParam = searchParams.get("tb") ?? "";
+  const priceMinParam = searchParams.get("pmin") ?? "";
+  const priceMaxParam = searchParams.get("pmax") ?? "";
 
   // Only the two dropdown pickers need data up front — powertrains (the
   // heaviest of the three, and double-populated: model_id -> brand_id) are
@@ -588,6 +590,18 @@ function CompareInner() {
     router.replace(`/compare?${params.toString()}`);
   };
 
+  /** Applies to both sides at once (not per-model) — the point is narrowing which cars are worth comparing within a budget, not filtering each dropdown independently. Empty min/max means no bound on that end. */
+  const setPriceFilter = (which: "min" | "max", raw: string) => {
+    const params = new URLSearchParams(searchParams.toString());
+    const key = which === "min" ? "pmin" : "pmax";
+    if (raw) params.set(key, raw);
+    else params.delete(key);
+    router.replace(`/compare?${params.toString()}`);
+  };
+
+  const priceMin = priceMinParam ? Number(priceMinParam) : undefined;
+  const priceMax = priceMaxParam ? Number(priceMaxParam) : undefined;
+
   /** Only models with a confirmed Morocco price are pickable — comparing anything else means at least one side is guesswork. */
   const priceConfirmedModels = useMemo(
     () =>
@@ -595,9 +609,32 @@ function CompareInner() {
     [allModels],
   );
 
+  const priceRangeModels = useMemo(
+    () =>
+      priceConfirmedModels.filter((m) => {
+        const price = m.morocco_price_dh!;
+        if (priceMin !== undefined && price < priceMin) return false;
+        if (priceMax !== undefined && price > priceMax) return false;
+        return true;
+      }),
+    [priceConfirmedModels, priceMin, priceMax],
+  );
+
+  // A model selected before the range narrowed (or shared via a ?a=/?b=
+  // link) that no longer qualifies gets cleared rather than left as a
+  // stale, invisible selection the pickers can't actually show as chosen.
+  useEffect(() => {
+    if (idA && !priceRangeModels.some((m) => m._id === idA)) setModelSelection("a", "");
+    if (idB && !priceRangeModels.some((m) => m._id === idB)) setModelSelection("b", "");
+    // setModelSelection is a fresh closure every render (reads searchParams),
+    // not stable across renders — omitted from deps deliberately, same as
+    // the powertrain-fetch effect above.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [priceRangeModels, idA, idB]);
+
   const manufacturers = useMemo(
-    () => buildManufacturers(allBrands, priceConfirmedModels),
-    [allBrands, priceConfirmedModels],
+    () => buildManufacturers(allBrands, priceRangeModels),
+    [allBrands, priceRangeModels],
   );
 
   const modelA = allModels.find((m) => m._id === idA);
@@ -629,18 +666,50 @@ function CompareInner() {
         meaningful difference are highlighted.
       </p>
 
+      <div className="mb-3">
+        <label className="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1">
+          Morocco price range (DH) — applies to both cars
+        </label>
+        <div className="flex items-center gap-2 max-w-sm">
+          <input
+            type="number"
+            inputMode="numeric"
+            min={0}
+            placeholder="Min"
+            value={priceMinParam}
+            onChange={(e) => setPriceFilter("min", e.target.value)}
+            className="border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 rounded px-3 py-2 text-sm w-full"
+          />
+          <span className="text-zinc-400 dark:text-zinc-500">–</span>
+          <input
+            type="number"
+            inputMode="numeric"
+            min={0}
+            placeholder="Max"
+            value={priceMaxParam}
+            onChange={(e) => setPriceFilter("max", e.target.value)}
+            className="border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 rounded px-3 py-2 text-sm w-full"
+          />
+        </div>
+        {(priceMinParam || priceMaxParam) && (
+          <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+            {priceRangeModels.length} of {priceConfirmedModels.length} priced model(s) in range
+          </p>
+        )}
+      </div>
+
       <div className="flex flex-col sm:flex-row gap-3 mb-3">
         <ManufacturerBrandModelPicker
           label="Model A"
           manufacturers={manufacturers}
-          models={priceConfirmedModels}
+          models={priceRangeModels}
           value={idA}
           onChange={(id) => setModelSelection("a", id)}
         />
         <ManufacturerBrandModelPicker
           label="Model B"
           manufacturers={manufacturers}
-          models={priceConfirmedModels}
+          models={priceRangeModels}
           value={idB}
           onChange={(id) => setModelSelection("b", id)}
         />
