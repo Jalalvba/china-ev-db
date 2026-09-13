@@ -88,8 +88,16 @@ export interface ExportDocument {
   powertrains: ExportedPowertrain[];
 }
 
-/** Fields that only exist to give the external LLM context (e.g. brand_name) or are read-only display (production_status, _id, brand_id) — never accepted back as a change on import, regardless of what the returned JSON says. */
-const MODEL_CONTEXT_ONLY_KEYS = new Set(["_id", "brand_id", "brand_name", "brand_name_cn", "production_status", "unverified"]);
+/** Fields that only exist to give the external LLM context (e.g. brand_name) or are read-only display (production_status, _id, brand_id) — never accepted back as a change on import, regardless of what the returned JSON says. "unverified_note" isn't a real field at all — Kimi/DeepSeek reliably invents it anyway to explain why it set "unverified", so it's silently dropped here rather than hard-failing every import that touches that field (the same reasoning as "unverified" itself being context-only: whatever it says is redundant with the field-level "<field>_source_note"s already required elsewhere). */
+const MODEL_CONTEXT_ONLY_KEYS = new Set([
+  "_id",
+  "brand_id",
+  "brand_name",
+  "brand_name_cn",
+  "production_status",
+  "unverified",
+  "unverified_note",
+]);
 
 // ---------------------------------------------------------------------------
 // Export-document builder — shared by the CLI script
