@@ -5,6 +5,7 @@ import Link from "next/link";
 import type { IBrand, IModel, IPowertrain } from "@/types";
 import { hpToKw, kwToHp } from "@/lib/units";
 import { bestMatchScores } from "@/lib/bestMatchScore";
+import { formatChinaPriceUsd } from "@/lib/priceDisplay";
 
 type PopulatedModel = Omit<IModel, "brand_id"> & { brand_id: IBrand };
 type PopulatedPowertrain = Omit<IPowertrain, "model_id"> & { model_id: PopulatedModel };
@@ -537,7 +538,7 @@ export default function SpecSearchPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {sortedResults.map((pt) => {
               const priceRange = pt.model_id?.price_range;
-              const hasChinaPrice = priceRange?.min != null && priceRange?.max != null;
+              const chinaPriceUsdLabel = formatChinaPriceUsd(priceRange);
 
               return (
                 <Link
@@ -551,18 +552,13 @@ export default function SpecSearchPage() {
                   <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-2">{pt.trim_name}</p>
 
                   <div className="space-y-1 text-xs text-zinc-600 dark:text-zinc-400">
-                    {hasChinaPrice && (
+                    {chinaPriceUsdLabel ? (
                       <p>
-                        <span className="font-medium text-zinc-800 dark:text-zinc-200">
-                          {priceRange!.min!.toLocaleString()}–{priceRange!.max!.toLocaleString()} {priceRange!.currency_local}
-                        </span>
-                        {priceRange!.min_usd != null && priceRange!.max_usd != null && (
-                          <> (~${priceRange!.min_usd.toLocaleString()}–${priceRange!.max_usd.toLocaleString()})</>
-                        )}
-                        {priceRange!.unverified && " ⚠"}
+                        <span className="font-medium text-zinc-800 dark:text-zinc-200">{chinaPriceUsdLabel}</span>
                       </p>
+                    ) : (
+                      <p className="italic">Price not available</p>
                     )}
-                    {!hasChinaPrice && <p className="italic">Price not available</p>}
                     {pt.model_id?.morocco_price_dh != null && (
                       <p>
                         🇲🇦 {pt.model_id.morocco_price_dh.toLocaleString()} DH

@@ -99,18 +99,8 @@ export default async function ModelPage({ params }: { params: Promise<{ id: stri
           </span>
         )}
       </div>
-      {model.price_range && (
-        <p className="text-sm text-zinc-600 dark:text-zinc-400 mt-1">
-          Price: {model.price_range.min?.toLocaleString()}–
-          {model.price_range.max?.toLocaleString()} {model.price_range.currency_local}
-          {model.price_range.min_usd &&
-            ` (~$${model.price_range.min_usd.toLocaleString()}–$${model.price_range.max_usd?.toLocaleString()})`}
-          {model.price_range.unverified && (
-            <span className="ml-2 px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400 text-xs">
-              unverified
-            </span>
-          )}
-        </p>
+      {chinaPriceUsdLabel && (
+        <p className="text-sm text-zinc-600 dark:text-zinc-400 mt-1">Price: {chinaPriceUsdLabel}</p>
       )}
       {model.notable_facts && (
         <div className="mt-3 p-3 rounded-lg bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-sm">
