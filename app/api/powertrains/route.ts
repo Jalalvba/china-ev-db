@@ -18,13 +18,21 @@ export async function GET(req: NextRequest) {
   const model_id = searchParams.get("model_id");
   const energy_type = searchParams.get("energy_type");
   const gearbox = searchParams.get("gearbox");
+  const fuel_type = searchParams.get("fuel_type");
+  const aspiration = searchParams.get("aspiration");
   const minBattery = searchParams.get("min_battery_kwh");
   const maxBattery = searchParams.get("max_battery_kwh");
+  const minEnginePower = searchParams.get("min_engine_power_kw");
+  const maxEnginePower = searchParams.get("max_engine_power_kw");
+  const minMotorPower = searchParams.get("min_motor_power_kw");
+  const maxMotorPower = searchParams.get("max_motor_power_kw");
   const ids = searchParams.get("ids");
 
   if (model_id) filter.model_id = model_id;
   if (energy_type) filter.energy_type = energy_type;
   if (gearbox) filter["transmission.type"] = gearbox;
+  if (fuel_type) filter["engine.fuel_type"] = fuel_type;
+  if (aspiration) filter["engine.aspiration"] = aspiration;
   if (ids) filter._id = { $in: ids.split(",") };
   if (minBattery || maxBattery) {
     filter["battery.capacity_total_kwh"] = {};
@@ -32,6 +40,26 @@ export async function GET(req: NextRequest) {
       (filter["battery.capacity_total_kwh"] as Record<string, unknown>).$gte = Number(minBattery);
     if (maxBattery)
       (filter["battery.capacity_total_kwh"] as Record<string, unknown>).$lte = Number(maxBattery);
+  }
+  if (minEnginePower || maxEnginePower) {
+    filter["engine.power_kw"] = {};
+    if (minEnginePower) (filter["engine.power_kw"] as Record<string, unknown>).$gte = Number(minEnginePower);
+    if (maxEnginePower) (filter["engine.power_kw"] as Record<string, unknown>).$lte = Number(maxEnginePower);
+  }
+  if (minMotorPower || maxMotorPower) {
+    filter["motor.power_kw"] = {};
+    if (minMotorPower) (filter["motor.power_kw"] as Record<string, unknown>).$gte = Number(minMotorPower);
+    if (maxMotorPower) (filter["motor.power_kw"] as Record<string, unknown>).$lte = Number(maxMotorPower);
+  }
+
+  // Refuse an unfiltered full-collection dump — every real caller (the
+  // Compare page's per-model trim fetch, this new technical search) always
+  // has at least one criterion. An empty filter used to mean "return every
+  // powertrain in the DB, double-populated" on every page load before
+  // a87acf5 fixed the one caller that did that; this closes the door on any
+  // future caller reintroducing the same mistake.
+  if (Object.keys(filter).length === 0) {
+    return NextResponse.json({ error: "At least one filter parameter is required." }, { status: 400 });
   }
 
   const powertrains = await Powertrain.find(filter).populate({ path: "model_id", populate: { path: "brand_id" } }).lean();
