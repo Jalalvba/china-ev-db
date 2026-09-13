@@ -28,6 +28,7 @@ import mongoose from "mongoose";
 import Brand from "../models/Brand";
 import ModelSchema from "../models/Model";
 import Powertrain from "../models/Powertrain";
+import { stripLeadingBrandName } from "../lib/priceFetchCore";
 import {
   resolveBrandName,
   resolveModelName,
@@ -623,6 +624,106 @@ function preflightCheckBrandNames(inputs: { raw: string; explicitEnglish?: strin
   process.exit(1);
 }
 
+/**
+ * Guards against the exact bug that created the "Dongfeng" / "Dongfeng
+ * Aeolus" duplicate pairs (see KNOWN_ISSUES.md): brand resolution is purely
+ * per-entry (resolveBrandName only looks at *this* entry's own brand/brand_en
+ * fields), and the model upsert is scoped to `{ brand_id, name }` — so if an
+ * entry's source data tags a sub-brand model generically (e.g. "东风"
+ * instead of "东风风神"), it silently resolves to the wrong sibling brand
+ * and inserts a fresh duplicate model doc instead of matching the existing
+ * one. Requires a live DB connection (unlike the other preflight checks),
+ * so it runs after mongoose.connect() but strictly before any writes.
+ */
+async function preflightCheckCrossBrandDuplicates(entries: RawVariantEntry[]): Promise<void> {
+  const primaryRaw = detectPrimaryBrand(entries);
+  const primaryBrandEn = entries.find((e) => e.brand === primaryRaw)?.brand_en;
+  const primaryResolved = resolveBrandName(primaryRaw, primaryBrandEn);
+
+  const conflicts: string[] = [];
+  // Cache sibling-brand lookups per parent_group so a batch of many entries
+  // for the same brand doesn't re-query Mongo per entry.
+  const siblingCache = new Map<string, { _id: unknown; name: string }[]>();
+
+  for (const entry of entries) {
+    const isSubBrand = entry.brand !== primaryRaw;
+    const resolved = isSubBrand ? resolveBrandName(entry.brand, entry.brand_en) : primaryResolved;
+    // Prefer the *actual* Brand doc's parent_group (set at seed/taxonomy
+    // time, e.g. "Dongfeng" -> "Dongfeng Motor Corporation") over
+    // resolved.parent_group from the static KNOWN_BRANDS map, which is
+    // frequently left unset for a group's own top-level brand entry (e.g.
+    // "东风" -> { name: "Dongfeng" }, no parent_group) — exactly the case
+    // that would otherwise let this check silently skip the real bug.
+    const existingBrandDoc = await Brand.findOne({ name: resolved.name }, { parent_group: 1 }).lean();
+    const parentGroup =
+      existingBrandDoc?.parent_group ?? resolved.parent_group ?? (isSubBrand ? `${primaryResolved.name} Group` : undefined);
+    // No parent_group to scope against (e.g. a genuinely standalone brand) —
+    // nothing to safely compare siblings against, skip rather than risk a
+    // false positive across unrelated manufacturers.
+    if (!parentGroup) continue;
+
+    let siblingBrands = siblingCache.get(parentGroup);
+    if (!siblingBrands) {
+      siblingBrands = await Brand.find({ parent_group: parentGroup, name: { $ne: resolved.name } }, { name: 1 }).lean();
+      siblingCache.set(parentGroup, siblingBrands);
+    }
+    if (siblingBrands.length === 0) continue;
+
+    const englishModelName = resolveModelName(entry.model, entry.model_en);
+    // Compare against both `name` (often the local-market nameplate, e.g.
+    // "Huge") and `name_en` (often the China-market/pinyin name, e.g.
+    // "Dongfeng Aeolus Haoji") on both sides — the same real model can be
+    // tagged inconsistently between the two, as Dongfeng Huge itself is.
+    // Also try stripping the *group's* bare brand name (e.g. "Dongfeng"),
+    // not just the specific sub-brand ("Dongfeng Aeolus"): sub-brand model
+    // names in this dataset are inconsistently prefixed with either — the
+    // existing "Dongfeng Huge" doc's own `name` field is a real example.
+    const stripPrefixes = (name: string, brandNames: string[]): string => {
+      for (const b of brandNames) {
+        const stripped = stripLeadingBrandName(b, name);
+        if (stripped !== name) return stripped.toLowerCase();
+      }
+      return name.toLowerCase();
+    };
+    const targetBrandNames = [resolved.name, primaryResolved.name];
+    const targetNames = new Set(
+      [englishModelName, entry.model_en].filter((n): n is string => Boolean(n)).map((n) => stripPrefixes(n, targetBrandNames))
+    );
+
+    const siblingIds = siblingBrands.map((b) => b._id);
+    const candidateModels = await ModelSchema.find({ brand_id: { $in: siblingIds } }, { name: 1, name_en: 1, brand_id: 1 }).lean();
+    for (const m of candidateModels) {
+      const siblingBrand = siblingBrands.find((b) => String(b._id) === String(m.brand_id));
+      if (!siblingBrand) continue;
+      const candidateBrandNames = [siblingBrand.name, primaryResolved.name];
+      const candidateNames = new Set(
+        [m.name, m.name_en].filter((n): n is string => Boolean(n)).map((n) => stripPrefixes(n, candidateBrandNames))
+      );
+      const isMatch = [...targetNames].some((t) => candidateNames.has(t));
+      if (isMatch) {
+        conflicts.push(
+          `"${englishModelName}" (entry brand "${entry.brand}"${entry.brand_en ? `/"${entry.brand_en}"` : ""} -> resolved "${resolved.name}") ` +
+            `looks like a duplicate of existing "${m.name}" (${m._id}) under sibling brand "${siblingBrand.name}" — both in parent_group "${parentGroup}".`
+        );
+      }
+    }
+  }
+
+  if (conflicts.length === 0) return;
+
+  console.error(`\n[preflight] Aborting: ${conflicts.length} model(s) look like duplicates of an existing model under a sibling brand.`);
+  for (const c of conflicts) console.error(`  - ${c}`);
+  console.error(
+    "\n[preflight] This is the exact bug that created the Dongfeng/\"Dongfeng Aeolus\" duplicate pairs — see KNOWN_ISSUES.md."
+  );
+  console.error(
+    "[preflight] If this is genuinely a new/different model, rename it to disambiguate from the sibling. If it should attach to\n" +
+      "the existing sibling brand instead, fix this entry's brand/brand_en so resolveBrandName resolves to that brand."
+  );
+  console.error("\n[preflight] No brand, model, or powertrain documents were written.");
+  process.exit(1);
+}
+
 async function run() {
   const filePath = process.argv[2];
   if (!filePath) {
@@ -647,6 +748,7 @@ async function run() {
   console.log("Connected to MongoDB.");
 
   if (Array.isArray(raw)) {
+    await preflightCheckCrossBrandDuplicates(raw as RawVariantEntry[]);
     await runVariantImport(raw as RawVariantEntry[], filePath);
   } else if (pendingDelta) {
     await runDeltaImport(pendingDelta, filePath);

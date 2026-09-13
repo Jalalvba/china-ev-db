@@ -62,6 +62,12 @@ export const KNOWN_BRANDS: Record<
   "红旗": { name: "Hongqi", parent_group: "FAW Group", founded_year: 1958 },
   "埃安": { name: "GAC Aion", parent_group: "GAC Group", founded_year: 2017 },
   "东风": { name: "Dongfeng", founded_year: 1969 },
+  // Wholly-owned mainstream Dongfeng sub-brand (Shine/Mage/Huge/E70/AX7/L7 etc.) —
+  // distinct from the bare "Dongfeng" group brand and from the separate Dongfeng-PSA
+  // JV (Shenlong Automobile). See BRAND_TAXONOMY.md. Source data sometimes tags these
+  // models' brand generically as "东风" instead of this sub-brand string, which is
+  // exactly the mismatch the cross-brand duplicate preflight check below guards against.
+  "东风风神": { name: "Dongfeng Aeolus", parent_group: "Dongfeng Motor Corporation" },
   "荣威": { name: "Roewe", parent_group: "SAIC Motor" },
   "睿蓝": { name: "Livan", parent_group: "Geely", founded_year: 2022 },
   "东风小康": { name: "DFSK", parent_group: "Dongfeng" },
