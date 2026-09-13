@@ -19,7 +19,16 @@ async function getData(
   await connectToDatabase();
   const brand = await Brand.findById(id).lean();
   if (!brand) return null;
-  const models = await ModelSchema.find({ brand_id: id }).sort({ name: 1 }).lean();
+  const models = await ModelSchema.find({ brand_id: id }).lean();
+  // Cheapest-to-most-expensive by confirmed Morocco price, same ordering as
+  // the homepage's brand cards — a model with no confirmed price (Infinity
+  // sentinel) sorts last rather than first, which Mongo's own ascending
+  // sort would otherwise do for a missing/null field.
+  models.sort((a, b) => {
+    const priceFor = (m: (typeof models)[number]) =>
+      m.morocco_price_confirmed && m.morocco_price_dh != null ? m.morocco_price_dh : Infinity;
+    return priceFor(a) - priceFor(b) || a.name.localeCompare(b.name);
+  });
 
   const moteurMaListings = await MoroccoListing.find(
     { model_id: { $in: models.map((m) => m._id) }, moteur_ma_confirmed: true, moteur_ma_price_dh: { $exists: true } },
