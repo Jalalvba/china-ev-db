@@ -18,6 +18,7 @@ const GEARBOX_TYPES = [
   "MT",
   "AMT",
   "multi-speed EV transmission",
+  "E-CVT",
 ];
 const RANGE_STANDARDS = ["CLTC", "WLTP", "WLTC", "NEDC"];
 const CONFIDENCE_VALUES = ["confirmed", "unconfirmed"];

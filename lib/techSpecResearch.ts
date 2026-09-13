@@ -20,6 +20,7 @@ import {
   BATTERY_CHEMISTRY_VALUES,
   HYBRID_TYPE_VALUES,
   EMISSIONS_STANDARD_VALUES,
+  HYBRID_ARCHITECTURE_VALUES,
 } from "../types/canonicalPowertrain";
 import { buildBrandContextBlock, type BrandContext } from "./brandContext";
 import { correctRangeStandard } from "./deepseekNormalize";
@@ -372,6 +373,9 @@ const TOP_LEVEL_KEYS = new Set([
   "combined_range_note",
   "combined_system_power_kw",
   "hybrid_type",
+  "hybrid_architecture",
+  "hybrid_system_name",
+  "architecture_unverified",
   "emissions_standard",
   "source",
   "confidence",
@@ -393,6 +397,7 @@ const FUEL_TYPE_SET = new Set<string>(FUEL_TYPE_VALUES);
 const BATTERY_CHEMISTRY_SET = new Set<string>(BATTERY_CHEMISTRY_VALUES);
 const HYBRID_TYPE_SET = new Set<string>(HYBRID_TYPE_VALUES);
 const EMISSIONS_STANDARD_SET = new Set<string>(EMISSIONS_STANDARD_VALUES);
+const HYBRID_ARCHITECTURE_SET = new Set<string>(HYBRID_ARCHITECTURE_VALUES);
 
 function checkBoolean(value: unknown, path: string, errors: string[]) {
   if (value === undefined || value === null) return;
@@ -431,6 +436,11 @@ export function validateCanonicalVariant(raw: unknown): { valid: boolean; errors
   }
   checkEnum(v.confidence, CONFIDENCE_SET, "variant.confidence", errors);
   checkEnum(v.hybrid_type, HYBRID_TYPE_SET, "variant.hybrid_type", errors);
+  checkEnum(v.hybrid_architecture, HYBRID_ARCHITECTURE_SET, "variant.hybrid_architecture", errors);
+  if (v.hybrid_system_name !== undefined && v.hybrid_system_name !== null && typeof v.hybrid_system_name !== "string") {
+    errors.push("variant.hybrid_system_name: must be a string or null");
+  }
+  checkBoolean(v.architecture_unverified, "variant.architecture_unverified", errors);
   checkEnum(v.emissions_standard, EMISSIONS_STANDARD_SET, "variant.emissions_standard", errors);
 
   if (v.engine !== undefined && v.engine !== null) {
@@ -442,6 +452,8 @@ export function validateCanonicalVariant(raw: unknown): { valid: boolean; errors
       checkEnum(engine.aspiration, ASPIRATION_SET, "variant.engine.aspiration", errors);
       checkEnum(engine.fuel_type, FUEL_TYPE_SET, "variant.engine.fuel_type", errors);
       checkBoolean(engine.is_range_extender, "variant.engine.is_range_extender", errors);
+      checkBoolean(engine.adblue_required, "variant.engine.adblue_required", errors);
+      checkBoolean(engine.dpf_present, "variant.engine.dpf_present", errors);
       checkEnum(engine.confidence, CONFIDENCE_SET, "variant.engine.confidence", errors);
     }
   }

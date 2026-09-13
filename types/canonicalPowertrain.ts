@@ -32,6 +32,7 @@ export const GEARBOX_TYPE_VALUES: GearboxType[] = [
   "MT",
   "AMT",
   "multi-speed EV transmission",
+  "E-CVT",
 ];
 export const RANGE_STANDARD_VALUES: RangeStandard[] = ["CLTC", "WLTP", "WLTC", "NEDC"];
 export const CONFIDENCE_VALUES: Confidence[] = ["confirmed", "unconfirmed"];

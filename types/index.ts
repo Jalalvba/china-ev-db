@@ -33,7 +33,9 @@ export type GearboxType =
   | "AT"
   | "MT"
   | "AMT"
-  | "multi-speed EV transmission";
+  | "multi-speed EV transmission"
+  /** A hybrid transaxle (planetary/power-split gearset with no belt or discrete ratios) sold under the "E-CVT" name — distinct from a conventional belt-driven "CVT". Common on BYD DM-i and similar power-split PHEV systems. */
+  | "E-CVT";
 
 export type RangeStandard = "CLTC" | "WLTP" | "WLTC" | "NEDC";
 
