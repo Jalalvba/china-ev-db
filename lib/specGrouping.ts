@@ -99,6 +99,13 @@ const FUEL_ABBR: Record<string, string> = {
  */
 export function compactSpecLabel(p: SpecFields): string {
   const parts: string[] = [];
+  // Leads the label: an HEV/PHEV/BEV/REEV all combine engine+motor+battery
+  // numbers in ways that otherwise look identical (a PHEV vs. an HEV can
+  // have near-identical engine/motor kW) — energy_type is the one field
+  // that actually tells them apart, so it has to be visible, not implied.
+  if (p.energy_type) {
+    parts.push(p.energy_type === "REEV/EREV" ? "REEV" : p.energy_type);
+  }
   if (hasFields(p.engine, ["power_kw"])) {
     const aspiration = p.engine!.aspiration === "turbo" ? "Turbo " : "";
     const fuel = p.engine!.fuel_type ? (FUEL_ABBR[p.engine!.fuel_type] ?? p.engine!.fuel_type) : "";
