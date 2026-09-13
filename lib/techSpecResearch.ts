@@ -20,6 +20,7 @@ import {
   BATTERY_CHEMISTRY_VALUES,
 } from "../types/canonicalPowertrain";
 import { buildBrandContextBlock, type BrandContext } from "./brandContext";
+import { correctRangeStandard } from "./deepseekNormalize";
 
 // gemini-3.6-flash confirmed available on this project's key via
 // `ai.models.list()` — re-run that check if this starts 404ing, rather than
@@ -86,9 +87,18 @@ export interface TechSpecPromptInput {
 // covered incidentally.
 // ---------------------------------------------------------------------------
 
-/** Field-by-field gap check for one existing powertrain. Returns human-readable labels like "motor torque (Nm)", suitable for dropping straight into a prompt. A block that's entirely absent is reported as one label for the block rather than every sub-field. */
+/** Reads a dotted "block.field" path (e.g. "battery.dc_charge_kw") out of a lean powertrain-like record. Trim-level paths with no dot (e.g. "combined_range_km") are read directly off the record. */
+function readFieldPath(pt: Record<string, unknown>, path: string): unknown {
+  const dot = path.indexOf(".");
+  if (dot === -1) return pt[path];
+  const block = pt[path.slice(0, dot)] as Record<string, unknown> | undefined;
+  return block ? block[path.slice(dot + 1)] : undefined;
+}
+
+/** Field-by-field gap check for one existing powertrain. Returns human-readable labels like "motor torque (Nm)", suitable for dropping straight into a prompt — one label per individually-null field, not just a coarse per-block summary, so nothing empty can hide inside an otherwise-"confirmed" block. A block that's entirely absent is reported as one label for the block rather than every sub-field (nothing to gain from itemizing fields inside a block that doesn't exist at all). */
 export function describeTrimGaps(pt: PowertrainLean): string[] {
   const gaps: string[] = [];
+  const record = pt as unknown as Record<string, unknown>;
 
   const engine = pt.engine as Record<string, unknown> | undefined;
   const motor = pt.motor as Record<string, unknown> | undefined;
@@ -96,39 +106,149 @@ export function describeTrimGaps(pt: PowertrainLean): string[] {
   const transmission = pt.transmission as Record<string, unknown> | undefined;
   const performance = pt.performance as Record<string, unknown> | undefined;
 
-  if (motor === undefined) {
-    gaps.push("electric motor specs (power, torque, drive layout)");
+  function fieldGapsFor(block: Record<string, unknown>, specs: FieldSpec[]): void {
+    for (const spec of specs) {
+      const key = spec.path.slice(spec.path.indexOf(".") + 1);
+      if (block[key] == null) gaps.push(spec.label);
+    }
+  }
+
+  // Gate motor/battery and engine checks by energy_type so a pure-ICE trim
+  // is never told its (correctly nonexistent) battery chemistry or EV range
+  // is a "gap" — those fields are N/A for that trim, not missing data, and
+  // asking an external researcher to hunt for a battery on a gasoline car
+  // produces nonsense answers, not useful research. When energy_type isn't
+  // recorded at all (older records), fall back to the previous
+  // presence-based heuristic rather than guessing.
+  const energyType = pt.energy_type;
+  const motorBatteryApplicable = energyType === undefined ? true : energyType !== "ICE";
+  const engineApplicable =
+    energyType === undefined
+      ? !(engine === undefined && pt.motor !== undefined) // old heuristic: skip only if this looks like a pure EV (motor present, no engine)
+      : energyType !== "BEV";
+
+  if (motorBatteryApplicable) {
+    if (motor === undefined) {
+      gaps.push("electric motor specs (power, torque, drive layout)");
+    } else {
+      fieldGapsFor(motor, MOTOR_FIELDS);
+      if (motor.confidence === "unconfirmed") gaps.push("motor specs (currently unconfirmed — needs a citable source)");
+    }
+
+    if (battery === undefined) {
+      gaps.push("battery specs (chemistry, capacity, charging rates, range)");
+    } else {
+      fieldGapsFor(battery, BATTERY_FIELDS);
+      if (battery.confidence === "unconfirmed") gaps.push("battery specs (currently unconfirmed — needs a citable source)");
+    }
+  }
+
+  if (engineApplicable && engine) {
+    fieldGapsFor(engine, ENGINE_FIELDS);
+    if (engine.confidence === "unconfirmed") gaps.push("engine specs (currently unconfirmed — needs a citable source)");
+  }
+
+  if (transmission === undefined) {
+    gaps.push("transmission specs (type, gear count)");
   } else {
-    if (motor.torque_nm == null) gaps.push("motor torque (Nm)");
-    if (motor.power_kw == null) gaps.push("motor power (kW)");
-    if (motor.confidence === "unconfirmed") gaps.push("motor specs (currently unconfirmed — needs a citable source)");
+    fieldGapsFor(transmission, TRANSMISSION_FIELDS);
+    if (transmission.confidence === "unconfirmed") gaps.push("transmission specs (currently unconfirmed)");
   }
 
-  if (battery === undefined) {
-    gaps.push("battery specs (chemistry, capacity, charging rates, range)");
+  if (performance === undefined) {
+    gaps.push("performance figures (0-100 acceleration, top speed)");
   } else {
-    if (!battery.chemistry) gaps.push("battery chemistry (e.g. LFP vs NMC)");
-    if (battery.dc_charge_kw == null) gaps.push("DC fast-charging rate (kW)");
-    if (battery.ev_range_km == null) gaps.push("EV range (km)");
-    if (battery.confidence === "unconfirmed") gaps.push("battery specs (currently unconfirmed — needs a citable source)");
+    fieldGapsFor(performance, PERFORMANCE_FIELDS);
+    if (performance.confidence === "unconfirmed") gaps.push("performance figures (currently unconfirmed)");
   }
 
-  if (engine === undefined && pt.motor !== undefined) {
-    // Pure-EV trims legitimately have no engine block — only flag as a gap
-    // when there's some other signal (unset entirely with no motor either)
-    // that this might be a combustion/hybrid trim missing its engine data.
-  } else if (engine && engine.confidence === "unconfirmed") {
-    gaps.push("engine specs (currently unconfirmed — needs a citable source)");
+  for (const spec of TRIM_LEVEL_FIELDS) {
+    if (readFieldPath(record, spec.path) == null) gaps.push(spec.label);
   }
 
-  if (transmission?.confidence === "unconfirmed") gaps.push("transmission specs (currently unconfirmed)");
-  if (performance?.confidence === "unconfirmed") gaps.push("performance figures (currently unconfirmed)");
   if (pt.confidence === "unconfirmed" || pt.unverified) gaps.push("overall trim data (currently unverified/unconfirmed — needs a citable source)");
 
   return gaps;
 }
 
 const RANGE_STANDARDS_LABEL = RANGE_STANDARD_VALUES.join(", ");
+
+// ---------------------------------------------------------------------------
+// Shared field-list — single source of truth for "what does a field-by-field
+// research target list look like", consumed by both describeTrimGaps() (to
+// report per-field gaps on an existing record) and the Gemini kickoff prompt
+// (to give a full checklist even when there's no existing record to diff
+// against yet). Keeping one definition means the two can't silently drift on
+// what "every field" means.
+// ---------------------------------------------------------------------------
+
+interface FieldSpec {
+  /** Dotted path, e.g. "battery.dc_charge_kw" — matches CANONICAL_POWERTRAIN_FIELD_TEMPLATE. */
+  path: string;
+  /** Human-readable label with units, suitable for a prompt or a gap list. */
+  label: string;
+}
+
+const ENGINE_FIELDS: FieldSpec[] = [
+  { path: "engine.displacement_l", label: "engine displacement (L)" },
+  { path: "engine.cylinders", label: "cylinder count" },
+  { path: "engine.aspiration", label: "aspiration (turbo / naturally-aspirated / supercharged / twin-charged)" },
+  { path: "engine.fuel_type", label: "engine fuel type" },
+  { path: "engine.is_range_extender", label: "range-extender flag (true only if this engine drives a generator, REEV/EREV)" },
+  { path: "engine.power_kw", label: "engine power (kW)" },
+  { path: "engine.torque_nm", label: "engine torque (Nm)" },
+];
+const MOTOR_FIELDS: FieldSpec[] = [
+  { path: "motor.type", label: "electric motor type (e.g. PMSM)" },
+  { path: "motor.power_kw", label: "motor power (kW)" },
+  { path: "motor.torque_nm", label: "motor torque (Nm)" },
+  { path: "motor.count", label: "motor count (single / dual / tri-motor / quad-motor)" },
+  { path: "motor.drive", label: "drive layout (FWD / RWD / AWD)" },
+];
+const BATTERY_FIELDS: FieldSpec[] = [
+  { path: "battery.chemistry", label: "battery chemistry (LFP / NMC / LTO / semi-solid-state / other)" },
+  { path: "battery.battery_variant", label: "battery product/variant name (e.g. Blade, 800V, 2nd gen)" },
+  { path: "battery.capacity_total_kwh", label: "battery total capacity (kWh)" },
+  { path: "battery.capacity_usable_kwh", label: "battery usable capacity (kWh)" },
+  { path: "battery.supplier", label: "battery supplier" },
+  { path: "battery.dc_charge_kw", label: "DC fast-charging rate (kW)" },
+  { path: "battery.ac_charge_kw", label: "AC charging rate (kW)" },
+  { path: "battery.ev_range_km", label: "EV range (km)" },
+  { path: "battery.ev_range_standard", label: "EV range test standard (CLTC / WLTP / WLTC / NEDC)" },
+];
+const TRANSMISSION_FIELDS: FieldSpec[] = [
+  { path: "transmission.type", label: "transmission type" },
+  { path: "transmission.speed_count", label: "number of gears" },
+];
+const PERFORMANCE_FIELDS: FieldSpec[] = [
+  { path: "performance.accel_0_100_s", label: "0-100 km/h acceleration (s)" },
+  { path: "performance.top_speed_kmh", label: "top speed (km/h)" },
+];
+const TRIM_LEVEL_FIELDS: FieldSpec[] = [
+  { path: "combined_range_km", label: "combined/total range (km) — fuel+EV combined for PHEV/REEV, or fuel range for ICE, or same as EV range for BEV; if no figure is published outright, it may be computed from tank capacity ÷ fuel consumption × 100 (both individually sourced) — see the JSON-formatting rules for the required \"Computed:\" note format" },
+  { path: "source", label: "source attribution (which site/press release the figures came from)" },
+];
+
+/**
+ * Every canonical field applicable to a given energy type, as flat FieldSpecs
+ * — engine fields are dropped for a pure BEV, motor/battery fields are
+ * dropped for a pure ICE, everything else (transmission, performance,
+ * trim-level) always applies. Pass `undefined` (energy type not yet known,
+ * e.g. before first-pass research) to get the full union — the prompt then
+ * tells Gemini to disregard whichever half turns out not to apply.
+ */
+function getApplicableFieldSpecs(energyType?: string): FieldSpec[] {
+  const specs: FieldSpec[] = [];
+  if (energyType !== "BEV") specs.push(...ENGINE_FIELDS);
+  if (energyType !== "ICE") specs.push(...MOTOR_FIELDS, ...BATTERY_FIELDS);
+  specs.push(...TRANSMISSION_FIELDS, ...PERFORMANCE_FIELDS, ...TRIM_LEVEL_FIELDS);
+  return specs;
+}
+
+/** Renders a field checklist as a bullet list of labels, for embedding directly in a prompt. */
+function renderFieldChecklist(specs: FieldSpec[]): string {
+  return specs.map((s) => `- ${s.label}`).join("\n");
+}
 
 /**
  * First-turn prompt: prose, not JSON. Gemini's Google Search grounding is
@@ -167,7 +287,12 @@ Prioritize sources in this order: (1) Chinese manufacturer official sources and 
 
 Search Chinese-language automotive sources, especially: ${SOURCE_SITES.join(", ")}.
 
-For EACH trim/variant, report the full technical specification you find: engine (if any), electric motor (if any), battery, transmission, and performance figures.
+For EACH trim/variant, you must individually attempt to find every one of the following fields — this is a named checklist, not a general "get a feel for the car" request. If the field turns out not to apply once you know the actual energy type (e.g. this is a pure EV with no engine, or a pure ICE with no motor/battery), just say so and skip that block; otherwise treat every field below as something to actively go find, not something to skip because you already have a general sense of the trim:
+${renderFieldChecklist(getApplicableFieldSpecs())}
+
+Do not rely on a single general search to cover all of the above. For each field (or small cluster of closely related fields, e.g. motor power + torque from the same spec-sheet table), run a distinct, targeted search — vary your query wording (Chinese model name + "参数配置", + "配置表", + the specific spec you're missing, etc.) — and only give up on a field after a real, targeted search attempt for it specifically has failed to turn up a source. One search that "covers the car in general" and then filling in whatever it happened to surface is not sufficient effort.
+
+This database is not limited to a handful of top-tier brands — it covers the whole range of mainstream Chinese-market brands with real sales volume and automotive-press coverage (household names like Chery, Geely, BYD, Changan, and GWM, but just as much smaller-but-real brands like Jetour, Soueast, or Livan). For ANY brand in that range — not only the biggest names — a thin, mostly-null result should be rare, because these vehicles are genuinely well documented in Chinese automotive media. If your findings for a mainstream, actively-sold model are coming back mostly null, treat that as a sign to search again with different terms before finalizing, not as an acceptable outcome — reserve actual "no source found" nulls for fields that are genuinely obscure or unpublished (e.g. an unannounced supplier name), not for a headline spec like DC charging rate or 0-100 time on a current-production model.
 ${
   knownGaps?.length
     ? `\nThe following data is already on file but currently incomplete or unconfirmed — this research pass exists specifically to fill these gaps, so make sure your searches specifically target each of these rather than stopping once you've confirmed the fields that are already known:\n${knownGaps
@@ -222,6 +347,7 @@ CRITICAL RULES:
 - Do NOT add, rename, or omit any field from the JSON shape below. Use exactly these field names, nothing else.
 - "notable_facts" is separate from the structured spec fields above — only fill in "notable_facts.text" if you found something genuinely noteworthy with a citation; otherwise set both "notable_facts.text" and "notable_facts.confidence" to null. Same confirmed/unconfirmed rule applies: "confirmed" only if a specific source backs the claim.
 - If known trims were given above, "trim_name" must reuse their exact wording — a reworded, translated, or detail-appended trim_name for what is really the same trim (e.g. turning "1.6T" into "1.6T (290T / 1.6TGDI)") is treated as a data-loss bug downstream, not a helpful improvement.
+- "combined_range_km" is usually a directly-published spec, but if you found no such published figure, you MAY instead compute it from two other individually-sourced inputs via a deterministic conversion — most commonly fuel tank capacity ÷ published fuel consumption × 100 (e.g. an ICE/HEV trim where only "51 L tank, 7.2 L/100km WLTC" was published, never a combined range in km outright). This is the ONLY case where you may derive a numeric field rather than reporting a value you found stated outright — do not extend this to any other field. If you do this: (1) both inputs must individually come from a citable source — never combine one sourced figure with an assumed/typical one; (2) "combined_range_note" MUST show the arithmetic AND name both source inputs, prefixed with the literal word "Computed:" so it can never be mistaken for a directly-published figure, e.g. "Computed: 51L tank ÷ 7.2L/100km × 100 = ~708 km (WLTC, Autohome spec sheet)". A combined_range_note that reports a directly-published figure (the normal case) must NOT start with "Computed:" — that prefix is reserved exclusively for this derived-value case, so it stays unambiguous which kind of value combined_range_km actually is.
 
 Respond with ONLY a single JSON object (no markdown fencing, no prose before or after) in exactly this shape (the inner object shown is a field-by-field description of the type each field must have, not a literal example value — array should contain one object per trim/variant):
 ${templateJson}`;
@@ -515,11 +641,14 @@ export interface PowertrainLean {
   _id: unknown;
   model_id: unknown;
   trim_name?: string;
+  energy_type?: string;
   engine?: Record<string, unknown>;
   motor?: Record<string, unknown>;
   battery?: Record<string, unknown>;
   transmission?: Record<string, unknown>;
   performance?: Record<string, unknown>;
+  combined_range_km?: number | null;
+  source?: string | null;
   confidence?: string;
   unverified?: boolean;
 }
@@ -623,6 +752,24 @@ export async function researchModel(
     }
 
     const variants: ResearchedVariant[] = parsed.variants.map((rawVariant) => {
+      // Only handles genuine typo/artifact aliases here (see
+      // RANGE_STANDARD_CORRECTIONS in deepseekNormalize.ts) — "WLTC" is
+      // deliberately NOT one of them: it's a real, distinct standard from
+      // "WLTP" (different correction factors can yield a different number
+      // for the same car), so it passes through unchanged as its own valid
+      // enum value rather than being relabeled. Same correction table is
+      // shared with the DeepSeek batch pipeline and the manual Kimi/DeepSeek
+      // round-trip in manualResearchImport.ts, so all three ingestion paths
+      // agree on what counts as an alias vs. a distinct standard.
+      if (rawVariant && typeof rawVariant === "object" && !Array.isArray(rawVariant)) {
+        const battery = (rawVariant as Record<string, unknown>).battery;
+        if (battery && typeof battery === "object" && !Array.isArray(battery)) {
+          const b = battery as Record<string, unknown>;
+          if (typeof b.ev_range_standard === "string") {
+            b.ev_range_standard = correctRangeStandard(b.ev_range_standard) ?? null;
+          }
+        }
+      }
       const { valid, errors } = validateCanonicalVariant(rawVariant);
       if (!valid) {
         return { variant: rawVariant as Record<string, unknown>, valid: false, errors };

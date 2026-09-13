@@ -39,3 +39,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# local mongodump archives (rollback snapshots from DB migrations — never source data)
+china_ev_db_*.gz
+
+# scratch output from scripts/fetch-all-prices.ts — timestamped local runs, not source data
+raw-data/fetch-all-prices-*.json

@@ -12,7 +12,9 @@
 // both pipelines.
 
 import { validateCanonicalVariant, describeTrimGaps, type PowertrainLean } from "./techSpecResearch";
+import { CANONICAL_POWERTRAIN_FIELD_TEMPLATE } from "@/types/canonicalPowertrain";
 import { findMismatchedKeys } from "./applySpecUpdates";
+import { correctRangeStandard } from "./deepseekNormalize";
 import type { IBrand } from "@/types";
 
 /** Model fields this workflow may ever read from an import and write back — deliberately excludes _id, brand_id, timestamps, Morocco fields (a different scraped-data pipeline), and any research-log bookkeeping field. Adding a field here means adding it to RESEARCHABLE_MODEL_KEYS below too — kept as two names for the same Set so a future editor sees why both exist. */
@@ -174,22 +176,35 @@ export function buildManualResearchPrompt(exportDoc: ExportDocument): string {
 
 Below is the current database record (as JSON) for "${model.brand_name}" — "${model.name_en ?? model.name}"${
     model.name_cn ? ` (${model.name_cn})` : ""
-  }. Research this vehicle using Chinese-language automotive sources as your first priority (autohome.com.cn, dongchedi.com, gasgoo.com, official manufacturer press/spec pages, MIIT/工信部 filings), then Moroccan automotive press, then generic English-language sources only if nothing more specific exists.
+  }. This record was produced by an earlier, automated research pass (Gemini with search grounding) — it is a reasonable starting point, not ground truth. You are doing a SECOND, INDEPENDENT research pass on top of it, and that pass has three distinct jobs, not one:
+
+1. FILL GAPS — find sourced values for whatever is currently null or unconfirmed (see "Known gaps" below).
+2. CROSS-CHECK EXISTING VALUES — independently verify fields that are already populated and marked "confirmed", using your own search rather than trusting that the first pass got them right. Do not skip a field just because it already has a value. If your independent research disagrees with a stored value — a wrong battery chemistry, a wrong power figure, a wrong transmission type, anything — correct it and explain the discrepancy in that field's "<field>_source_note", even though it was never listed as a "known gap". This matters: on a previous model (Soueast S06 DM), the original automated pass reported the wrong battery chemistry, and it only got caught because a second independent pass happened to check a field nobody had flagged as missing. Treat every "confirmed" field as a candidate to challenge, not as settled.
+3. FIND MISSING TRIMS — the trim list below may be incomplete, not just the fields within it (see the trim-completeness note below). Actively search for variants of this model that exist in the real market but aren't in this record at all.
+
+Research this vehicle using Chinese-language automotive sources as your first priority (autohome.com.cn, dongchedi.com, gasgoo.com, official manufacturer press/spec pages, MIIT/工信部 filings), then Moroccan automotive press, then generic English-language sources only if nothing more specific exists.
 
 ${
   gapLines
-    ? `Known gaps to focus on (fields currently missing or unconfirmed):\n${gapLines}\n`
-    : "No specific gaps were flagged, but re-verify every field against a real source rather than assuming the current values are correct.\n"
+    ? `Known gaps to focus on first (fields currently missing or unconfirmed):\n${gapLines}\n`
+    : "No specific gaps were flagged, but this is still a cross-check pass, not a no-op — independently re-verify fields against real sources per job 2 above rather than assuming the current values are correct.\n"
 }
+This record may be INCOMPLETE at the trim/variant level, not just at the field level: the "powertrains" list below is only whatever trims happen to already be in our database, which may be a subset of the real production lineup for this model (e.g. we might only have a base trim on file when the actual market lineup also includes a higher-output engine option, a PHEV variant, a special edition, etc.). Actively check whether additional trims exist for this model beyond what's listed below — don't limit your research to filling gaps in the trims you were given. If you find a real trim that isn't in the list, add it as a new entry in "powertrains" per rule 2 below (omit "_id" entirely for it).
+
 CRITICAL RULES — read carefully, this is a round-trip into a strict-schema database:
 1. Return the SAME JSON shape you were given below — same top-level keys ("model", "powertrains"), same nested field names. Do not add, rename, or omit any field.
 2. model._id and every powertrains[]._id MUST be returned byte-for-byte UNCHANGED from what you were given. These IDs are how the import step matches your response back to the exact existing database record — if you omit an _id, invent a new one, or alter it in any way, that entire record will be misread as a brand-new trim instead of an update to the existing one, which defeats the whole point of this workflow. If you are adding a genuinely NEW trim that wasn't in the input, give it no "_id" field at all (omit it, don't invent a placeholder) — that is the only case where a missing _id is correct.
 3. Every numeric or categorical fact must come from a source you can point to — do not estimate or infer from similar vehicles. Use null for anything you cannot find a sourced value for.
-4. For every field you CHANGE from its current value, add a sibling "<field>_source_note" string (e.g. if you change "battery.dc_charge_kw", also include "battery.dc_charge_kw_source_note": "40kW per official Soueast spec sheet, autohome.com.cn"). Only changed fields need a source note — leave unchanged fields as-is with no note.
+4. For every field you CHANGE from its current value — whether it was null (a gap you filled) or already populated (a value your independent research corrected) — add a sibling "<field>_source_note" string explaining the source and, if you're correcting an existing value, what was wrong with it (e.g. if you change "battery.chemistry" from an existing "NMC" to "LFP", include "battery.chemistry_source_note": "Corrected from NMC — official Soueast spec sheet and autohome.com.cn both list LFP"). Only changed fields need a source note — leave unchanged fields as-is with no note. A field you independently checked and confirmed matches the stored value needs no note either; notes exist only to flag a change, not to prove you checked something.
 5. Do not touch any field not listed in "model" or "powertrains[]" below — there is no other data to research.
 6. Respond with ONLY the JSON object. No markdown code fences, no explanation before or after, no commentary — your entire response must be valid JSON starting with { and ending with }, ready to be pasted directly into a JSON parser.
+7. Every powertrain field name and nesting below is EXACT and FIXED — this is the only valid shape for a powertrain entry, shown here with every field present as null so you have the precise structure to fill in (do not infer it from which fields happen to already have values):
 
-Here is the current record to research and return, in the same shape, with gaps filled:
+${JSON.stringify(CANONICAL_POWERTRAIN_FIELD_TEMPLATE, null, 2)}
+
+In particular: "ev_range_km" lives ONLY inside "battery" (never at the top level of a powertrain, never inside "motor"), and battery capacity is "capacity_total_kwh" (never "capacity_kwh").
+
+Here is the current record: research it as described above (fill gaps, cross-check existing values, look for missing trims) and return it in the same shape:
 
 ${JSON.stringify({ model, powertrains: powertrains.map(({ research_gaps: _rg, ...p }) => p) }, null, 2)}`;
 }
@@ -264,6 +279,112 @@ export interface ValidatedPowertrainImport {
   errors: string[];
 }
 
+/**
+ * Known, recurring DeepSeek/Kimi mistakes: a field lands in the wrong block,
+ * or under the wrong name, even though the export/prompt always shows it
+ * correctly nested and named (buildManualResearchPrompt). Each entry below
+ * is a single field with exactly one correct location/name per the
+ * canonical schema (types/canonicalPowertrain.ts), confirmed case by case as
+ * they surface — this is a mechanical relocate/rename, not a general
+ * "accept anything" leniency. It never invents or guesses a value, only
+ * moves/renames a field (and its "<field>_source_note" sibling, if present)
+ * to its one valid spot before validation runs. Extend this table, don't
+ * hand-roll a new one-off function, when the next misplaced-field case shows up.
+ */
+const KNOWN_FIELD_RELOCATIONS: { from: string; to: string }[] = [
+  // trim-level -> battery (the original ev_range_km flattening bug)
+  { from: "ev_range_km", to: "battery.ev_range_km" },
+  // motor -> battery (same field, different wrong block)
+  { from: "motor.ev_range_km", to: "battery.ev_range_km" },
+  // battery -> battery, name mismatch only
+  { from: "battery.capacity_kwh", to: "battery.capacity_total_kwh" },
+];
+
+function getPath(obj: Record<string, unknown>, path: string[]): unknown {
+  let cur: unknown = obj;
+  for (const key of path) {
+    if (!cur || typeof cur !== "object" || Array.isArray(cur)) return undefined;
+    cur = (cur as Record<string, unknown>)[key];
+  }
+  return cur;
+}
+
+function deleteAtPath(obj: Record<string, unknown>, path: string[]): void {
+  if (path.length === 1) {
+    delete obj[path[0]];
+    return;
+  }
+  const parent = getPath(obj, path.slice(0, -1));
+  if (parent && typeof parent === "object" && !Array.isArray(parent)) {
+    delete (parent as Record<string, unknown>)[path[path.length - 1]];
+  }
+}
+
+function setAtPath(obj: Record<string, unknown>, path: string[], value: unknown): void {
+  let cur = obj;
+  for (const key of path.slice(0, -1)) {
+    const existing = cur[key];
+    const next = existing && typeof existing === "object" && !Array.isArray(existing)
+      ? { ...(existing as Record<string, unknown>) }
+      : {};
+    cur[key] = next;
+    cur = next as Record<string, unknown>;
+  }
+  cur[path[path.length - 1]] = value;
+}
+
+/** Deep-clones just enough of `rest` (plain objects only) that relocations can mutate freely without touching the caller's object. */
+function deepCloneShallowRecord(rest: Record<string, unknown>): Record<string, unknown> {
+  const out: Record<string, unknown> = { ...rest };
+  for (const [k, v] of Object.entries(out)) {
+    if (v && typeof v === "object" && !Array.isArray(v)) {
+      out[k] = deepCloneShallowRecord(v as Record<string, unknown>);
+    }
+  }
+  return out;
+}
+
+function relocateKnownMisplacedFields(rest: Record<string, unknown>): Record<string, unknown> {
+  const out = deepCloneShallowRecord(rest);
+  for (const { from, to } of KNOWN_FIELD_RELOCATIONS) {
+    for (const suffix of ["", "_source_note"]) {
+      const fromPath = (from + suffix).split(".");
+      const toPath = (to + suffix).split(".");
+      const value = getPath(out, fromPath);
+      if (value !== undefined) {
+        deleteAtPath(out, fromPath);
+        setAtPath(out, toPath, value);
+      }
+    }
+  }
+  return out;
+}
+
+/**
+ * Known value-level aliasing, applied AFTER relocateKnownMisplacedFields
+ * (which handles wrong location/name, not wrong value) and BEFORE
+ * validation. Reuses correctRangeStandard from deepseekNormalize.ts, whose
+ * table only fixes genuine typo/citation artifacts (e.g. "NEDC2") — "WLTC"
+ * is deliberately NOT one of them, since it's a real, distinct test standard
+ * from "WLTP" (different correction factors, not guaranteed to produce the
+ * same figure for the same car) and is accepted as its own valid enum value
+ * rather than relabeled. Reusing the same table the Gemini and DeepSeek
+ * batch pipelines use keeps all three import paths agreeing on what counts
+ * as an alias vs. a distinct standard, instead of maintaining separate
+ * answers to the same question.
+ */
+function normalizeKnownValueAliases(rest: Record<string, unknown>): Record<string, unknown> {
+  const out = deepCloneShallowRecord(rest);
+  const battery = out.battery;
+  if (battery && typeof battery === "object" && !Array.isArray(battery)) {
+    const b = battery as Record<string, unknown>;
+    if (typeof b.ev_range_standard === "string") {
+      b.ev_range_standard = correctRangeStandard(b.ev_range_standard) ?? null;
+    }
+  }
+  return out;
+}
+
 export function validateManualPowertrain(raw: unknown, index: number): ValidatedPowertrainImport {
   if (typeof raw !== "object" || raw === null || Array.isArray(raw)) {
     return { _id: null, variant: {}, sourceNotes: {}, valid: false, errors: [`powertrains[${index}]: not an object`] };
@@ -274,7 +395,9 @@ export function validateManualPowertrain(raw: unknown, index: number): Validated
     return { _id: null, variant: {}, sourceNotes: {}, valid: false, errors: [`powertrains[${index}]._id: must be a string if present`] };
   }
   const { _id, ...rest } = withId;
-  const { stripped, notes } = extractSourceNotes(rest);
+  const relocated = relocateKnownMisplacedFields(rest);
+  const normalized = normalizeKnownValueAliases(relocated);
+  const { stripped, notes } = extractSourceNotes(normalized);
   const { valid, errors } = validateCanonicalVariant(stripped);
   return {
     _id: typeof rawId === "string" ? rawId : null,

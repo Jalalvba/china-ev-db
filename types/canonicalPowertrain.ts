@@ -27,7 +27,7 @@ export const GEARBOX_TYPE_VALUES: GearboxType[] = [
   "AMT",
   "multi-speed EV transmission",
 ];
-export const RANGE_STANDARD_VALUES: RangeStandard[] = ["CLTC", "WLTP", "NEDC"];
+export const RANGE_STANDARD_VALUES: RangeStandard[] = ["CLTC", "WLTP", "WLTC", "NEDC"];
 export const CONFIDENCE_VALUES: Confidence[] = ["confirmed", "unconfirmed"];
 export const ASPIRATION_VALUES: AspirationType[] = ["turbo", "naturally-aspirated", "supercharged", "twin-charged", "n/a"];
 export const FUEL_TYPE_VALUES: FuelType[] = ["gasoline", "diesel", "n/a"];
@@ -154,8 +154,8 @@ export const CANONICAL_POWERTRAIN_FIELD_TEMPLATE = {
     top_speed_kmh: "number | null",
     confidence: CONFIDENCE_VALUES.join(" | ") + " | null",
   },
-  combined_range_km: "number | null",
-  combined_range_note: "string | null",
+  combined_range_km: "number | null (a directly-published figure, or — only when no such figure exists — computed from two individually-sourced inputs, e.g. tank capacity ÷ fuel consumption × 100; see combined_range_note requirements)",
+  combined_range_note: "string | null (if combined_range_km was computed rather than directly published, this MUST start with \"Computed:\" and show the arithmetic plus both source inputs — never leave a computed value indistinguishable from a directly-published one)",
   source: "string | null (e.g. \"Autohome\", \"official manufacturer site\")",
   confidence: CONFIDENCE_VALUES.join(" | ") + " | null",
 } as const;

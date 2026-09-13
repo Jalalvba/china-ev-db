@@ -2,7 +2,34 @@
 // (Chinese brand/model names, 万-denominated prices, loosely-typed fields)
 // into the app's Brand/Model/Powertrain shape.
 
-export const CNY_PER_USD = 7.2;
+/**
+ * Real CNY->USD exchange rate, fetched from Frankfurter (frankfurter.dev,
+ * ECB reference rates, free/no-key) — never hardcoded. Previously this was a
+ * hardcoded `CNY_PER_USD = 7.2` constant, silently going stale as the real
+ * rate drifted; every model's min_usd/max_usd converted with the old
+ * constant was wrong by however much the rate had moved since 7.2 was
+ * written. Cached for the lifetime of the process (import runs are one-shot
+ * scripts, not long-running servers) so a batch import makes one network
+ * call, not one per model. Throws rather than silently falling back to a
+ * guessed number — callers must handle the failure explicitly (same
+ * "don't guess, flag for review" discipline as the Morocco price scraper).
+ */
+let cachedRate: { rate: number; date: string } | null = null;
+
+export async function getCnyPerUsdRate(): Promise<{ rate: number; date: string }> {
+  if (cachedRate) return cachedRate;
+  const res = await fetch("https://api.frankfurter.dev/v1/latest?base=CNY&symbols=USD");
+  if (!res.ok) {
+    throw new Error(`Failed to fetch CNY->USD exchange rate: ${res.status} ${res.statusText}`);
+  }
+  const data = (await res.json()) as { rates?: { USD?: number }; date?: string };
+  const usdPerCny = data.rates?.USD;
+  if (!usdPerCny || !data.date) {
+    throw new Error(`Unexpected exchange-rate API response: ${JSON.stringify(data)}`);
+  }
+  cachedRate = { rate: 1 / usdPerCny, date: data.date };
+  return cachedRate;
+}
 
 /** Known Chinese brand names -> canonical English brand name + group. Extend as needed. */
 export const KNOWN_BRANDS: Record<
@@ -388,14 +415,35 @@ export const KNOWN_MODELS: Record<string, string> = {
 };
 
 const RANGE_STANDARD_CORRECTIONS: Record<string, string> = {
-  WLTC: "WLTP",
+  // WLTC (the drive cycle itself) is NOT the same standard as WLTP (the EU
+  // regulatory procedure built on that cycle, with its own correction
+  // factors) — a WLTC-reported figure and a WLTP-certified figure for the
+  // same car aren't guaranteed to match. Previously this table silently
+  // relabeled WLTC as WLTP; that misrepresented which standard actually
+  // produced the number, so WLTC is now accepted as its own distinct value
+  // (see RANGE_STANDARD_VALUES in types/canonicalPowertrain.ts) rather than
+  // corrected here. Do not re-add this alias without re-litigating that
+  // decision.
   NEDC2: "NEDC",
   // "工信部" (MIIT-published figure) uses the CLTC test cycle under current
   // Chinese regulation — treated as equivalent, not a literal translation.
+  //
+  // FLAGGED FOR FUTURE REVIEW (raised during the WLTC/WLTP correction audit
+  // — see git history around that change for full context): 工信部 names the
+  // *publishing authority*, not a test cycle, and this mapping has the same
+  // shape as the WLTC->WLTP alias that was just removed above for
+  // misrepresenting which standard actually produced a number. MIIT-
+  // published range figures were NEDC-based before China's regulatory
+  // switch to CLTC (~2021) — so unconditionally mapping "工信部" to "CLTC"
+  // is likely WRONG for any source citing a pre-transition model/figure.
+  // Deliberately left as-is for now (not fixed, not scoped) pending a
+  // future session researching the actual MIIT methodology transition date,
+  // after which this should either be corrected, scoped by model year, or
+  // consciously left as a known simplification.
   "工信部": "CLTC",
 };
 
-const VALID_RANGE_STANDARDS = new Set(["CLTC", "WLTP", "NEDC"]);
+const VALID_RANGE_STANDARDS = new Set(["CLTC", "WLTP", "WLTC", "NEDC"]);
 
 const VALID_SEGMENTS = new Set([
   "A-segment/City",
@@ -473,10 +521,11 @@ export function isModelNameResolvable(raw: string, explicitEnglish?: string): bo
   return Boolean(explicitEnglish) || Boolean(KNOWN_MODELS[raw]) || isAscii(raw);
 }
 
-/** Parse a "7.98–9.98万" / "22.98万起" / "100.8万" style RMB price string into numeric CNY. */
-export function parsePriceRange(str: string | null | undefined):
-  | { min: number; max: number; currency_local: string; min_usd: number; max_usd: number; unverified?: boolean }
-  | undefined {
+/** Parse a "7.98–9.98万" / "22.98万起" / "100.8万" style RMB price string into numeric CNY. `cnyPerUsd` must come from getCnyPerUsdRate() — call it once per import run and pass the result through, rather than fetching per call. */
+export function parsePriceRange(
+  str: string | null | undefined,
+  cnyPerUsd: number
+): { min: number; max: number; currency_local: string; min_usd: number; max_usd: number; unverified?: boolean } | undefined {
   if (!str) return undefined;
   const cleaned = str.replace(/,/g, "");
   const nums = cleaned.match(/[\d.]+/g)?.map(Number);
@@ -489,8 +538,8 @@ export function parsePriceRange(str: string | null | undefined):
     min,
     max,
     currency_local: "CNY",
-    min_usd: Math.round(min / CNY_PER_USD),
-    max_usd: Math.round(max / CNY_PER_USD),
+    min_usd: Math.round(min / cnyPerUsd),
+    max_usd: Math.round(max / cnyPerUsd),
   };
 }
 
@@ -505,15 +554,18 @@ export interface CanonicalPriceInput {
  * or the canonical {min, max, unverified} object already in DB-ready form.
  * Falls back to explicitUnverified (e.g. an entry-level price_unverified
  * flag) only when the object/string itself doesn't already carry one.
+ * `cnyPerUsd` must come from getCnyPerUsdRate() — call it once per import
+ * run and pass the result through, rather than fetching per call.
  */
 export function resolvePriceRange(
   input: string | CanonicalPriceInput | null | undefined,
+  cnyPerUsd: number,
   explicitUnverified?: boolean
 ): { min?: number; max?: number; currency_local: string; min_usd?: number; max_usd?: number; unverified?: boolean } | undefined {
   if (!input) return undefined;
 
   if (typeof input === "string") {
-    const parsed = parsePriceRange(input);
+    const parsed = parsePriceRange(input, cnyPerUsd);
     if (parsed && explicitUnverified) parsed.unverified = true;
     return parsed;
   }
@@ -527,8 +579,8 @@ export function resolvePriceRange(
     min,
     max,
     currency_local: "CNY",
-    min_usd: min !== undefined ? Math.round(min / CNY_PER_USD) : undefined,
-    max_usd: max !== undefined ? Math.round(max / CNY_PER_USD) : undefined,
+    min_usd: min !== undefined ? Math.round(min / cnyPerUsd) : undefined,
+    max_usd: max !== undefined ? Math.round(max / cnyPerUsd) : undefined,
     unverified: input.unverified ?? explicitUnverified,
   };
 }

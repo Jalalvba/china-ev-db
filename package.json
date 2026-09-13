@@ -18,6 +18,9 @@
     "tech-spec-agent": "tsx scripts/tech-spec-agent.ts",
     "update-morocco-dealers": "tsx scripts/update-morocco-dealers.ts",
     "sync-prices": "tsx scripts/sync-morocco-prices.ts",
+    "fetch-all-prices": "tsx scripts/fetch-all-prices.ts",
+    "analyze-price-fetch": "tsx scripts/analyze-price-fetch.ts",
+    "import-price-fetch": "tsx scripts/import-price-fetch.ts",
     "migrate-parent-groups": "tsx scripts/migrate-parent-groups.ts",
     "fix-deepseek-audit": "tsx scripts/fix-deepseek-audit-corrections.ts"
   },

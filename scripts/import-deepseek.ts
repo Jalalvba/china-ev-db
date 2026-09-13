@@ -34,6 +34,7 @@ import {
   isModelNameResolvable,
   isBrandNameResolvable,
   resolvePriceRange,
+  getCnyPerUsdRate,
   type CanonicalPriceInput,
   parseDcKw,
   parseCombinedRange,
@@ -242,6 +243,9 @@ async function runVariantImport(entries: RawVariantEntry[], filePath: string) {
 
   console.log(`Importing ${entries.length} model entries (variant-spec shape) from ${filePath}`);
 
+  const { rate: cnyPerUsd, date: rateDate } = await getCnyPerUsdRate();
+  console.log(`Using CNY->USD rate ${cnyPerUsd.toFixed(4)} (Frankfurter, dated ${rateDate})`);
+
   let brandsTouched = 0;
   let modelsUpserted = 0;
   let powertrainsUpserted = 0;
@@ -263,7 +267,7 @@ async function runVariantImport(entries: RawVariantEntry[], filePath: string) {
 
     const englishModelName = resolveModelName(entry.model, entry.model_en);
     const segment = assertValidSegment(guessSegment(entry.segment, entry.body));
-    const price_range = resolvePriceRange(entry.price_rmb_range, entry.price_unverified);
+    const price_range = resolvePriceRange(entry.price_rmb_range, cnyPerUsd, entry.price_unverified);
 
     const modelFields = stripUndefined({
       name_cn: entry.model,

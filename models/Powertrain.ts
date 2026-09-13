@@ -15,7 +15,7 @@ const GEARBOX_TYPES = [
   "AMT",
   "multi-speed EV transmission",
 ];
-const RANGE_STANDARDS = ["CLTC", "WLTP", "NEDC"];
+const RANGE_STANDARDS = ["CLTC", "WLTP", "WLTC", "NEDC"];
 const CONFIDENCE_VALUES = ["confirmed", "unconfirmed"];
 const ASPIRATION_VALUES = ["turbo", "naturally-aspirated", "supercharged", "twin-charged", "n/a"];
 const FUEL_TYPE_VALUES = ["gasoline", "diesel", "n/a"];

@@ -29,6 +29,9 @@ const PRICE_RANGE_SCHEMA = new Schema(
     min_usd: Number,
     max_usd: Number,
     unverified: { type: Boolean, default: false },
+    flag_reason: { type: String, trim: true },
+    exchange_rate_used: Number,
+    exchange_rate_date: String,
   },
   { _id: false }
 );
@@ -64,6 +67,8 @@ const ModelSchema = new Schema<ModelDoc>(
     morocco_price_source: { type: String, enum: ["moteur.ma", "wandaloo.com"] },
     morocco_price_url: { type: String },
     morocco_price_confirmed: { type: Boolean, default: false },
+    morocco_to_china_price_ratio: { type: Number },
+    morocco_to_china_price_ratio_computed_at: { type: Date },
   },
   { timestamps: true }
 );

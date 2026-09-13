@@ -15,6 +15,8 @@ import TechSpecUpdater from "@/app/TechSpecUpdater";
 import ManualResearchImporter from "@/app/ManualResearchImporter";
 import ExportForManualResearchButton from "@/app/ExportForManualResearchButton";
 import MoroccoPriceFetcher from "@/app/MoroccoPriceFetcher";
+import { formatChinaPriceUsd } from "@/lib/priceDisplay";
+import { hasFields, groupBySpec } from "@/lib/specGrouping";
 
 export const dynamic = "force-dynamic";
 
@@ -29,12 +31,6 @@ async function getData(
   const powertrains = await Powertrain.find({ model_id: id }).lean();
   const moroccoListing = await MoroccoListing.findOne({ model_id: id }).lean();
   return JSON.parse(JSON.stringify({ model, powertrains, moroccoListing }));
-}
-
-/** True if `block` has at least one populated field among `keys` — a block that's merely `{ confidence: "confirmed" }` or `{}` (no meaningful data, e.g. an ICE-only trim's motor/battery) should render as absent, not as a row full of "?" placeholders. */
-function hasFields<T extends object>(block: T | undefined | null, keys: (keyof T)[]): boolean {
-  if (!block) return false;
-  return keys.some((k) => block[k] !== undefined && block[k] !== null && block[k] !== "");
 }
 
 /** Distinguishes AI-researched data from data that's never been touched by the research pipeline (still whatever scripts/seed.ts or scripts/import-deepseek.ts originally wrote). */
@@ -64,6 +60,12 @@ export default async function ModelPage({ params }: { params: Promise<{ id: stri
   if (!data) notFound();
   const { model, powertrains, moroccoListing } = data;
   const brand = model.brand_id;
+
+  // price_range lives on the Model, not per-Powertrain trim — there's only
+  // one blended China price range for the whole model, never a distinct
+  // price per trim. Repeat the same formatted value under every trim column
+  // rather than implying a per-trim breakdown the data doesn't support.
+  const chinaPriceUsdLabel = formatChinaPriceUsd(model.price_range);
 
   return (
     <div>
@@ -174,6 +176,33 @@ export default async function ModelPage({ params }: { params: Promise<{ id: stri
       )}
 
       <h2 className="text-lg font-semibold mt-6 mb-3">Powertrain Variants ({powertrains.length})</h2>
+      {(() => {
+        const specGroups = groupBySpec(powertrains);
+        // Only worth showing when it actually compresses something — if
+        // every trim already has a distinct spec, this would just restate
+        // the table below with extra steps.
+        if (specGroups.length === 0 || specGroups.length === powertrains.length) return null;
+        return (
+          <div className="mb-4 p-3 rounded-lg bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-sm">
+            <p className="font-medium mb-2">
+              {powertrains.length} trims collapse to {specGroups.length} distinct spec group{specGroups.length === 1 ? "" : "s"}:
+            </p>
+            <ul className="space-y-2">
+              {specGroups.map((g, i) => (
+                <li key={i}>
+                  <span className="font-medium">
+                    Group {i + 1} — {g.trims.length} trim{g.trims.length === 1 ? "" : "s"}:
+                  </span>{" "}
+                  {g.label}
+                  <div className="text-zinc-500 dark:text-zinc-400 mt-0.5">
+                    {g.trims.map((t) => t.trim_name).join(", ")}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </div>
+        );
+      })()}
       {powertrains.length === 0 ? (
         <p className="text-zinc-500 dark:text-zinc-400">No powertrain data available.</p>
       ) : (
@@ -185,6 +214,10 @@ export default async function ModelPage({ params }: { params: Promise<{ id: stri
               <Row
                 label="Unverified"
                 values={powertrains.map((p) => (p.unverified ? "Yes ⚠" : "No"))}
+              />
+              <Row
+                label="China Price (USD)"
+                values={powertrains.map(() => chinaPriceUsdLabel)}
               />
               <Row
                 label="Engine"

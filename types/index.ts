@@ -27,7 +27,7 @@ export type GearboxType =
   | "AMT"
   | "multi-speed EV transmission";
 
-export type RangeStandard = "CLTC" | "WLTP" | "NEDC";
+export type RangeStandard = "CLTC" | "WLTP" | "WLTC" | "NEDC";
 
 /** "n/a" covers BEVs and any other trim with no `engine` block. */
 export type AspirationType = "turbo" | "naturally-aspirated" | "supercharged" | "twin-charged" | "n/a";
@@ -103,6 +103,12 @@ export interface IPriceRange {
   min_usd?: number;
   max_usd?: number;
   unverified?: boolean;
+  /** Why unverified was set true — e.g. a mislabeled-currency or wrong-model-match finding from a data audit. Free text, not required whenever unverified is true (some unverified records just predate the flag). */
+  flag_reason?: string;
+  /** CNY-per-USD rate used to derive min_usd/max_usd, from getCnyPerUsdRate() (lib/deepseekNormalize.ts) at import time. Undefined for records imported before the hardcoded 7.2 constant was replaced with a live fetch. */
+  exchange_rate_used?: number;
+  /** Date the exchange_rate_used value was published for (Frankfurter's `data.date`), not the import run's own date. */
+  exchange_rate_date?: string;
 }
 
 export interface IModel {
@@ -131,6 +137,10 @@ export interface IModel {
   morocco_price_source?: "moteur.ma" | "wandaloo.com";
   morocco_price_url?: string;
   morocco_price_confirmed?: boolean;
+  /** morocco_price_dh / price_range.min, only ever computed for models where price_range.unverified is not true — see scripts/backfill-morocco-china-ratio.ts. Undefined means never computed (missing inputs, or excluded by the unverified guard). */
+  morocco_to_china_price_ratio?: number;
+  /** When morocco_to_china_price_ratio was last (re)computed. */
+  morocco_to_china_price_ratio_computed_at?: string;
   /** Set by mongoose (`timestamps: true`); not touched by the research pipeline. Used as the "Original import data" fallback timestamp when last_researched_at/notable_facts_last_researched_at is unset. */
   createdAt?: string;
   updatedAt?: string;
