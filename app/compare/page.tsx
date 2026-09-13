@@ -471,7 +471,7 @@ function TrimPicker({
   if (groups.length === 0) return null;
 
   const selectClass =
-    "border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 rounded px-3 py-2 text-sm w-full";
+    "border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 rounded px-3 py-2 text-sm w-full overflow-hidden text-ellipsis whitespace-nowrap";
 
   return (
     <div className="flex-1">
@@ -481,10 +481,13 @@ function TrimPicker({
       <select className={selectClass} value={value} onChange={(e) => onChange(e.target.value)}>
         {groups.map((g) => {
           const repId = g.trims[0]._id as string;
+          // Trim count leads (not trailing) so it survives a narrow mobile
+          // <select>'s closed-state clipping — losing "— 8 trims" off the
+          // end left a spec string that read as an unexplained raw fragment.
           const optionLabel =
-            g.trims.length > 1 ? `${g.label} — ${g.trims.length} trims` : g.trims[0].trim_name;
+            g.trims.length > 1 ? `${g.trims.length} trims — ${g.label}` : g.trims[0].trim_name;
           return (
-            <option key={repId} value={repId}>
+            <option key={repId} value={repId} title={optionLabel}>
               {optionLabel}
             </option>
           );

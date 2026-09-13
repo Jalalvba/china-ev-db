@@ -2,10 +2,11 @@
 
 ## Duplicate model documents: bare "Dongfeng" vs "Dongfeng Aeolus" (2026-09-13)
 
-Eight models exist as two separate DB documents each — one correctly filed under
-the **"Dongfeng Aeolus"** brand, one stray duplicate filed under the parent
-**"Dongfeng"** brand. Not reconciled yet; needs a per-pair diff (spec data may
-differ between the two docs, so this isn't a safe blind delete/merge).
+Eight models existed as two separate DB documents each — one correctly filed
+under the **"Dongfeng Aeolus"** brand, one stray duplicate filed under the
+parent **"Dongfeng"** brand. One pair (Huge) has been reconciled; the other
+seven are not — needs a per-pair diff (spec data may differ between the two
+docs, so this isn't a safe blind delete/merge).
 
 **Root cause** (fixed going forward, see below): `resolveBrandName()` in
 `lib/deepseekNormalize.ts` resolves a brand purely from the current import
@@ -28,7 +29,20 @@ to `KNOWN_BRANDS` so correctly-tagged source data resolves right without
 depending on `explicitEnglish` being supplied every time. This stops new
 duplicates; it does not retroactively fix the seven pairs below.
 
-### The eight duplicate pairs
+### Resolved
+
+- **Dongfeng Huge**: reconciled 2026-09-13. Canonical doc `6aa58f6c459a4cbe4a9c65d4`
+  ("Dongfeng Huge" / "Dongfeng Aeolus") kept its own `name_cn`/`name_en`/
+  `generation` (more complete than the duplicate's generic "Huge"/"1st
+  Generation"). Merged in from the duplicate: all 11 `Powertrain` docs
+  (re-pointed `model_id`), `notable_facts`, `morocco_to_china_price_ratio`,
+  and a real scraped `morocco_price_source`/`morocco_price_url`
+  (moteur.ma) replacing the earlier `manual-verified` placeholder that had
+  no URL. Duplicate doc `6aa58edb459a4cbe4a9c65c8` (bare "Dongfeng" brand)
+  deleted after the merge — had no other references (checked
+  `moroccolistings` and all other collections).
+
+### The remaining seven duplicate pairs
 
 | Aeolus model (correct brand, keep) | Duplicate under bare "Dongfeng" (needs diff before any merge) |
 |---|---|
@@ -36,7 +50,6 @@ duplicates; it does not retroactively fix the seven pairs below.
 | Dongfeng Shine GS (`6aa58f6c459a4cbe4a9c65d3`) | Shine GS (`6aa58edb459a4cbe4a9c65c6`) |
 | Dongfeng Shine Max (`6aa58f6c459a4cbe4a9c65d2`) | Shine Max (`6aa58edb459a4cbe4a9c65c5`) |
 | Dongfeng Mage (`6aa58f6c459a4cbe4a9c65d5`) | Mage (`6aa58edb459a4cbe4a9c65c7`) |
-| Dongfeng Huge (`6aa58f6c459a4cbe4a9c65d4`) | Huge (`6aa58edb459a4cbe4a9c65c8`) |
 | Dongfeng E70 (`6aa58f6c459a4cbe4a9c65d8`) | E70 (`6aa58edb459a4cbe4a9c65cf`) |
 | Dongfeng AX7 (`6aa58f6c459a4cbe4a9c65da`) | AX7 (`6aa58edb459a4cbe4a9c65c9`) |
 | Dongfeng Aeolus L7 (`6aa58f6c459a4cbe4a9c65d6`) | Dongfeng Aeolus L7 (`6aa6aa7aa93026dd42b5cb2b` — created 2026-09-13, identical name, wrong brand) |
