@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import type { IBrand, IModel, IPowertrain } from "@/types";
 import { kwToHp } from "@/lib/units";
 import { groupBrands } from "@/lib/brandGrouping";
-import { formatChinaPriceCny, formatChinaPriceUsd } from "@/lib/priceDisplay";
+import { formatChinaPriceUsd } from "@/lib/priceDisplay";
 import { groupBySpec, compactSpecLabel } from "@/lib/specGrouping";
 
 type PopulatedModel = Omit<IModel, "brand_id"> & { brand_id: IBrand };
@@ -58,11 +58,6 @@ const ROWS: Row[] = [
     label: "Production Status",
     get: (m) => m?.production_status ?? "N/A",
     diff: simpleDiff,
-  },
-  {
-    label: "Price Range (CNY)",
-    get: (m) => formatChinaPriceCny(m?.price_range) ?? "N/A",
-    hideIfBothEmpty: true,
   },
   {
     label: "China Price (USD)",

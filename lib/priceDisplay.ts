@@ -7,14 +7,6 @@
 
 import type { IPriceRange } from "@/types";
 
-/** "18,000 – 24,000 CNY", or undefined if min/max aren't both present — never emits a literal "?" for a missing bound. Appends "⚠" when the range is flagged unverified. */
-export function formatChinaPriceCny(priceRange: IPriceRange | undefined | null): string | undefined {
-  if (!priceRange || priceRange.min == null || priceRange.max == null) return undefined;
-  return `${priceRange.min.toLocaleString()} – ${priceRange.max.toLocaleString()} ${priceRange.currency_local}${
-    priceRange.unverified ? " ⚠" : ""
-  }`;
-}
-
 /** "$18,000 – $24,000", or undefined if min_usd/max_usd aren't both present. Appends "⚠" when the range is flagged unverified. */
 export function formatChinaPriceUsd(priceRange: IPriceRange | undefined | null): string | undefined {
   if (!priceRange || priceRange.min_usd == null || priceRange.max_usd == null) return undefined;

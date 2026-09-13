@@ -18,6 +18,7 @@
     "tech-spec-agent": "tsx scripts/tech-spec-agent.ts",
     "update-morocco-dealers": "tsx scripts/update-morocco-dealers.ts",
     "sync-prices": "tsx scripts/sync-morocco-prices.ts",
+    "backfill-price-usd": "tsx scripts/backfill-price-usd.ts",
     "fetch-all-prices": "tsx scripts/fetch-all-prices.ts",
     "analyze-price-fetch": "tsx scripts/analyze-price-fetch.ts",
     "import-price-fetch": "tsx scripts/import-price-fetch.ts",
