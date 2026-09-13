@@ -512,18 +512,21 @@ function CompareInner() {
   const trimIdAParam = searchParams.get("ta") ?? "";
   const trimIdBParam = searchParams.get("tb") ?? "";
 
+  // Only the two dropdown pickers need data up front — powertrains (the
+  // heaviest of the three, and double-populated: model_id -> brand_id) are
+  // fetched separately, per selected model, below. Fetching all ~200
+  // powertrains unconditionally on every page load was needless weight on a
+  // slow connection for a page that starts with nothing selected.
   useEffect(() => {
     let cancelled = false;
     setLoadError(false);
     Promise.all([
       fetch("/api/models").then((r) => r.json()),
-      fetch("/api/powertrains").then((r) => r.json()),
       fetch("/api/brands").then((r) => r.json()),
     ])
-      .then(([models, powertrains, brands]) => {
+      .then(([models, brands]) => {
         if (cancelled) return;
         setAllModels(models);
-        setAllPowertrains(powertrains);
         setAllBrands(brands);
         setLoaded(true);
       })
@@ -539,6 +542,36 @@ function CompareInner() {
       cancelled = true;
     };
   }, [retryCount]);
+
+  // Fetch trims for whichever side(s) have a model selected, merging into
+  // the existing set (never dropping the other side's already-fetched
+  // trims) and skipping a re-fetch for a model already present.
+  useEffect(() => {
+    const idsToFetch = [idA, idB].filter(
+      (id) => id && !allPowertrains.some((p) => p.model_id?._id === id),
+    );
+    if (idsToFetch.length === 0) return;
+    let cancelled = false;
+    Promise.all(
+      idsToFetch.map((id) =>
+        fetch(`/api/powertrains?model_id=${id}`).then((r) => r.json()),
+      ),
+    )
+      .then((results) => {
+        if (cancelled) return;
+        const fetched: PopulatedPowertrain[] = results.flat();
+        setAllPowertrains((prev) => [
+          ...prev,
+          ...fetched.filter((p) => !prev.some((existing) => existing._id === p._id)),
+        ]);
+      })
+      .catch((err) => {
+        console.error("Compare page trim load failed:", err);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [idA, idB, allPowertrains]);
 
   /** Model change clears that side's trim selection ("ta"/"tb") too — a trim id from the old model doesn't mean anything once the model changes, and leaving a stale one in the URL would silently apply to whatever model replaces it. */
   const setModelSelection = (which: "a" | "b", id: string) => {
