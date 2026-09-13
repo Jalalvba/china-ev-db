@@ -523,6 +523,25 @@ function stripFenceAndPreamble(text: string): string {
   return candidate.slice(braceStart, braceEnd + 1);
 }
 
+/**
+ * Backstop only — the prompt explicitly asks for "_id" (with the leading
+ * underscore) on model and every powertrain, byte-for-byte as given, but
+ * Kimi/DeepSeek have been observed "cleaning up" the field name to a bare
+ * "id" anyway despite that instruction. Rather than hard-failing an
+ * otherwise-good response over a field-name typo the model made on its own,
+ * rename "id" -> "_id" in place (only when "_id" itself isn't already
+ * present, so a deliberate real "id" field — none exist in this schema, but
+ * defensively) before validation ever sees it.
+ */
+function normalizeIdField(obj: unknown): void {
+  if (typeof obj !== "object" || obj === null || Array.isArray(obj)) return;
+  const rec = obj as Record<string, unknown>;
+  if (!("_id" in rec) && "id" in rec) {
+    rec._id = rec.id;
+    delete rec.id;
+  }
+}
+
 export function parseManualImport(
   rawText: string,
   currentModel: Record<string, unknown>,
@@ -538,6 +557,11 @@ export function parseManualImport(
     return { valid: false, errors: ["Top level must be a JSON object with \"model\" and \"powertrains\" keys."], modelDiff: [], modelChanges: {}, powertrainResults: [] };
   }
   const top = parsed as Record<string, unknown>;
+
+  normalizeIdField(top.model);
+  if (Array.isArray(top.powertrains)) {
+    for (const pt of top.powertrains) normalizeIdField(pt);
+  }
 
   const errors: string[] = [];
 
