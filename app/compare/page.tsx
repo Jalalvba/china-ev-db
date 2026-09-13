@@ -504,6 +504,8 @@ function CompareInner() {
   );
   const [allBrands, setAllBrands] = useState<IBrand[]>([]);
   const [loaded, setLoaded] = useState(false);
+  const [loadError, setLoadError] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
 
   const idA = searchParams.get("a") ?? "";
   const idB = searchParams.get("b") ?? "";
@@ -511,17 +513,32 @@ function CompareInner() {
   const trimIdBParam = searchParams.get("tb") ?? "";
 
   useEffect(() => {
+    let cancelled = false;
+    setLoadError(false);
     Promise.all([
       fetch("/api/models").then((r) => r.json()),
       fetch("/api/powertrains").then((r) => r.json()),
       fetch("/api/brands").then((r) => r.json()),
-    ]).then(([models, powertrains, brands]) => {
-      setAllModels(models);
-      setAllPowertrains(powertrains);
-      setAllBrands(brands);
-      setLoaded(true);
-    });
-  }, []);
+    ])
+      .then(([models, powertrains, brands]) => {
+        if (cancelled) return;
+        setAllModels(models);
+        setAllPowertrains(powertrains);
+        setAllBrands(brands);
+        setLoaded(true);
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        // A dropped/failed request on a flaky connection used to leave this
+        // page stuck on "Loading…" forever with no way to recover short of
+        // a hard refresh — surface it and let the user retry instead.
+        console.error("Compare page data load failed:", err);
+        setLoadError(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [retryCount]);
 
   /** Model change clears that side's trim selection ("ta"/"tb") too — a trim id from the old model doesn't mean anything once the model changes, and leaving a stale one in the URL would silently apply to whatever model replaces it. */
   const setModelSelection = (which: "a" | "b", id: string) => {
@@ -623,7 +640,17 @@ function CompareInner() {
         </div>
       )}
 
-      {!loaded ? (
+      {loadError ? (
+        <div className="text-zinc-500 dark:text-zinc-400">
+          <p>Couldn&apos;t load model data — check your connection.</p>
+          <button
+            onClick={() => setRetryCount((n) => n + 1)}
+            className="mt-2 px-3 py-1.5 rounded-md bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 transition"
+          >
+            Retry
+          </button>
+        </div>
+      ) : !loaded ? (
         <p className="text-zinc-500 dark:text-zinc-400">Loading…</p>
       ) : !showTable ? (
         <p className="text-zinc-500 dark:text-zinc-400">
