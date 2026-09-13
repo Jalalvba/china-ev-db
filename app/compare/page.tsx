@@ -6,7 +6,7 @@ import type { IBrand, IModel, IPowertrain } from "@/types";
 import { kwToHp } from "@/lib/units";
 import { groupBrands } from "@/lib/brandGrouping";
 import { formatChinaPriceCny, formatChinaPriceUsd } from "@/lib/priceDisplay";
-import { groupBySpec } from "@/lib/specGrouping";
+import { groupBySpec, compactSpecLabel } from "@/lib/specGrouping";
 
 type PopulatedModel = Omit<IModel, "brand_id"> & { brand_id: IBrand };
 type PopulatedPowertrain = Omit<IPowertrain, "model_id"> & {
@@ -481,11 +481,11 @@ function TrimPicker({
       <select className={selectClass} value={value} onChange={(e) => onChange(e.target.value)}>
         {groups.map((g) => {
           const repId = g.trims[0]._id as string;
-          // Trim count leads (not trailing) so it survives a narrow mobile
-          // <select>'s closed-state clipping — losing "— 8 trims" off the
-          // end left a spec string that read as an unexplained raw fragment.
-          const optionLabel =
-            g.trims.length > 1 ? `${g.trims.length} trims — ${g.label}` : g.trims[0].trim_name;
+          // Always the same shape — compact canonical fields, never a raw
+          // trim_name — so a single trim and a multi-trim group render as
+          // visually comparable options instead of two different styles.
+          const spec = compactSpecLabel(g.trims[0]);
+          const optionLabel = g.trims.length > 1 ? `${g.trims.length} trims · ${spec}` : spec;
           return (
             <option key={repId} value={repId} title={optionLabel}>
               {optionLabel}

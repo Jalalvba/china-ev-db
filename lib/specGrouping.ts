@@ -81,6 +81,41 @@ export function specGroupLabel(p: SpecFields): string {
   return parts.join(", ");
 }
 
+/** Short fuel_type label for the compact picker format — full words ("gasoline") read fine in a table cell but waste width in a narrow <select>. */
+const FUEL_ABBR: Record<string, string> = {
+  gasoline: "Gas",
+  diesel: "Diesel",
+};
+
+/**
+ * Compact, always-the-same-shape canonical-field summary for a trim picker
+ * option — e.g. "150 kW · Turbo Gas · DCT 7". Unlike specGroupLabel (a full
+ * sentence meant for a comparison-table cell), this never varies in
+ * structure between a single trim and a multi-trim group, and it never
+ * falls back to trim_name — every option in the picker is built from the
+ * same canonical engine/motor/battery/transmission fields, so two options
+ * are visually comparable at a glance instead of one being a spec dump and
+ * the other a bare (often Chinese) trim badge.
+ */
+export function compactSpecLabel(p: SpecFields): string {
+  const parts: string[] = [];
+  if (hasFields(p.engine, ["power_kw"])) {
+    const aspiration = p.engine!.aspiration === "turbo" ? "Turbo " : "";
+    const fuel = p.engine!.fuel_type ? (FUEL_ABBR[p.engine!.fuel_type] ?? p.engine!.fuel_type) : "";
+    parts.push(`${p.engine!.power_kw} kW ${aspiration}${fuel}`.replace(/\s+/g, " ").trim());
+  }
+  if (hasFields(p.motor, ["power_kw"])) {
+    parts.push(`${p.motor!.power_kw} kW motor`);
+  }
+  if (hasFields(p.battery, ["capacity_total_kwh"])) {
+    parts.push(`${p.battery!.capacity_total_kwh} kWh`);
+  }
+  if (p.transmission?.type) {
+    parts.push(`${p.transmission.type}${p.transmission.speed_count ? ` ${p.transmission.speed_count}` : ""}`);
+  }
+  return parts.length > 0 ? parts.join(" · ") : "Spec unavailable";
+}
+
 export interface SpecGroup<T extends SpecFields = IPowertrain> {
   label: string;
   trims: T[];
