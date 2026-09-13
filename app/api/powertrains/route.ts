@@ -10,6 +10,15 @@ import "@/models/Model";
 import "@/models/Brand";
 import Powertrain from "@/models/Powertrain";
 
+/** Sets `filter[field] = { $gte, $lte }` from whichever of min/max query params are present — a field with no data on a given document simply never matches a $gte/$lte clause (Mongo's normal behavior for a missing field), which is exactly the desired "optional field, no filter = no effect, missing data = excluded only when a filter IS set" rule; nothing here needs to special-case null/undefined. No-op if neither bound is present. */
+function applyRangeFilter(filter: Record<string, unknown>, field: string, min: string | null, max: string | null) {
+  if (!min && !max) return;
+  const range: Record<string, number> = {};
+  if (min) range.$gte = Number(min);
+  if (max) range.$lte = Number(max);
+  filter[field] = range;
+}
+
 export async function GET(req: NextRequest) {
   await connectToDatabase();
   const { searchParams } = new URL(req.url);
@@ -20,12 +29,9 @@ export async function GET(req: NextRequest) {
   const gearbox = searchParams.get("gearbox");
   const fuel_type = searchParams.get("fuel_type");
   const aspiration = searchParams.get("aspiration");
-  const minBattery = searchParams.get("min_battery_kwh");
-  const maxBattery = searchParams.get("max_battery_kwh");
-  const minEnginePower = searchParams.get("min_engine_power_kw");
-  const maxEnginePower = searchParams.get("max_engine_power_kw");
-  const minMotorPower = searchParams.get("min_motor_power_kw");
-  const maxMotorPower = searchParams.get("max_motor_power_kw");
+  const drive = searchParams.get("drive");
+  const hybrid_type = searchParams.get("hybrid_type");
+  const emissions_standard = searchParams.get("emissions_standard");
   const ids = searchParams.get("ids");
 
   if (model_id) filter.model_id = model_id;
@@ -33,24 +39,24 @@ export async function GET(req: NextRequest) {
   if (gearbox) filter["transmission.type"] = gearbox;
   if (fuel_type) filter["engine.fuel_type"] = fuel_type;
   if (aspiration) filter["engine.aspiration"] = aspiration;
+  if (drive) filter["motor.drive"] = drive;
+  if (hybrid_type) filter.hybrid_type = hybrid_type;
+  if (emissions_standard) filter.emissions_standard = emissions_standard;
   if (ids) filter._id = { $in: ids.split(",") };
-  if (minBattery || maxBattery) {
-    filter["battery.capacity_total_kwh"] = {};
-    if (minBattery)
-      (filter["battery.capacity_total_kwh"] as Record<string, unknown>).$gte = Number(minBattery);
-    if (maxBattery)
-      (filter["battery.capacity_total_kwh"] as Record<string, unknown>).$lte = Number(maxBattery);
-  }
-  if (minEnginePower || maxEnginePower) {
-    filter["engine.power_kw"] = {};
-    if (minEnginePower) (filter["engine.power_kw"] as Record<string, unknown>).$gte = Number(minEnginePower);
-    if (maxEnginePower) (filter["engine.power_kw"] as Record<string, unknown>).$lte = Number(maxEnginePower);
-  }
-  if (minMotorPower || maxMotorPower) {
-    filter["motor.power_kw"] = {};
-    if (minMotorPower) (filter["motor.power_kw"] as Record<string, unknown>).$gte = Number(minMotorPower);
-    if (maxMotorPower) (filter["motor.power_kw"] as Record<string, unknown>).$lte = Number(maxMotorPower);
-  }
+
+  applyRangeFilter(filter, "battery.capacity_total_kwh", searchParams.get("min_battery_kwh"), searchParams.get("max_battery_kwh"));
+  applyRangeFilter(filter, "engine.power_kw", searchParams.get("min_engine_power_kw"), searchParams.get("max_engine_power_kw"));
+  applyRangeFilter(filter, "motor.power_kw", searchParams.get("min_motor_power_kw"), searchParams.get("max_motor_power_kw"));
+  applyRangeFilter(filter, "engine.torque_nm", searchParams.get("min_engine_torque_nm"), searchParams.get("max_engine_torque_nm"));
+  applyRangeFilter(filter, "motor.torque_nm", searchParams.get("min_motor_torque_nm"), searchParams.get("max_motor_torque_nm"));
+  applyRangeFilter(filter, "engine.displacement_l", searchParams.get("min_displacement_l"), searchParams.get("max_displacement_l"));
+  applyRangeFilter(filter, "battery.ev_range_km", searchParams.get("min_ev_range_km"), searchParams.get("max_ev_range_km"));
+  applyRangeFilter(
+    filter,
+    "combined_system_power_kw",
+    searchParams.get("min_combined_system_power_kw"),
+    searchParams.get("max_combined_system_power_kw")
+  );
 
   // Refuse an unfiltered full-collection dump — every real caller (the
   // Compare page's per-model trim fetch, this new technical search) always

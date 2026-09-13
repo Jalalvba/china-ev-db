@@ -14,7 +14,12 @@ export type ProductionStatus = "in production" | "discontinued" | "upcoming";
 
 export type EnergyType = "ICE" | "HEV" | "PHEV" | "BEV" | "REEV/EREV" | "MHEV";
 
-export type DriveType = "FWD" | "RWD" | "AWD";
+export type DriveType = "FWD" | "RWD" | "AWD" | "4WD";
+
+/** Coarser, hybrid-specific classification some sources use — distinct from (and expected to overlap heavily with) EnergyType, the powertrain's fundamental architecture. Kept as its own field per an explicit request for it as a separate filterable axis, not folded into EnergyType. */
+export type HybridType = "HEV" | "PHEV" | "EREV" | "Mild hybrid" | "Not applicable";
+
+export type EmissionsStandard = "Euro 5" | "Euro 6" | "Euro 6d" | "China 5" | "China 6";
 
 export type MotorCount = "single" | "dual" | "tri-motor" | "quad-motor";
 

@@ -4,7 +4,10 @@ import type { IPowertrain } from "@/types";
 type PowertrainDoc = Omit<IPowertrain, "model_id"> & { model_id: Types.ObjectId };
 
 const ENERGY_TYPES = ["ICE", "HEV", "PHEV", "BEV", "REEV/EREV", "MHEV"];
-const DRIVE_TYPES = ["FWD", "RWD", "AWD"];
+const DRIVE_TYPES = ["FWD", "RWD", "AWD", "4WD"];
+/** Distinct from energy_type (ICE/HEV/PHEV/BEV/REEV-EREV/MHEV, the powertrain's fundamental architecture) — this is a coarser, hybrid-specific classification some sources use. Deliberately kept as its own field rather than aliased to energy_type per the exact filter spec that requested it as a separate axis; expect heavy overlap with energy_type in practice, and expect this to be sparsely populated until a research pass explicitly asks for it. */
+const HYBRID_TYPES = ["HEV", "PHEV", "EREV", "Mild hybrid", "Not applicable"];
+const EMISSIONS_STANDARDS = ["Euro 5", "Euro 6", "Euro 6d", "China 5", "China 6"];
 const MOTOR_COUNTS = ["single", "dual", "tri-motor", "quad-motor"];
 const GEARBOX_TYPES = [
   "single-speed reducer",
@@ -94,6 +97,10 @@ const PowertrainSchema = new Schema<PowertrainDoc>(
     performance: { type: PerformanceSchema },
     combined_range_km: { type: Number },
     combined_range_note: { type: String },
+    /** Combined ICE+motor system output — only meaningful for a hybrid (HEV/PHEV/REEV); left unset for a pure ICE or pure BEV trim rather than backfilled with engine_kw+motor_kw, since that arithmetic sum isn't always the real published system figure. */
+    combined_system_power_kw: { type: Number },
+    hybrid_type: { type: String, enum: HYBRID_TYPES },
+    emissions_standard: { type: String, enum: EMISSIONS_STANDARDS },
     source: { type: String },
     confidence: { type: String, enum: CONFIDENCE_VALUES },
     unverified: { type: Boolean, default: false },

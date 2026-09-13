@@ -18,6 +18,8 @@ import {
   ASPIRATION_VALUES,
   FUEL_TYPE_VALUES,
   BATTERY_CHEMISTRY_VALUES,
+  HYBRID_TYPE_VALUES,
+  EMISSIONS_STANDARD_VALUES,
 } from "../types/canonicalPowertrain";
 import { buildBrandContextBlock, type BrandContext } from "./brandContext";
 import { correctRangeStandard } from "./deepseekNormalize";
@@ -368,6 +370,9 @@ const TOP_LEVEL_KEYS = new Set([
   "performance",
   "combined_range_km",
   "combined_range_note",
+  "combined_system_power_kw",
+  "hybrid_type",
+  "emissions_standard",
   "source",
   "confidence",
 ]);
@@ -386,6 +391,8 @@ const CONFIDENCE_SET = new Set<string>(CONFIDENCE_VALUES);
 const ASPIRATION_SET = new Set<string>(ASPIRATION_VALUES);
 const FUEL_TYPE_SET = new Set<string>(FUEL_TYPE_VALUES);
 const BATTERY_CHEMISTRY_SET = new Set<string>(BATTERY_CHEMISTRY_VALUES);
+const HYBRID_TYPE_SET = new Set<string>(HYBRID_TYPE_VALUES);
+const EMISSIONS_STANDARD_SET = new Set<string>(EMISSIONS_STANDARD_VALUES);
 
 function checkBoolean(value: unknown, path: string, errors: string[]) {
   if (value === undefined || value === null) return;
@@ -423,6 +430,8 @@ export function validateCanonicalVariant(raw: unknown): { valid: boolean; errors
     errors.push("variant.energy_type: missing (required)");
   }
   checkEnum(v.confidence, CONFIDENCE_SET, "variant.confidence", errors);
+  checkEnum(v.hybrid_type, HYBRID_TYPE_SET, "variant.hybrid_type", errors);
+  checkEnum(v.emissions_standard, EMISSIONS_STANDARD_SET, "variant.emissions_standard", errors);
 
   if (v.engine !== undefined && v.engine !== null) {
     if (typeof v.engine !== "object" || Array.isArray(v.engine)) {

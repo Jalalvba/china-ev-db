@@ -13,10 +13,14 @@ import type {
   AspirationType,
   FuelType,
   BatteryChemistry,
+  HybridType,
+  EmissionsStandard,
 } from "./index";
 
 export const ENERGY_TYPE_VALUES: EnergyType[] = ["ICE", "HEV", "PHEV", "BEV", "REEV/EREV", "MHEV"];
-export const DRIVE_TYPE_VALUES: DriveType[] = ["FWD", "RWD", "AWD"];
+export const DRIVE_TYPE_VALUES: DriveType[] = ["FWD", "RWD", "AWD", "4WD"];
+export const HYBRID_TYPE_VALUES: HybridType[] = ["HEV", "PHEV", "EREV", "Mild hybrid", "Not applicable"];
+export const EMISSIONS_STANDARD_VALUES: EmissionsStandard[] = ["Euro 5", "Euro 6", "Euro 6d", "China 5", "China 6"];
 export const MOTOR_COUNT_VALUES: MotorCount[] = ["single", "dual", "tri-motor", "quad-motor"];
 export const GEARBOX_TYPE_VALUES: GearboxType[] = [
   "single-speed reducer",
@@ -96,6 +100,10 @@ export interface ICanonicalPowertrain {
   combined_range_km?: number;
   /** Free-text caveat about combined_range_km, e.g. a suspected source mislabeling of the test standard. */
   combined_range_note?: string;
+  /** Combined ICE+motor system output — only meaningful for a hybrid (HEV/PHEV/REEV). Left unset for a pure ICE or pure BEV trim rather than backfilled with engine_kw+motor_kw, since that arithmetic sum isn't always the real published system figure. */
+  combined_system_power_kw?: number;
+  hybrid_type?: HybridType;
+  emissions_standard?: EmissionsStandard;
   /** Attribution, e.g. "Autohome / Dongchedi". */
   source?: string;
   /** Top-level confidence for the powertrain record as a whole, distinct from each sub-block's own confidence. */
@@ -156,6 +164,9 @@ export const CANONICAL_POWERTRAIN_FIELD_TEMPLATE = {
   },
   combined_range_km: "number | null (a directly-published figure, or — only when no such figure exists — computed from two individually-sourced inputs, e.g. tank capacity ÷ fuel consumption × 100; see combined_range_note requirements)",
   combined_range_note: "string | null (if combined_range_km was computed rather than directly published, this MUST start with \"Computed:\" and show the arithmetic plus both source inputs — never leave a computed value indistinguishable from a directly-published one)",
+  combined_system_power_kw: "number | null (combined ICE+motor system output — only for a hybrid HEV/PHEV/REEV; null for a pure ICE or pure BEV trim, and do not compute as engine_kw+motor_kw — only use a directly-published system figure)",
+  hybrid_type: HYBRID_TYPE_VALUES.join(" | ") + " | null",
+  emissions_standard: EMISSIONS_STANDARD_VALUES.join(" | ") + " | null (China-market trims: use the China 5/China 6 values; export/GCC-market trims: Euro 5/6/6d)",
   source: "string | null (e.g. \"Autohome\", \"official manufacturer site\")",
   confidence: CONFIDENCE_VALUES.join(" | ") + " | null",
 } as const;

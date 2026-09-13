@@ -13,6 +13,9 @@ const ENERGY_TYPES = ["ICE", "HEV", "PHEV", "BEV", "REEV/EREV", "MHEV"];
 const FUEL_TYPES = ["gasoline", "diesel", "n/a"];
 const ASPIRATIONS = ["turbo", "naturally-aspirated", "supercharged", "twin-charged", "n/a"];
 const GEARBOX_TYPES = ["single-speed reducer", "CVT", "DCT", "AT", "MT", "AMT", "multi-speed EV transmission"];
+const DRIVE_TYPES = ["FWD", "RWD", "AWD", "4WD"];
+const HYBRID_TYPES = ["HEV", "PHEV", "EREV", "Mild hybrid", "Not applicable"];
+const EMISSIONS_STANDARDS = ["Euro 5", "Euro 6", "Euro 6d", "China 5", "China 6"];
 
 const selectClass =
   "border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 rounded px-3 py-2 text-sm w-full";
@@ -32,10 +35,23 @@ export default function SpecSearchPage() {
   const [fuelType, setFuelType] = useState("");
   const [aspiration, setAspiration] = useState("");
   const [gearbox, setGearbox] = useState("");
+  const [driveType, setDriveType] = useState("");
+  const [hybridType, setHybridType] = useState("");
+  const [emissionsStandard, setEmissionsStandard] = useState("");
   const [minEnginePower, setMinEnginePower] = useState("");
   const [maxEnginePower, setMaxEnginePower] = useState("");
   const [minMotorPower, setMinMotorPower] = useState("");
   const [maxMotorPower, setMaxMotorPower] = useState("");
+  const [minEngineTorque, setMinEngineTorque] = useState("");
+  const [maxEngineTorque, setMaxEngineTorque] = useState("");
+  const [minMotorTorque, setMinMotorTorque] = useState("");
+  const [maxMotorTorque, setMaxMotorTorque] = useState("");
+  const [minDisplacement, setMinDisplacement] = useState("");
+  const [maxDisplacement, setMaxDisplacement] = useState("");
+  const [minEvRange, setMinEvRange] = useState("");
+  const [maxEvRange, setMaxEvRange] = useState("");
+  const [minCombinedPower, setMinCombinedPower] = useState("");
+  const [maxCombinedPower, setMaxCombinedPower] = useState("");
   const [minBattery, setMinBattery] = useState("");
   const [maxBattery, setMaxBattery] = useState("");
 
@@ -44,7 +60,29 @@ export default function SpecSearchPage() {
   const [error, setError] = useState<string | null>(null);
 
   const hasAnyFilter =
-    energyType || fuelType || aspiration || gearbox || minEnginePower || maxEnginePower || minMotorPower || maxMotorPower || minBattery || maxBattery;
+    energyType ||
+    fuelType ||
+    aspiration ||
+    gearbox ||
+    driveType ||
+    hybridType ||
+    emissionsStandard ||
+    minEnginePower ||
+    maxEnginePower ||
+    minMotorPower ||
+    maxMotorPower ||
+    minEngineTorque ||
+    maxEngineTorque ||
+    minMotorTorque ||
+    maxMotorTorque ||
+    minDisplacement ||
+    maxDisplacement ||
+    minEvRange ||
+    maxEvRange ||
+    minCombinedPower ||
+    maxCombinedPower ||
+    minBattery ||
+    maxBattery;
 
   /** Explicit confirmation of exactly which fields are constraining the search — an empty field is never silently treated as a real value (a blank select/number input never gets sent to the API at all, see runSearch below), but that's invisible without this: no visual difference otherwise between "this field is unset" and "I forgot what I set it to." */
   const activeFilters: string[] = [];
@@ -52,8 +90,17 @@ export default function SpecSearchPage() {
   if (fuelType) activeFilters.push(`Fuel type: ${fuelType}`);
   if (aspiration) activeFilters.push(`Aspiration: ${aspiration}`);
   if (gearbox) activeFilters.push(`Transmission: ${gearbox}`);
+  if (driveType) activeFilters.push(`Drive type: ${driveType}`);
+  if (hybridType) activeFilters.push(`Hybrid type: ${hybridType}`);
+  if (emissionsStandard) activeFilters.push(`Emissions standard: ${emissionsStandard}`);
   if (minEnginePower || maxEnginePower) activeFilters.push(`Engine power: ${minEnginePower || "0"}–${maxEnginePower || "∞"} hp`);
   if (minMotorPower || maxMotorPower) activeFilters.push(`Motor power: ${minMotorPower || "0"}–${maxMotorPower || "∞"} hp`);
+  if (minEngineTorque || maxEngineTorque) activeFilters.push(`Engine torque: ${minEngineTorque || "0"}–${maxEngineTorque || "∞"} Nm`);
+  if (minMotorTorque || maxMotorTorque) activeFilters.push(`Motor torque: ${minMotorTorque || "0"}–${maxMotorTorque || "∞"} Nm`);
+  if (minDisplacement || maxDisplacement) activeFilters.push(`Displacement: ${minDisplacement || "0"}–${maxDisplacement || "∞"} L`);
+  if (minEvRange || maxEvRange) activeFilters.push(`Electric-only range: ${minEvRange || "0"}–${maxEvRange || "∞"} km`);
+  if (minCombinedPower || maxCombinedPower)
+    activeFilters.push(`Combined system power: ${minCombinedPower || "0"}–${maxCombinedPower || "∞"} hp (hybrid only)`);
   if (minBattery || maxBattery) activeFilters.push(`Battery: ${minBattery || "0"}–${maxBattery || "∞"} kWh`);
 
   async function runSearch() {
@@ -65,13 +112,28 @@ export default function SpecSearchPage() {
     if (fuelType) params.set("fuel_type", fuelType);
     if (aspiration) params.set("aspiration", aspiration);
     if (gearbox) params.set("gearbox", gearbox);
-    // Engine/motor power is entered in hp (matching how it's displayed
-    // everywhere else in the app — see lib/units.ts) but stored/queried in
-    // kW, so it's converted here rather than asking the API to know about hp.
+    if (driveType) params.set("drive", driveType);
+    if (hybridType) params.set("hybrid_type", hybridType);
+    if (emissionsStandard) params.set("emissions_standard", emissionsStandard);
+    // Power (engine/motor/combined-system) is entered in hp (matching how
+    // it's displayed everywhere else in the app — see lib/units.ts) but
+    // stored/queried in kW, so it's converted here rather than asking the
+    // API to know about hp. Torque, displacement, and range are already in
+    // the same units the DB stores them in (Nm, L, km) — no conversion.
     if (minEnginePower) params.set("min_engine_power_kw", String(hpToKw(Number(minEnginePower))));
     if (maxEnginePower) params.set("max_engine_power_kw", String(hpToKw(Number(maxEnginePower))));
     if (minMotorPower) params.set("min_motor_power_kw", String(hpToKw(Number(minMotorPower))));
     if (maxMotorPower) params.set("max_motor_power_kw", String(hpToKw(Number(maxMotorPower))));
+    if (minCombinedPower) params.set("min_combined_system_power_kw", String(hpToKw(Number(minCombinedPower))));
+    if (maxCombinedPower) params.set("max_combined_system_power_kw", String(hpToKw(Number(maxCombinedPower))));
+    if (minEngineTorque) params.set("min_engine_torque_nm", minEngineTorque);
+    if (maxEngineTorque) params.set("max_engine_torque_nm", maxEngineTorque);
+    if (minMotorTorque) params.set("min_motor_torque_nm", minMotorTorque);
+    if (maxMotorTorque) params.set("max_motor_torque_nm", maxMotorTorque);
+    if (minDisplacement) params.set("min_displacement_l", minDisplacement);
+    if (maxDisplacement) params.set("max_displacement_l", maxDisplacement);
+    if (minEvRange) params.set("min_ev_range_km", minEvRange);
+    if (maxEvRange) params.set("max_ev_range_km", maxEvRange);
     if (minBattery) params.set("min_battery_kwh", minBattery);
     if (maxBattery) params.set("max_battery_kwh", maxBattery);
 
@@ -128,6 +190,30 @@ export default function SpecSearchPage() {
             </option>
           ))}
         </select>
+        <select className={selectClass} value={driveType} onChange={(e) => setDriveType(e.target.value)}>
+          <option value="">Drive type…</option>
+          {DRIVE_TYPES.map((t) => (
+            <option key={t} value={t}>
+              {t}
+            </option>
+          ))}
+        </select>
+        <select className={selectClass} value={hybridType} onChange={(e) => setHybridType(e.target.value)}>
+          <option value="">Hybrid type…</option>
+          {HYBRID_TYPES.map((t) => (
+            <option key={t} value={t}>
+              {t}
+            </option>
+          ))}
+        </select>
+        <select className={selectClass} value={emissionsStandard} onChange={(e) => setEmissionsStandard(e.target.value)}>
+          <option value="">Emissions standard…</option>
+          {EMISSIONS_STANDARDS.map((t) => (
+            <option key={t} value={t}>
+              {t}
+            </option>
+          ))}
+        </select>
 
         <div className="flex items-center gap-2">
           <input
@@ -152,6 +238,47 @@ export default function SpecSearchPage() {
           <input
             type="number"
             inputMode="numeric"
+            placeholder="Min engine torque Nm"
+            value={minEngineTorque}
+            onChange={(e) => setMinEngineTorque(e.target.value)}
+            className={selectClass}
+          />
+          <span className="text-zinc-400 dark:text-zinc-500">–</span>
+          <input
+            type="number"
+            inputMode="numeric"
+            placeholder="Max engine torque Nm"
+            value={maxEngineTorque}
+            onChange={(e) => setMaxEngineTorque(e.target.value)}
+            className={selectClass}
+          />
+        </div>
+        <div className="flex items-center gap-2">
+          <input
+            type="number"
+            inputMode="numeric"
+            step="0.1"
+            placeholder="Min displacement L"
+            value={minDisplacement}
+            onChange={(e) => setMinDisplacement(e.target.value)}
+            className={selectClass}
+          />
+          <span className="text-zinc-400 dark:text-zinc-500">–</span>
+          <input
+            type="number"
+            inputMode="numeric"
+            step="0.1"
+            placeholder="Max displacement L"
+            value={maxDisplacement}
+            onChange={(e) => setMaxDisplacement(e.target.value)}
+            className={selectClass}
+          />
+        </div>
+
+        <div className="flex items-center gap-2">
+          <input
+            type="number"
+            inputMode="numeric"
             placeholder="Min motor hp"
             value={minMotorPower}
             onChange={(e) => setMinMotorPower(e.target.value)}
@@ -171,6 +298,45 @@ export default function SpecSearchPage() {
           <input
             type="number"
             inputMode="numeric"
+            placeholder="Min motor torque Nm"
+            value={minMotorTorque}
+            onChange={(e) => setMinMotorTorque(e.target.value)}
+            className={selectClass}
+          />
+          <span className="text-zinc-400 dark:text-zinc-500">–</span>
+          <input
+            type="number"
+            inputMode="numeric"
+            placeholder="Max motor torque Nm"
+            value={maxMotorTorque}
+            onChange={(e) => setMaxMotorTorque(e.target.value)}
+            className={selectClass}
+          />
+        </div>
+        <div className="flex items-center gap-2">
+          <input
+            type="number"
+            inputMode="numeric"
+            placeholder="Min combined system hp"
+            value={minCombinedPower}
+            onChange={(e) => setMinCombinedPower(e.target.value)}
+            className={selectClass}
+          />
+          <span className="text-zinc-400 dark:text-zinc-500">–</span>
+          <input
+            type="number"
+            inputMode="numeric"
+            placeholder="Max combined system hp"
+            value={maxCombinedPower}
+            onChange={(e) => setMaxCombinedPower(e.target.value)}
+            className={selectClass}
+          />
+        </div>
+
+        <div className="flex items-center gap-2">
+          <input
+            type="number"
+            inputMode="numeric"
             placeholder="Min battery kWh"
             value={minBattery}
             onChange={(e) => setMinBattery(e.target.value)}
@@ -183,6 +349,25 @@ export default function SpecSearchPage() {
             placeholder="Max battery kWh"
             value={maxBattery}
             onChange={(e) => setMaxBattery(e.target.value)}
+            className={selectClass}
+          />
+        </div>
+        <div className="flex items-center gap-2">
+          <input
+            type="number"
+            inputMode="numeric"
+            placeholder="Min EV-only range km"
+            value={minEvRange}
+            onChange={(e) => setMinEvRange(e.target.value)}
+            className={selectClass}
+          />
+          <span className="text-zinc-400 dark:text-zinc-500">–</span>
+          <input
+            type="number"
+            inputMode="numeric"
+            placeholder="Max EV-only range km"
+            value={maxEvRange}
+            onChange={(e) => setMaxEvRange(e.target.value)}
             className={selectClass}
           />
         </div>
