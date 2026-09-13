@@ -3,7 +3,6 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import type { IBrand, IModel, IPowertrain } from "@/types";
-import { compactSpecLabel } from "@/lib/specGrouping";
 import { hpToKw, kwToHp } from "@/lib/units";
 import { bestMatchScores } from "@/lib/bestMatchScore";
 
@@ -484,12 +483,8 @@ export default function SpecSearchPage() {
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {sortedResults.map((pt) => {
-              const evRange = pt.battery?.ev_range_km;
-              const batteryKwh = pt.battery?.capacity_total_kwh;
-              const hp = effectiveHp(pt);
-              const archLabel = pt.hybrid_architecture ? HYBRID_ARCHITECTURE_LABELS[pt.hybrid_architecture] : undefined;
-              const engineHp = kwToHp(pt.engine?.power_kw);
-              const motorHp = kwToHp(pt.motor?.power_kw);
+              const priceRange = pt.model_id?.price_range;
+              const hasChinaPrice = priceRange?.min != null && priceRange?.max != null;
 
               return (
                 <Link
@@ -503,50 +498,25 @@ export default function SpecSearchPage() {
                   <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-2">{pt.trim_name}</p>
 
                   <div className="space-y-1 text-xs text-zinc-600 dark:text-zinc-400">
-                    {evRange != null && (
+                    {hasChinaPrice && (
                       <p>
-                        <span className="font-medium text-zinc-800 dark:text-zinc-200">{evRange} km</span> EV-only range
+                        <span className="font-medium text-zinc-800 dark:text-zinc-200">
+                          {priceRange!.min!.toLocaleString()}–{priceRange!.max!.toLocaleString()} {priceRange!.currency_local}
+                        </span>
+                        {priceRange!.min_usd != null && priceRange!.max_usd != null && (
+                          <> (~${priceRange!.min_usd.toLocaleString()}–${priceRange!.max_usd.toLocaleString()})</>
+                        )}
+                        {priceRange!.unverified && " ⚠"}
                       </p>
                     )}
-                    {batteryKwh != null && (
+                    {!hasChinaPrice && <p className="italic">Price not available</p>}
+                    {pt.model_id?.morocco_price_dh != null && (
                       <p>
-                        <span className="font-medium text-zinc-800 dark:text-zinc-200">{batteryKwh} kWh</span> battery
-                      </p>
-                    )}
-                    {hp != null && (
-                      <p>
-                        <span className="font-medium text-zinc-800 dark:text-zinc-200">{hp} hp</span> combined system
-                      </p>
-                    )}
-                    {archLabel && (
-                      <span className="inline-block mt-0.5 px-1.5 py-0.5 rounded bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-300 text-[11px] font-medium">
-                        {archLabel}
-                      </span>
-                    )}
-                    {pt.engine?.power_kw != null && (
-                      <p>
-                        Engine: {pt.engine.displacement_l ? `${pt.engine.displacement_l}L ` : ""}
-                        {pt.engine.aspiration === "turbo" ? "Turbo " : ""}
-                        {engineHp != null ? `${engineHp} hp` : ""}
-                        {pt.engine.torque_nm != null ? ` · ${pt.engine.torque_nm} Nm` : ""}
-                      </p>
-                    )}
-                    {pt.motor?.power_kw != null && (
-                      <p>
-                        Motor: {motorHp != null ? `${motorHp} hp` : ""}
-                        {pt.motor.torque_nm != null ? ` · ${pt.motor.torque_nm} Nm` : ""}
-                      </p>
-                    )}
-                    {pt.transmission?.type && (
-                      <p>
-                        {pt.transmission.type}
-                        {pt.transmission.speed_count ? ` ${pt.transmission.speed_count}-spd` : ""}
+                        🇲🇦 {pt.model_id.morocco_price_dh.toLocaleString()} DH
+                        {!pt.model_id.morocco_price_confirmed && " (unconfirmed)"}
                       </p>
                     )}
                   </div>
-                  <p className="mt-2 pt-2 border-t border-zinc-100 dark:border-zinc-800 text-[11px] text-zinc-500 dark:text-zinc-500">
-                    {compactSpecLabel(pt)}
-                  </p>
                 </Link>
               );
             })}
