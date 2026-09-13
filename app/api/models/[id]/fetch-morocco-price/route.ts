@@ -53,18 +53,15 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
         morocco_price_confirmed: true,
       };
     } else {
-      // Not listed (or listed with no parseable price) on either site —
-      // clear any stale value rather than leave it dangling, and report
-      // this as a normal (non-error) outcome per the omit-rather-than-empty
-      // convention.
-      update = { morocco_price_confirmed: false };
-      await ModelSchema.findByIdAndUpdate(modelId, {
-        $set: { morocco_price_confirmed: false },
-        $unset: { morocco_price_dh: "", morocco_price_source: "", morocco_price_url: "" },
-      });
+      // Not listed (or listed with no parseable price) on either site *this
+      // attempt* — a failed lookup right now is never grounds to clear a
+      // price that may already be confirmed (manually, or by an earlier
+      // successful check): moteur.ma/wandaloo.com lookups are flaky enough
+      // (see scripts/sync-morocco-prices.ts) that a miss is not proof the
+      // model is actually delisted. Write nothing; just report the outcome.
       return NextResponse.json({
         found: false,
-        message: "Not listed on moteur.ma or wandaloo.com.",
+        message: "Not listed on moteur.ma or wandaloo.com just now — leaving any existing price untouched.",
         moteurFetchError: moteurResult.fetchError,
         wandalooFetchError: wandalooResult.fetchError,
       });
