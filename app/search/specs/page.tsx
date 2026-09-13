@@ -45,6 +45,16 @@ export default function SpecSearchPage() {
   const hasAnyFilter =
     energyType || fuelType || aspiration || gearbox || minEnginePower || maxEnginePower || minMotorPower || maxMotorPower || minBattery || maxBattery;
 
+  /** Explicit confirmation of exactly which fields are constraining the search — an empty field is never silently treated as a real value (a blank select/number input never gets sent to the API at all, see runSearch below), but that's invisible without this: no visual difference otherwise between "this field is unset" and "I forgot what I set it to." */
+  const activeFilters: string[] = [];
+  if (energyType) activeFilters.push(`Energy type: ${energyType}`);
+  if (fuelType) activeFilters.push(`Fuel type: ${fuelType}`);
+  if (aspiration) activeFilters.push(`Aspiration: ${aspiration}`);
+  if (gearbox) activeFilters.push(`Transmission: ${gearbox}`);
+  if (minEnginePower || maxEnginePower) activeFilters.push(`Engine power: ${minEnginePower || "0"}–${maxEnginePower || "∞"} kW`);
+  if (minMotorPower || maxMotorPower) activeFilters.push(`Motor power: ${minMotorPower || "0"}–${maxMotorPower || "∞"} kW`);
+  if (minBattery || maxBattery) activeFilters.push(`Battery: ${minBattery || "0"}–${maxBattery || "∞"} kWh`);
+
   async function runSearch() {
     if (!hasAnyFilter) return;
     setLoading(true);
@@ -173,6 +183,13 @@ export default function SpecSearchPage() {
           />
         </div>
       </div>
+
+      {activeFilters.length > 0 && (
+        <p className="text-xs text-zinc-500 dark:text-zinc-400 mb-2">
+          Filtering by: {activeFilters.join(" · ")}
+          <span className="ml-1">— every other field above is unset and has no effect on results.</span>
+        </p>
+      )}
 
       <button
         onClick={runSearch}
