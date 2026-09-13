@@ -43,11 +43,27 @@ async function getData(
   return JSON.parse(JSON.stringify({ brand, models, moteurMaByModelId }));
 }
 
-export default async function BrandPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function BrandPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ all?: string }>;
+}) {
   const { id } = await params;
+  const { all } = await searchParams;
+  const showAll = all === "1";
   const data = await getData(id);
   if (!data) notFound();
-  const { brand, models, moteurMaByModelId } = data;
+  const { brand, models: allModels, moteurMaByModelId } = data;
+  // Same "hidden unless asked for" pattern as the homepage's brand list
+  // (b798cec/c9c6ab1) — a model with no confirmed Morocco price is still on
+  // file, just not shown by default, since this app's whole point is the
+  // Morocco market. Already sorted cheapest-first above, so hiding the
+  // unpriced tail just trims the list rather than needing a re-sort.
+  const modelsWithMoroccoPrice = allModels.filter((m) => m.morocco_price_confirmed && m.morocco_price_dh != null);
+  const models = showAll ? allModels : modelsWithMoroccoPrice;
+  const hiddenModelCount = allModels.length - modelsWithMoroccoPrice.length;
 
   return (
     <div>
@@ -91,10 +107,26 @@ export default async function BrandPage({ params }: { params: Promise<{ id: stri
         <BrandAndModelDiscovery brandId={brand._id as string} />
       </div>
 
-      <h2 className="text-lg font-semibold mt-6 mb-3">Models ({models.length})</h2>
+      <h2 className="text-lg font-semibold mt-6 mb-1">
+        Models ({models.length}{showAll ? "" : " with a confirmed Morocco price"})
+      </h2>
+      {hiddenModelCount > 0 && (
+        <p className="text-sm mb-3">
+          <Link
+            href={showAll ? `/brands/${id}` : `/brands/${id}?all=1`}
+            className="text-blue-600 dark:text-blue-400 hover:underline"
+          >
+            {showAll
+              ? "Hide models with no Morocco price"
+              : `Show ${hiddenModelCount} more model(s) (no confirmed Morocco price yet)`}
+          </Link>
+        </p>
+      )}
       {models.length === 0 && (
         <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-4">
-          No models on file yet for this brand — use &quot;🔎 Research brand&quot; above to find its lineup.
+          {allModels.length > 0
+            ? "No models with a confirmed Morocco price yet — use the link above to see all models on file."
+            : 'No models on file yet for this brand — use "🔎 Research brand" above to find its lineup.'}
         </p>
       )}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
