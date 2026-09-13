@@ -5,7 +5,7 @@
 // Usage: npm run import-morocco -- raw-data/morocco_availability.json
 
 import dotenv from "dotenv";
-dotenv.config({ quiet: true });
+dotenv.config({ path: [".env.local", ".env"], quiet: true });
 import fs from "fs";
 import path from "path";
 import mongoose from "mongoose";

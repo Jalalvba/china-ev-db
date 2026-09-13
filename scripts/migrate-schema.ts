@@ -5,7 +5,7 @@
 // Usage: npm run migrate-schema
 
 import dotenv from "dotenv";
-dotenv.config({ quiet: true });
+dotenv.config({ path: [".env.local", ".env"], quiet: true });
 import mongoose from "mongoose";
 import Brand from "../models/Brand";
 import ModelSchema from "../models/Model";

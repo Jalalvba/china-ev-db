@@ -19,7 +19,7 @@
 //   pnpm sync-prices -- --concurrency=3 --delay=1500
 
 import dotenv from "dotenv";
-dotenv.config({ quiet: true });
+dotenv.config({ path: [".env.local", ".env"], quiet: true });
 import fs from "fs";
 import path from "path";
 import mongoose from "mongoose";
@@ -132,16 +132,13 @@ async function run() {
             morocco_price_confirmed: false,
           },
         });
-      } else if (!opts.dryRun && result.outcome === "not-found") {
-        await ModelSchema.findByIdAndUpdate(model._id, {
-          $set: { morocco_price_confirmed: false },
-          $unset: { morocco_price_dh: "", morocco_price_source: "", morocco_price_url: "" },
-        });
       }
-      // "non-exact-match" writes nothing — leave whatever was in the DB
-      // untouched and surface it in the review file instead. The match
-      // itself is too uncertain (may belong to a different, similarly-named
-      // model) to either confirm it or to justify clearing an existing value.
+      // "not-found" and "non-exact-match" both write nothing — leave
+      // whatever was in the DB untouched and surface it in the review file
+      // instead. A failed/uncertain lookup this run is never grounds to
+      // clear a price that may have been confirmed some other way (manual
+      // verification, a prior run, etc.) — only a fresh successful match
+      // (moteur.ma / wandaloo.com / gemini-fallback, handled above) writes.
 
       if (idx < targets.length) await sleep(opts.delayMs);
     }

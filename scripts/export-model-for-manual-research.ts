@@ -12,7 +12,7 @@
 //   npm run export-manual-research -- --brand Soueast --model "S06 DM"
 
 import dotenv from "dotenv";
-dotenv.config({ quiet: true });
+dotenv.config({ path: [".env.local", ".env"], quiet: true });
 import fs from "fs";
 import path from "path";
 import mongoose, { Types } from "mongoose";

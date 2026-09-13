@@ -6,7 +6,7 @@
 // Usage: npm run migrate-canonical-powertrain
 
 import dotenv from "dotenv";
-dotenv.config({ quiet: true });
+dotenv.config({ path: [".env.local", ".env"], quiet: true });
 import mongoose from "mongoose";
 import Powertrain from "../models/Powertrain";
 

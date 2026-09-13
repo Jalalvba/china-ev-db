@@ -8,7 +8,7 @@
 //   npx tsx scripts/flag-price-range-outliers.ts --confirm  (writes for real)
 
 import dotenv from "dotenv";
-dotenv.config({ quiet: true });
+dotenv.config({ path: [".env.local", ".env"], quiet: true });
 import mongoose from "mongoose";
 
 const MONGODB_URI = process.env.MONGODB_URI;

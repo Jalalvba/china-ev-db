@@ -21,7 +21,7 @@
 //   updated in place, new ones are inserted. Nothing is deleted.
 
 import dotenv from "dotenv";
-dotenv.config({ quiet: true });
+dotenv.config({ path: [".env.local", ".env"], quiet: true });
 import fs from "fs";
 import path from "path";
 import mongoose from "mongoose";

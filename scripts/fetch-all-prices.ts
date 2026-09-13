@@ -18,7 +18,7 @@
 //   pnpm fetch-all-prices -- --concurrency=3 --delay=1500
 
 import dotenv from "dotenv";
-dotenv.config({ quiet: true });
+dotenv.config({ path: [".env.local", ".env"], quiet: true });
 import fs from "fs";
 import path from "path";
 import mongoose from "mongoose";
