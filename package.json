@@ -19,6 +19,8 @@
     "update-morocco-dealers": "tsx scripts/update-morocco-dealers.ts",
     "sync-prices": "tsx scripts/sync-morocco-prices.ts",
     "backfill-price-usd": "tsx scripts/backfill-price-usd.ts",
+    "backfill-morocco-china-ratio": "tsx scripts/backfill-morocco-china-ratio.ts",
+    "flag-price-range-outliers": "tsx scripts/flag-price-range-outliers.ts",
     "fetch-all-prices": "tsx scripts/fetch-all-prices.ts",
     "analyze-price-fetch": "tsx scripts/analyze-price-fetch.ts",
     "import-price-fetch": "tsx scripts/import-price-fetch.ts",

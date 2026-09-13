@@ -4,8 +4,8 @@
 // like "9X" aren't unique across brands).
 //
 // Usage:
-//   npx tsx scripts/flag-price-range-outliers.ts            (dry run, default)
-//   npx tsx scripts/flag-price-range-outliers.ts --confirm  (writes for real)
+//   pnpm flag-price-range-outliers            (dry run, default)
+//   pnpm flag-price-range-outliers -- --confirm  (writes for real)
 
 import dotenv from "dotenv";
 dotenv.config({ path: [".env.local", ".env"], quiet: true });

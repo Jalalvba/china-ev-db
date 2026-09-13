@@ -6,8 +6,8 @@
 // make their ratio ≈1.0 and corrupt the mean/stddev if included.
 //
 // Usage:
-//   npx tsx scripts/backfill-morocco-china-ratio.ts            (dry run, default)
-//   npx tsx scripts/backfill-morocco-china-ratio.ts --confirm  (writes for real)
+//   pnpm backfill-morocco-china-ratio            (dry run, default)
+//   pnpm backfill-morocco-china-ratio -- --confirm  (writes for real)
 
 import dotenv from "dotenv";
 dotenv.config({ path: [".env.local", ".env"], quiet: true });

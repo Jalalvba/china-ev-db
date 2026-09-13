@@ -111,19 +111,6 @@ const TOP_LEVEL_KEYS = new Set([
 ]);
 const PRICE_RANGE_KEYS = new Set(["min", "max", "currency_local"]);
 
-export interface DiscoveredModel {
-  name: string;
-  name_cn?: string;
-  name_en?: string;
-  regional_name_note?: string;
-  generation?: string;
-  segment?: string;
-  body_type?: string;
-  production_status?: string;
-  price_range?: { min?: number; max?: number; currency_local?: string };
-  confidence?: string;
-}
-
 /** Validates one discovered-model object's shape (extra/renamed keys, bad enum values) — does NOT require segment/body_type to be present, since those commonly come back null and the review UI lets a person fill them in before creating the Model doc. */
 export function validateDiscoveredModel(raw: unknown): { valid: boolean; errors: string[] } {
   const errors: string[] = [];
