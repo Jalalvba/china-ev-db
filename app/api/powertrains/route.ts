@@ -6,7 +6,7 @@ import { connectToDatabase } from "@/lib/db";
 // reasoning as app/api/models/route.ts's Brand import. Without this, a
 // serverless instance that has never handled /api/models or /api/brands
 // first throws MissingSchemaError on the populate.
-import "@/models/Model";
+import ModelSchema from "@/models/Model";
 import "@/models/Brand";
 import Powertrain from "@/models/Powertrain";
 
@@ -59,6 +59,34 @@ export async function GET(req: NextRequest) {
     searchParams.get("min_combined_system_power_kw"),
     searchParams.get("max_combined_system_power_kw")
   );
+
+  // Price lives on the Model, not the Powertrain, so it can't go through
+  // applyRangeFilter above — resolve it to a set of matching model_ids
+  // first. min/max bound the model's own price_range.min_usd/max_usd (a
+  // Min $20k/Max $30k search matches a model priced $22k-$28k, not one
+  // priced $18k-$35k that merely overlaps the range) so "budget" filters
+  // read the way a buyer expects, not as an overlap test.
+  const minPriceUsd = searchParams.get("min_price_usd");
+  const maxPriceUsd = searchParams.get("max_price_usd");
+  const minMoroccoPriceDh = searchParams.get("min_morocco_price_dh");
+  const maxMoroccoPriceDh = searchParams.get("max_morocco_price_dh");
+  if (minPriceUsd || maxPriceUsd || minMoroccoPriceDh || maxMoroccoPriceDh) {
+    const modelFilter: Record<string, unknown> = {};
+    applyRangeFilter(modelFilter, "price_range.min_usd", minPriceUsd, null);
+    applyRangeFilter(modelFilter, "price_range.max_usd", null, maxPriceUsd);
+    applyRangeFilter(modelFilter, "morocco_price_dh", minMoroccoPriceDh, maxMoroccoPriceDh);
+    const matchingModels = (await ModelSchema.find(modelFilter, { _id: 1 }).lean()) as unknown as { _id: unknown }[];
+    const matchingIds = matchingModels.map((m) => String(m._id));
+    // Intersect with an already-set model_id filter rather than clobber it —
+    // only the single-model-id caller (model_id=...) sets that today, and
+    // price filters should still narrow it further if both are passed.
+    const existing = filter.model_id;
+    if (existing && typeof existing === "string") {
+      filter.model_id = matchingIds.includes(existing) ? existing : { $in: [] };
+    } else {
+      filter.model_id = { $in: matchingIds };
+    }
+  }
 
   // Refuse an unfiltered full-collection dump — every real caller (the
   // Compare page's per-model trim fetch, this new technical search) always

@@ -77,6 +77,10 @@ export default function SpecSearchPage() {
   const [maxCombinedPower, setMaxCombinedPower] = useState("");
   const [minBattery, setMinBattery] = useState("");
   const [maxBattery, setMaxBattery] = useState("");
+  const [minPriceUsd, setMinPriceUsd] = useState("");
+  const [maxPriceUsd, setMaxPriceUsd] = useState("");
+  const [minMoroccoPrice, setMinMoroccoPrice] = useState("");
+  const [maxMoroccoPrice, setMaxMoroccoPrice] = useState("");
 
   const [results, setResults] = useState<PopulatedPowertrain[] | null>(null);
   const [loading, setLoading] = useState(false);
@@ -106,7 +110,11 @@ export default function SpecSearchPage() {
     minCombinedPower ||
     maxCombinedPower ||
     minBattery ||
-    maxBattery;
+    maxBattery ||
+    minPriceUsd ||
+    maxPriceUsd ||
+    minMoroccoPrice ||
+    maxMoroccoPrice;
 
   /** Explicit confirmation of exactly which fields are constraining the search — an empty field is never silently treated as a real value (a blank select/number input never gets sent to the API at all, see runSearch below), but that's invisible without this: no visual difference otherwise between "this field is unset" and "I forgot what I set it to." */
   const activeFilters: string[] = [];
@@ -127,6 +135,9 @@ export default function SpecSearchPage() {
   if (minCombinedPower || maxCombinedPower)
     activeFilters.push(`Combined system power: ${minCombinedPower || "0"}–${maxCombinedPower || "∞"} hp (hybrid only)`);
   if (minBattery || maxBattery) activeFilters.push(`Battery: ${minBattery || "0"}–${maxBattery || "∞"} kWh`);
+  if (minPriceUsd || maxPriceUsd) activeFilters.push(`China price: $${minPriceUsd || "0"}–$${maxPriceUsd || "∞"}`);
+  if (minMoroccoPrice || maxMoroccoPrice)
+    activeFilters.push(`Morocco price: ${minMoroccoPrice || "0"}–${maxMoroccoPrice || "∞"} DH`);
 
   async function runSearch() {
     if (!hasAnyFilter) return;
@@ -162,6 +173,10 @@ export default function SpecSearchPage() {
     if (maxEvRange) params.set("max_ev_range_km", maxEvRange);
     if (minBattery) params.set("min_battery_kwh", minBattery);
     if (maxBattery) params.set("max_battery_kwh", maxBattery);
+    if (minPriceUsd) params.set("min_price_usd", minPriceUsd);
+    if (maxPriceUsd) params.set("max_price_usd", maxPriceUsd);
+    if (minMoroccoPrice) params.set("min_morocco_price_dh", minMoroccoPrice);
+    if (maxMoroccoPrice) params.set("max_morocco_price_dh", maxMoroccoPrice);
 
     try {
       const res = await fetch(`/api/powertrains?${params.toString()}`);
@@ -435,6 +450,44 @@ export default function SpecSearchPage() {
             placeholder="Max EV-only range km"
             value={maxEvRange}
             onChange={(e) => setMaxEvRange(e.target.value)}
+            className={selectClass}
+          />
+        </div>
+        <div className="flex items-center gap-2">
+          <input
+            type="number"
+            inputMode="numeric"
+            placeholder="Min China price $"
+            value={minPriceUsd}
+            onChange={(e) => setMinPriceUsd(e.target.value)}
+            className={selectClass}
+          />
+          <span className="text-zinc-400 dark:text-zinc-500">–</span>
+          <input
+            type="number"
+            inputMode="numeric"
+            placeholder="Max China price $"
+            value={maxPriceUsd}
+            onChange={(e) => setMaxPriceUsd(e.target.value)}
+            className={selectClass}
+          />
+        </div>
+        <div className="flex items-center gap-2">
+          <input
+            type="number"
+            inputMode="numeric"
+            placeholder="Min Morocco price DH"
+            value={minMoroccoPrice}
+            onChange={(e) => setMinMoroccoPrice(e.target.value)}
+            className={selectClass}
+          />
+          <span className="text-zinc-400 dark:text-zinc-500">–</span>
+          <input
+            type="number"
+            inputMode="numeric"
+            placeholder="Max Morocco price DH"
+            value={maxMoroccoPrice}
+            onChange={(e) => setMaxMoroccoPrice(e.target.value)}
             className={selectClass}
           />
         </div>
