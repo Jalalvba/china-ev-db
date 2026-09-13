@@ -554,12 +554,59 @@ interface AgentResponse {
   notes?: string;
 }
 
+/**
+ * Finds the index just past the closing brace that matches the `{` at
+ * `start`, by walking the string tracking brace depth and string/escape
+ * state (so a `}` inside a quoted string value, e.g. a trim's `note` field
+ * containing literal text with braces, doesn't miscount). Returns -1 if the
+ * braces never balance before the string ends — a real signal the response
+ * was cut off mid-generation, distinct from "just isn't JSON at all".
+ */
+function findMatchingBraceEnd(text: string, start: number): number {
+  let depth = 0;
+  let inString = false;
+  let escaped = false;
+  for (let i = start; i < text.length; i++) {
+    const ch = text[i];
+    if (inString) {
+      if (escaped) escaped = false;
+      else if (ch === "\\") escaped = true;
+      else if (ch === '"') inString = false;
+      continue;
+    }
+    if (ch === '"') inString = true;
+    else if (ch === "{") depth++;
+    else if (ch === "}") {
+      depth--;
+      if (depth === 0) return i + 1;
+    }
+  }
+  return -1;
+}
+
 function extractJson(text: string): AgentResponse | null {
   const fencedMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/);
   const candidate = fencedMatch ? fencedMatch[1] : text;
   const braceStart = candidate.indexOf("{");
+  if (braceStart === -1) return null;
+
+  // Proper brace-matching first (handles trailing commentary after the JSON
+  // block, and a `}` character legitimately inside a string value) — falls
+  // back to the old naive lastIndexOf-based slice only if that fails to
+  // find a balanced end, so no previously-working response starts failing.
+  const matchedEnd = findMatchingBraceEnd(candidate, braceStart);
+  if (matchedEnd !== -1) {
+    try {
+      return JSON.parse(candidate.slice(braceStart, matchedEnd));
+    } catch {
+      // Balanced braces but still invalid JSON (e.g. a trailing comma) —
+      // fall through to the naive attempt below on the off chance it does
+      // better, though it usually won't for this failure mode.
+    }
+  }
+
   const braceEnd = candidate.lastIndexOf("}");
-  if (braceStart === -1 || braceEnd === -1 || braceEnd <= braceStart) return null;
+  if (braceEnd === -1 || braceEnd <= braceStart) return null;
   try {
     return JSON.parse(candidate.slice(braceStart, braceEnd + 1));
   } catch {
@@ -612,6 +659,20 @@ async function queryModel(
 
       const rawText = formatTurn.text ?? "";
       const parsed = extractJson(rawText);
+
+      // A malformed/truncated JSON response is usually a one-off flaky
+      // generation, not a persistent problem — retry the same way a
+      // thrown network/rate-limit error already does, instead of failing
+      // the whole model on the first bad response. Only the final attempt
+      // returns a parse failure to the caller.
+      if ((!parsed || !Array.isArray(parsed.variants)) && attempt < maxAttempts) {
+        const backoffMs = 2000 * attempt;
+        console.error(
+          `  [retry ${attempt}/${maxAttempts}] ${promptInput.brandName} ${promptInput.modelName}: response didn't parse as the expected JSON shape — waiting ${backoffMs}ms`
+        );
+        await sleep(backoffMs);
+        continue;
+      }
 
       return { parsed, sourceUrls, rawText };
     } catch (err) {
