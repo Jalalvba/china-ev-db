@@ -10,6 +10,7 @@
 // hit once for the same reason (duplicated per-page logic silently diverging).
 
 import type { IPowertrain } from "@/types";
+import { kwToHp } from "@/lib/units";
 
 /** The subset of IPowertrain these functions actually touch — deliberately excludes "model_id", so callers whose IPowertrain-shaped type overrides model_id (e.g. the Compare page's PopulatedPowertrain, which replaces it with a populated model object) can pass their type through without a cast. */
 type SpecFields = Pick<IPowertrain, "trim_name" | "energy_type" | "engine" | "motor" | "battery" | "transmission">;
@@ -53,19 +54,26 @@ export function specGroupKey(p: SpecFields): string {
   });
 }
 
-/** One-line human summary of a group's shared spec, e.g. "150 kW/305 Nm turbo gasoline, no battery, DCT 7-spd". */
+/** kW with hp in parens, e.g. "150 kW (201 hp)" — same dual-unit convention already used on the model detail and Compare pages (lib/units.ts's kwToHp), so power never displays as a bare, unfamiliar kW figure on its own. */
+function powerWithHp(kw: number | null | undefined): string {
+  if (kw == null) return "?";
+  const hp = kwToHp(kw);
+  return hp !== undefined ? `${kw} kW (${hp} hp)` : `${kw} kW`;
+}
+
+/** One-line human summary of a group's shared spec, e.g. "150 kW (201 hp)/305 Nm turbo gasoline, no battery, DCT 7-spd". */
 export function specGroupLabel(p: SpecFields): string {
   const parts: string[] = [];
   if (hasFields(p.engine, ["power_kw", "torque_nm"])) {
     parts.push(
-      `${p.engine!.power_kw ?? "?"} kW/${p.engine!.torque_nm ?? "?"} Nm ${p.engine!.aspiration ?? ""} ${p.engine!.fuel_type ?? ""}`
+      `${powerWithHp(p.engine!.power_kw)}/${p.engine!.torque_nm ?? "?"} Nm ${p.engine!.aspiration ?? ""} ${p.engine!.fuel_type ?? ""}`
         .replace(/\s+/g, " ")
         .trim()
     );
   }
   if (hasFields(p.motor, ["power_kw", "type", "count"])) {
     parts.push(
-      `+ ${p.motor!.count ?? ""} ${p.motor!.type ?? "motor"} ${p.motor!.power_kw ?? "?"} kW/${p.motor!.torque_nm ?? "?"} Nm`
+      `+ ${p.motor!.count ?? ""} ${p.motor!.type ?? "motor"} ${powerWithHp(p.motor!.power_kw)}/${p.motor!.torque_nm ?? "?"} Nm`
         .replace(/\s+/g, " ")
         .trim()
     );
@@ -109,10 +117,13 @@ export function compactSpecLabel(p: SpecFields): string {
   if (hasFields(p.engine, ["power_kw"])) {
     const aspiration = p.engine!.aspiration === "turbo" ? "Turbo " : "";
     const fuel = p.engine!.fuel_type ? (FUEL_ABBR[p.engine!.fuel_type] ?? p.engine!.fuel_type) : "";
-    parts.push(`${p.engine!.power_kw} kW ${aspiration}${fuel}`.replace(/\s+/g, " ").trim());
+    // hp, not kW — every power figure in this app displays as hp (with kW
+    // in parens where there's room, e.g. specGroupLabel below); this label
+    // has no room for both and stays hp-only to fit a narrow mobile picker.
+    parts.push(`${kwToHp(p.engine!.power_kw)} hp ${aspiration}${fuel}`.replace(/\s+/g, " ").trim());
   }
   if (hasFields(p.motor, ["power_kw"])) {
-    parts.push(`${p.motor!.power_kw} kW motor`);
+    parts.push(`${kwToHp(p.motor!.power_kw)} hp motor`);
   }
   if (hasFields(p.battery, ["capacity_total_kwh"])) {
     parts.push(`${p.battery!.capacity_total_kwh} kWh`);
