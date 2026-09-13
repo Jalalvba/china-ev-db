@@ -30,7 +30,15 @@ export interface BrandGroup {
  * "BAIC"), then a brand's own name if other brands point to it as their
  * parent, else the brand stands alone.
  */
-export function groupBrands(brands: IBrand[]): { groups: BrandGroup[]; standalone: IBrand[] } {
+export function groupBrands(
+  brands: IBrand[],
+  cheapestMoroccoPriceByBrandId?: Record<string, number>
+): { groups: BrandGroup[]; standalone: IBrand[] } {
+  // Missing price (a brand with no confirmed Morocco price, only reachable
+  // via the ?all=1 view) sorts after every priced brand rather than first —
+  // Infinity as the "no price" sentinel makes that the natural result of a
+  // plain ascending numeric sort with no separate branch needed.
+  const priceFor = (b: IBrand): number => (b._id ? cheapestMoroccoPriceByBrandId?.[b._id] : undefined) ?? Infinity;
   const names = new Set(brands.map((b) => b.name));
   const byName = new Map(brands.map((b) => [b.name, b]));
 
@@ -80,17 +88,15 @@ export function groupBrands(brands: IBrand[]): { groups: BrandGroup[]; standalon
       standalone.push(...groupBrandsList);
       continue;
     }
-    groupBrandsList.sort((a, b) => {
-      const aAnchor = a.name === key || ANCHOR_BRAND_TO_GROUP[a.name] === key;
-      const bAnchor = b.name === key || ANCHOR_BRAND_TO_GROUP[b.name] === key;
-      if (aAnchor !== bAnchor) return aAnchor ? -1 : 1;
-      return a.name.localeCompare(b.name);
-    });
+    groupBrandsList.sort((a, b) => priceFor(a) - priceFor(b) || a.name.localeCompare(b.name));
     groups.push({ key, label: key, brands: groupBrandsList });
   }
 
-  groups.sort((a, b) => b.brands.length - a.brands.length || a.label.localeCompare(b.label));
-  standalone.sort((a, b) => a.name.localeCompare(b.name));
+  // Each group's own cheapest brand decides the group's position — same
+  // cheapest-to-most-expensive ordering as within a group, just one level up.
+  const cheapestInGroup = (g: BrandGroup) => Math.min(...g.brands.map(priceFor));
+  groups.sort((a, b) => cheapestInGroup(a) - cheapestInGroup(b) || a.label.localeCompare(b.label));
+  standalone.sort((a, b) => priceFor(a) - priceFor(b) || a.name.localeCompare(b.name));
 
   return { groups, standalone };
 }

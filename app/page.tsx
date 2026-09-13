@@ -49,11 +49,21 @@ async function getMoroccoDealersByBrandName(): Promise<Record<string, string>> {
   return result;
 }
 
-/** Brand _ids (as strings) with at least one Model carrying a confirmed Morocco price — used to hide brands with no Morocco pricing data by default, same "hidden unless asked for" pattern as discontinued/bankrupt brands below. */
-async function getBrandIdsWithMoroccoPrice(): Promise<Set<string>> {
+/** Brand _id (as string) -> cheapest confirmed Morocco price (DH) among its models — used both to hide brands with no Morocco pricing data by default (same "hidden unless asked for" pattern as discontinued/bankrupt brands below) and to sort/display brands cheapest-to-most-expensive. */
+async function getCheapestMoroccoPriceByBrandId(): Promise<Record<string, number>> {
   await connectToDatabase();
-  const brandIds = await ModelSchema.distinct("brand_id", { morocco_price_confirmed: true });
-  return new Set(brandIds.map((id) => String(id)));
+  const models = await ModelSchema.find(
+    { morocco_price_confirmed: true, morocco_price_dh: { $exists: true, $ne: null } },
+    { brand_id: 1, morocco_price_dh: 1 }
+  ).lean();
+  const result: Record<string, number> = {};
+  for (const m of models) {
+    const brandId = String(m.brand_id);
+    if (result[brandId] === undefined || m.morocco_price_dh! < result[brandId]) {
+      result[brandId] = m.morocco_price_dh!;
+    }
+  }
+  return result;
 }
 
 export default async function Home({
@@ -63,17 +73,17 @@ export default async function Home({
 }) {
   const { all } = await searchParams;
   const showAll = all === "1";
-  const [allBrands, moroccoDealersByBrandName, brandIdsWithMoroccoPrice] = await Promise.all([
+  const [allBrands, moroccoDealersByBrandName, cheapestMoroccoPriceByBrandId] = await Promise.all([
     getBrands(),
     getMoroccoDealersByBrandName(),
-    getBrandIdsWithMoroccoPrice(),
+    getCheapestMoroccoPriceByBrandId(),
   ]);
   const activeBrands = allBrands.filter((b) => !b.status || b.status === "active");
-  const activeBrandsWithMoroccoPrice = activeBrands.filter((b) => b._id && brandIdsWithMoroccoPrice.has(b._id));
+  const activeBrandsWithMoroccoPrice = activeBrands.filter((b) => b._id && cheapestMoroccoPriceByBrandId[b._id] !== undefined);
   const brands = showAll ? allBrands : activeBrandsWithMoroccoPrice;
   const hiddenCount = allBrands.length - activeBrandsWithMoroccoPrice.length;
 
-  const { groups, standalone } = groupBrands(brands);
+  const { groups, standalone } = groupBrands(brands, cheapestMoroccoPriceByBrandId);
 
   return (
     <div>
@@ -92,7 +102,12 @@ export default async function Home({
         </p>
       )}
       <div className="mt-6">
-        <BrandGroupList groups={groups} standalone={standalone} moroccoDealersByBrandName={moroccoDealersByBrandName} />
+        <BrandGroupList
+          groups={groups}
+          standalone={standalone}
+          moroccoDealersByBrandName={moroccoDealersByBrandName}
+          cheapestMoroccoPriceByBrandId={cheapestMoroccoPriceByBrandId}
+        />
       </div>
     </div>
   );

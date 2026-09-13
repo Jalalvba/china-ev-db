@@ -12,7 +12,15 @@ const STATUS_STYLES: Record<string, string> = {
   merged: "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400",
 };
 
-function BrandCard({ brand, moroccoDealer }: { brand: IBrand; moroccoDealer?: string }) {
+function BrandCard({
+  brand,
+  moroccoDealer,
+  cheapestMoroccoPriceDh,
+}: {
+  brand: IBrand;
+  moroccoDealer?: string;
+  cheapestMoroccoPriceDh?: number;
+}) {
   return (
     <Link
       href={`/brands/${brand._id}`}
@@ -46,6 +54,11 @@ function BrandCard({ brand, moroccoDealer }: { brand: IBrand; moroccoDealer?: st
         <span>{brand.country_origin}</span>
         {brand.founded_year && <span>Founded {brand.founded_year}</span>}
       </div>
+      {cheapestMoroccoPriceDh !== undefined && (
+        <p className="mt-2 text-sm font-medium text-zinc-900 dark:text-zinc-100">
+          from {cheapestMoroccoPriceDh.toLocaleString()} DH
+        </p>
+      )}
       {moroccoDealer && (
         <p className="mt-2 text-xs text-green-600 dark:text-green-400">
           🇲🇦 {moroccoDealer}
@@ -58,9 +71,11 @@ function BrandCard({ brand, moroccoDealer }: { brand: IBrand; moroccoDealer?: st
 function GroupSection({
   group,
   moroccoDealersByBrandName,
+  cheapestMoroccoPriceByBrandId,
 }: {
   group: BrandGroup;
   moroccoDealersByBrandName: Record<string, string>;
+  cheapestMoroccoPriceByBrandId: Record<string, number>;
 }) {
   const [open, setOpen] = useState(true);
 
@@ -92,6 +107,7 @@ function GroupSection({
               key={brand._id}
               brand={brand}
               moroccoDealer={moroccoDealersByBrandName[brand.name.toLowerCase()]}
+              cheapestMoroccoPriceDh={brand._id ? cheapestMoroccoPriceByBrandId[brand._id] : undefined}
             />
           ))}
         </div>
@@ -104,15 +120,22 @@ export default function BrandGroupList({
   groups,
   standalone,
   moroccoDealersByBrandName,
+  cheapestMoroccoPriceByBrandId,
 }: {
   groups: BrandGroup[];
   standalone: IBrand[];
   moroccoDealersByBrandName: Record<string, string>;
+  cheapestMoroccoPriceByBrandId: Record<string, number>;
 }) {
   return (
     <div className="space-y-4">
       {groups.map((group) => (
-        <GroupSection key={group.key} group={group} moroccoDealersByBrandName={moroccoDealersByBrandName} />
+        <GroupSection
+          key={group.key}
+          group={group}
+          moroccoDealersByBrandName={moroccoDealersByBrandName}
+          cheapestMoroccoPriceByBrandId={cheapestMoroccoPriceByBrandId}
+        />
       ))}
 
       {standalone.length > 0 && (
@@ -126,6 +149,7 @@ export default function BrandGroupList({
                 key={brand._id}
                 brand={brand}
                 moroccoDealer={moroccoDealersByBrandName[brand.name.toLowerCase()]}
+                cheapestMoroccoPriceDh={brand._id ? cheapestMoroccoPriceByBrandId[brand._id] : undefined}
               />
             ))}
           </div>
