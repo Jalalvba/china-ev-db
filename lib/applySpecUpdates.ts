@@ -71,11 +71,21 @@ export function valuesMatch(expected: unknown, actual: unknown): boolean {
   return Object.entries(expected as Record<string, unknown>).every(([k, v]) => valuesMatch(v, actualObj[k]));
 }
 
-/** Returns the top-level keys of `expected` whose value did not verify against `actual` — used to name exactly which fields failed to persist, rather than a generic "verification failed". */
+/** Resolves a dotted path (e.g. "price_range.min") against a nested object; a plain key with no dot is just a direct lookup, so this is a drop-in for the old `actual[k]` behavior on every existing flat-key caller. */
+function getByPath(obj: Record<string, unknown>, path: string): unknown {
+  let cur: unknown = obj;
+  for (const segment of path.split(".")) {
+    if (cur === null || typeof cur !== "object") return undefined;
+    cur = (cur as Record<string, unknown>)[segment];
+  }
+  return cur;
+}
+
+/** Returns the keys of `expected` whose value did not verify against `actual` — used to name exactly which fields failed to persist, rather than a generic "verification failed". A key may be a dotted path (e.g. "price_range.min", as produced by buildFieldDiff's recursion into nested objects) — resolved via getByPath, not a flat `actual[k]` lookup, so a nested field's own $set write can be verified correctly. */
 export function findMismatchedKeys(expected: Record<string, unknown>, actual: Record<string, unknown> | null): string[] {
   if (!actual) return Object.keys(expected);
   return Object.entries(expected)
-    .filter(([k, v]) => !valuesMatch(v, actual[k]))
+    .filter(([k, v]) => !valuesMatch(v, getByPath(actual, k)))
     .map(([k]) => k);
 }
 

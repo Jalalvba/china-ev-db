@@ -27,6 +27,7 @@ export const RESEARCHABLE_MODEL_KEYS = [
   "body_type",
   "notable_facts",
   "notable_facts_confidence",
+  "price_range",
 ] as const;
 
 const RESEARCHABLE_MODEL_KEY_SET = new Set<string>(RESEARCHABLE_MODEL_KEYS);
@@ -77,6 +78,12 @@ export interface ExportDocument {
     unverified?: boolean;
     notable_facts?: string;
     notable_facts_confidence?: string;
+    price_range?: {
+      min?: number;
+      max?: number;
+      currency_local?: string;
+      unverified?: boolean;
+    };
   };
   powertrains: ExportedPowertrain[];
 }
@@ -137,6 +144,17 @@ export function buildExportDocument(
       unverified: modelDoc.unverified as boolean | undefined,
       notable_facts: modelDoc.notable_facts as string | undefined,
       notable_facts_confidence: modelDoc.notable_facts_confidence as string | undefined,
+      // Only the researchable subset — never min_usd/max_usd/exchange_rate_used:
+      // those are always computed server-side from a live rate at import time
+      // (see the apply route), never trusted from the researcher's own math.
+      price_range: modelDoc.price_range
+        ? {
+            min: (modelDoc.price_range as Record<string, unknown>).min as number | undefined,
+            max: (modelDoc.price_range as Record<string, unknown>).max as number | undefined,
+            currency_local: (modelDoc.price_range as Record<string, unknown>).currency_local as string | undefined,
+            unverified: (modelDoc.price_range as Record<string, unknown>).unverified as boolean | undefined,
+          }
+        : { min: undefined, max: undefined, currency_local: "CNY", unverified: undefined },
     },
     powertrains,
   };
@@ -167,20 +185,23 @@ export function buildCombinedExportText(exportDoc: ExportDocument): string {
 
 export function buildManualResearchPrompt(exportDoc: ExportDocument): string {
   const { model, powertrains } = exportDoc;
-  const gapLines = powertrains
-    .filter((p) => p.research_gaps.length > 0)
-    .map((p) => `- "${p.trim_name}": ${p.research_gaps.join("; ")}`)
-    .join("\n");
+  const modelGapLines =
+    model.price_range?.min == null || model.price_range?.max == null ? ['- model.price_range: missing — see job 4 below.'] : [];
+  const gapLines = [
+    ...modelGapLines,
+    ...powertrains.filter((p) => p.research_gaps.length > 0).map((p) => `- "${p.trim_name}": ${p.research_gaps.join("; ")}`),
+  ].join("\n");
 
   return `You are a technical researcher building a spec database of Chinese-market EVs/ICE/hybrids.
 
 Below is the current database record (as JSON) for "${model.brand_name}" — "${model.name_en ?? model.name}"${
     model.name_cn ? ` (${model.name_cn})` : ""
-  }. This record was produced by an earlier, automated research pass (Gemini with search grounding) — it is a reasonable starting point, not ground truth. You are doing a SECOND, INDEPENDENT research pass on top of it, and that pass has three distinct jobs, not one:
+  }. This record was produced by an earlier, automated research pass (Gemini with search grounding) — it is a reasonable starting point, not ground truth. You are doing a SECOND, INDEPENDENT research pass on top of it, and that pass has four distinct jobs, not one:
 
 1. FILL GAPS — find sourced values for whatever is currently null or unconfirmed (see "Known gaps" below).
 2. CROSS-CHECK EXISTING VALUES — independently verify fields that are already populated and marked "confirmed", using your own search rather than trusting that the first pass got them right. Do not skip a field just because it already has a value. If your independent research disagrees with a stored value — a wrong battery chemistry, a wrong power figure, a wrong transmission type, anything — correct it and explain the discrepancy in that field's "<field>_source_note", even though it was never listed as a "known gap". This matters: on a previous model (Soueast S06 DM), the original automated pass reported the wrong battery chemistry, and it only got caught because a second independent pass happened to check a field nobody had flagged as missing. Treat every "confirmed" field as a candidate to challenge, not as settled.
 3. FIND MISSING TRIMS — the trim list below may be incomplete, not just the fields within it (see the trim-completeness note below). Actively search for variants of this model that exist in the real market but aren't in this record at all.
+4. RESEARCH PRICE — "model.price_range" (min/max CHINA MSRP, in CNY) is one of the fields to fill/cross-check exactly like any other. If it's null, find the real China starting-price range for this model (the manufacturer's official listed price, or the lowest/highest trim MSRP from autohome.com.cn / dongchedi.com's price pages — not a used-market or export price). If it's already populated, cross-check it per job 2 above. Only "min", "max", "currency_local" (should be "CNY"), and "unverified" belong in price_range — do NOT add "min_usd"/"max_usd"/"exchange_rate_used": the USD conversion is always computed separately from a live exchange rate, never from your own math, so those fields are deliberately absent from the record below and must stay absent from your response.
 
 Research this vehicle using Chinese-language automotive sources as your first priority (autohome.com.cn, dongchedi.com, gasgoo.com, official manufacturer press/spec pages, MIIT/工信部 filings), then Moroccan automotive press, then generic English-language sources only if nothing more specific exists.
 

@@ -5,6 +5,7 @@ import Powertrain from "@/models/Powertrain";
 import { parseManualImport } from "@/lib/manualResearchImport";
 import { findMismatchedKeys } from "@/lib/applySpecUpdates";
 import { appendResearchLog } from "@/lib/researchLog";
+import { getCnyPerUsdRate } from "@/lib/deepseekNormalize";
 import type { PowertrainLean } from "@/lib/techSpecResearch";
 
 type ManualSource = "manual-kimi-import" | "manual-deepseek-import";
@@ -45,7 +46,38 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   // --- model fields ---
   if (parseResult.modelDiff.length > 0) {
     const expected: Record<string, unknown> = {};
-    for (const entry of parseResult.modelDiff) expected[entry.path] = entry.after;
+    for (const entry of parseResult.modelDiff) {
+      // price_range.min_usd/max_usd/exchange_rate_used are never something
+      // the researcher was asked to fill in (buildExportDocument only ever
+      // sends min/max/currency_local/unverified) and never something we
+      // trust even if one slips through anyway — always computed fresh
+      // below from a live rate, the same rule scripts/backfill-price-usd.ts
+      // and the import pipeline already follow.
+      if (entry.path === "price_range.min_usd" || entry.path === "price_range.max_usd" || entry.path === "price_range.exchange_rate_used") {
+        continue;
+      }
+      expected[entry.path] = entry.after;
+    }
+
+    const priceChanged = parseResult.modelDiff.some((e) => e.path === "price_range.min" || e.path === "price_range.max");
+    if (priceChanged) {
+      const currencyEntry = parseResult.modelDiff.find((e) => e.path === "price_range.currency_local");
+      const existingCurrency = (modelDoc as Record<string, unknown> & { price_range?: { currency_local?: string } }).price_range?.currency_local;
+      const currency = (currencyEntry?.after as string | undefined) ?? existingCurrency;
+      const minEntry = parseResult.modelDiff.find((e) => e.path === "price_range.min");
+      const maxEntry = parseResult.modelDiff.find((e) => e.path === "price_range.max");
+      const min = (minEntry?.after as number | undefined) ?? (modelDoc as Record<string, unknown> & { price_range?: { min?: number } }).price_range?.min;
+      const max = (maxEntry?.after as number | undefined) ?? (modelDoc as Record<string, unknown> & { price_range?: { max?: number } }).price_range?.max;
+      if (currency === "CNY" && typeof min === "number" && typeof max === "number") {
+        const { rate: cnyPerUsd } = await getCnyPerUsdRate();
+        expected["price_range.min_usd"] = Math.round(min / cnyPerUsd);
+        expected["price_range.max_usd"] = Math.round(max / cnyPerUsd);
+        expected["price_range.exchange_rate_used"] = cnyPerUsd;
+      }
+      // A non-CNY currency_local (e.g. an AED-priced model) is left without
+      // a computed USD figure here, same as scripts/backfill-price-usd.ts —
+      // converting at the CNY rate would be wrong.
+    }
 
     await ModelSchema.findByIdAndUpdate(modelId, { $set: expected });
     const persisted = (await ModelSchema.findById(modelId).lean()) as Record<string, unknown> | null;
