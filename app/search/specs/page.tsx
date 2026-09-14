@@ -250,6 +250,31 @@ export default function SpecSearchPage() {
     return copy;
   }, [results, sortBy]);
 
+  /**
+   * Set of Powertrain _ids whose card needs a trim_name subtitle: two or
+   * more results for the SAME Model rendering the exact same
+   * compactSpecLabel() string. Without trim_name shown, those cards are
+   * pixel-identical and read as a duplicate/bug rather than as two real,
+   * different trims that happen to share identical canonical specs — this
+   * is deliberately keyed off the rendered label (not raw spec fields) so
+   * it stays in sync with whatever compactSpecLabel actually displays.
+   */
+  const ambiguousTrimIds = useMemo(() => {
+    if (!sortedResults) return new Set<string>();
+    const groups = new Map<string, string[]>();
+    for (const pt of sortedResults) {
+      const key = `${pt.model_id?._id}::${compactSpecLabel(pt)}`;
+      const ids = groups.get(key) ?? [];
+      ids.push(pt._id as string);
+      groups.set(key, ids);
+    }
+    const ambiguous = new Set<string>();
+    for (const ids of groups.values()) {
+      if (ids.length > 1) ids.forEach((id) => ambiguous.add(id));
+    }
+    return ambiguous;
+  }, [sortedResults]);
+
   return (
     <div>
       <h1 className="text-2xl font-bold mb-1">Technical Spec Search</h1>
@@ -574,7 +599,21 @@ export default function SpecSearchPage() {
                   <h3 className="font-semibold">
                     {pt.model_id?.brand_id?.name} {pt.model_id?.name}
                   </h3>
-                  <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-2">{compactSpecLabel(pt)}</p>
+                  {pt.model_id?.segment && (
+                    <p className="text-xs font-medium text-zinc-400 dark:text-zinc-500 mb-0.5">
+                      {pt.model_id.segment}
+                    </p>
+                  )}
+                  <p
+                    className={`text-sm text-zinc-500 dark:text-zinc-400 ${
+                      ambiguousTrimIds.has(pt._id as string) && pt.trim_name ? "mb-0.5" : "mb-2"
+                    }`}
+                  >
+                    {compactSpecLabel(pt)}
+                  </p>
+                  {ambiguousTrimIds.has(pt._id as string) && pt.trim_name && (
+                    <p className="text-xs text-zinc-400 dark:text-zinc-500 mb-2 italic">{pt.trim_name}</p>
+                  )}
 
                   <div className="space-y-1 text-xs text-zinc-600 dark:text-zinc-400">
                     {chinaPriceUsdLabel ? (
