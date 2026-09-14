@@ -278,14 +278,15 @@ export function validateManualModelFields(raw: unknown): { valid: boolean; error
 // diff — same rule as Gemini's response).
 // ---------------------------------------------------------------------------
 
-/** Strips "<field>_source_note" sibling keys (recursively, one level into each block) before running the canonical validator, which doesn't know about them — returns the stripped copy plus a flat map of path -> source note for display in the diff. */
+/** Strips "<field>_source_note" sibling keys (recursively, one level into each block) before running the canonical validator, which doesn't know about them — returns the stripped copy plus a flat map of path -> source note for display in the diff. Also accepts the bare "source_note" spelling (no leading field name) as shorthand for "source_source_note" — a recurring Kimi/DeepSeek mistake where it means "a note about my source citation" rather than "a note about a field named source", since the trim already has its own top-level "source" field this clearly refers to. */
 export function extractSourceNotes(raw: Record<string, unknown>): { stripped: Record<string, unknown>; notes: Record<string, string> } {
   const notes: Record<string, string> = {};
   function strip(obj: Record<string, unknown>, path: string): Record<string, unknown> {
     const out: Record<string, unknown> = {};
     for (const [k, v] of Object.entries(obj)) {
-      if (k.endsWith("_source_note")) {
-        const fieldPath = path ? `${path}.${k.replace(/_source_note$/, "")}` : k.replace(/_source_note$/, "");
+      if (k === "source_note" || k.endsWith("_source_note")) {
+        const fieldName = k === "source_note" ? "source" : k.replace(/_source_note$/, "");
+        const fieldPath = path ? `${path}.${fieldName}` : fieldName;
         if (typeof v === "string") notes[fieldPath] = v;
         continue;
       }
