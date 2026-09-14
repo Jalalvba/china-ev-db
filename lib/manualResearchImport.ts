@@ -242,16 +242,27 @@ ${JSON.stringify({ model, powertrains: powertrains.map(({ research_gaps: _rg, ..
 // Model-field validation (mirrors validateCanonicalVariant's discipline)
 // ---------------------------------------------------------------------------
 
-export function validateManualModelFields(raw: unknown): { valid: boolean; errors: string[]; cleaned: Record<string, unknown> } {
+export function validateManualModelFields(
+  raw: unknown
+): { valid: boolean; errors: string[]; cleaned: Record<string, unknown>; sourceNotes: Record<string, string> } {
   const errors: string[] = [];
   if (typeof raw !== "object" || raw === null || Array.isArray(raw)) {
-    return { valid: false, errors: ["model: not an object"], cleaned: {} };
+    return { valid: false, errors: ["model: not an object"], cleaned: {}, sourceNotes: {} };
   }
-  const v = raw as Record<string, unknown>;
+  // Strips "<field>_source_note"/bare "source_note" siblings recursively,
+  // one level into each nested block — needed here, not just at the
+  // top level, because a note can land nested inside a block field (e.g.
+  // model.price_range.price_range_source_note) rather than as a sibling of
+  // "model" itself. Without this the raw note string rides along into
+  // "cleaned.price_range" and Mongoose's strict schema silently drops it on
+  // write, which then fails findMismatchedKeys's re-fetch verification
+  // (seen for real on Geely Galaxy Warship 700: "Model fields did not
+  // verify after write: [price_range.price_range_source_note]").
+  const { stripped, notes } = extractSourceNotes(raw as Record<string, unknown>);
+  const v = stripped;
   const cleaned: Record<string, unknown> = {};
 
   for (const key of Object.keys(v)) {
-    if (key.endsWith("_source_note")) continue; // handled separately, not a schema field
     if (MODEL_CONTEXT_ONLY_KEYS.has(key)) continue; // context-only, silently ignored on the way back in
     if (!RESEARCHABLE_MODEL_KEY_SET.has(key)) {
       errors.push(`model.${key}: unexpected field, not researchable`);
@@ -266,7 +277,7 @@ export function validateManualModelFields(raw: unknown): { valid: boolean; error
     }
   }
 
-  return { valid: errors.length === 0, errors, cleaned };
+  return { valid: errors.length === 0, errors, cleaned, sourceNotes: notes };
 }
 
 // ---------------------------------------------------------------------------
@@ -286,7 +297,11 @@ export function extractSourceNotes(raw: Record<string, unknown>): { stripped: Re
     for (const [k, v] of Object.entries(obj)) {
       if (k === "source_note" || k.endsWith("_source_note")) {
         const fieldName = k === "source_note" ? "source" : k.replace(/_source_note$/, "");
-        const fieldPath = path ? `${path}.${fieldName}` : fieldName;
+        // A note nested one level inside the very field it's annotating
+        // (e.g. "price_range.price_range_source_note", another redundant
+        // Kimi/DeepSeek naming variant) shouldn't double up the segment —
+        // collapse to just "path" rather than "path.path".
+        const fieldPath = !path ? fieldName : path.split(".").pop() === fieldName ? path : `${path}.${fieldName}`;
         if (typeof v === "string") notes[fieldPath] = v;
         continue;
       }
@@ -576,7 +591,7 @@ export function parseManualImport(
 
   const modelResult = validateManualModelFields(top.model);
   errors.push(...modelResult.errors);
-  const modelDiff = buildFieldDiff(currentModel, modelResult.cleaned, {});
+  const modelDiff = buildFieldDiff(currentModel, modelResult.cleaned, modelResult.sourceNotes);
 
   const existingById = new Map(existingPowertrains.map((pt) => [String(pt._id), pt]));
 
