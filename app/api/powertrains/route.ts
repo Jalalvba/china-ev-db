@@ -32,7 +32,6 @@ export async function GET(req: NextRequest) {
   const drive = searchParams.get("drive");
   const hybrid_type = searchParams.get("hybrid_type");
   const hybrid_architecture = searchParams.get("hybrid_architecture");
-  const emissions_standard = searchParams.get("emissions_standard");
   const ids = searchParams.get("ids");
 
   if (model_id) filter.model_id = model_id;
@@ -43,7 +42,6 @@ export async function GET(req: NextRequest) {
   if (drive) filter["motor.drive"] = drive;
   if (hybrid_type) filter.hybrid_type = hybrid_type;
   if (hybrid_architecture) filter.hybrid_architecture = hybrid_architecture;
-  if (emissions_standard) filter.emissions_standard = emissions_standard;
   if (ids) filter._id = { $in: ids.split(",") };
 
   applyRangeFilter(filter, "battery.capacity_total_kwh", searchParams.get("min_battery_kwh"), searchParams.get("max_battery_kwh"));
@@ -70,11 +68,18 @@ export async function GET(req: NextRequest) {
   const maxPriceUsd = searchParams.get("max_price_usd");
   const minMoroccoPriceDh = searchParams.get("min_morocco_price_dh");
   const maxMoroccoPriceDh = searchParams.get("max_morocco_price_dh");
-  if (minPriceUsd || maxPriceUsd || minMoroccoPriceDh || maxMoroccoPriceDh) {
+  // Segment also lives on the Model, not the Powertrain — same "resolve to
+  // matching model_ids first" approach as price below, folded into the same
+  // modelFilter/intersection so a segment filter and a price filter combine
+  // correctly (both narrow the same model_ids set) rather than needing two
+  // separate resolve-then-intersect passes.
+  const segment = searchParams.get("segment");
+  if (minPriceUsd || maxPriceUsd || minMoroccoPriceDh || maxMoroccoPriceDh || segment) {
     const modelFilter: Record<string, unknown> = {};
     applyRangeFilter(modelFilter, "price_range.min_usd", minPriceUsd, null);
     applyRangeFilter(modelFilter, "price_range.max_usd", null, maxPriceUsd);
     applyRangeFilter(modelFilter, "morocco_price_dh", minMoroccoPriceDh, maxMoroccoPriceDh);
+    if (segment) modelFilter.segment = segment;
     const matchingModels = (await ModelSchema.find(modelFilter, { _id: 1 }).lean()) as unknown as { _id: unknown }[];
     const matchingIds = matchingModels.map((m) => String(m._id));
     // Intersect with an already-set model_id filter rather than clobber it —

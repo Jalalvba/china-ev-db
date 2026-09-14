@@ -8,6 +8,7 @@ import { bestMatchScores } from "@/lib/bestMatchScore";
 import { formatChinaPriceUsd } from "@/lib/priceDisplay";
 import { compactSpecLabel } from "@/lib/specGrouping";
 import { SegmentLabel } from "@/lib/segmentDisplay";
+import type { Segment } from "@/types";
 
 type PopulatedModel = Omit<IModel, "brand_id"> & { brand_id: IBrand };
 type PopulatedPowertrain = Omit<IPowertrain, "model_id"> & { model_id: PopulatedModel };
@@ -19,7 +20,21 @@ const GEARBOX_TYPES = ["single-speed reducer", "CVT", "DCT", "AT", "MT", "AMT", 
 const DRIVE_TYPES = ["FWD", "RWD", "AWD", "4WD"];
 const HYBRID_TYPES = ["HEV", "PHEV", "EREV", "Mild hybrid", "Not applicable"];
 const HYBRID_ARCHITECTURES = ["parallel", "power_split", "series_erev", "mild"];
-const EMISSIONS_STANDARDS = ["Euro 5", "Euro 6", "Euro 6d", "China 5", "China 6"];
+// Same client-safe local copy pattern as app/search/page.tsx and
+// app/compare/page.tsx — models/Model.ts pulls in mongoose, which must
+// never end up in a client bundle.
+const SEGMENTS: Segment[] = [
+  "A-segment/City",
+  "B-segment/Compact",
+  "C-segment/Mid-size",
+  "D-segment/Large",
+  "SUV-compact",
+  "SUV-mid",
+  "SUV-full",
+  "MPV",
+  "Pickup",
+  "Sports",
+];
 const HYBRID_ARCHITECTURE_LABELS: Record<string, string> = {
   parallel: "Parallel",
   power_split: "Power-split",
@@ -62,7 +77,7 @@ export default function SpecSearchPage() {
   const [driveType, setDriveType] = useState("");
   const [hybridType, setHybridType] = useState("");
   const [hybridArchitecture, setHybridArchitecture] = useState("");
-  const [emissionsStandard, setEmissionsStandard] = useState("");
+  const [segment, setSegment] = useState("");
   const [sortBy, setSortBy] = useState<SortMode>("best_match");
   const [minEnginePower, setMinEnginePower] = useState("");
   const [maxEnginePower, setMaxEnginePower] = useState("");
@@ -97,7 +112,7 @@ export default function SpecSearchPage() {
     driveType ||
     hybridType ||
     hybridArchitecture ||
-    emissionsStandard ||
+    segment ||
     minEnginePower ||
     maxEnginePower ||
     minMotorPower ||
@@ -128,7 +143,7 @@ export default function SpecSearchPage() {
   if (driveType) activeFilters.push(`Drive type: ${driveType}`);
   if (hybridType) activeFilters.push(`Hybrid type: ${hybridType}`);
   if (hybridArchitecture) activeFilters.push(`Hybrid architecture: ${HYBRID_ARCHITECTURE_LABELS[hybridArchitecture] ?? hybridArchitecture}`);
-  if (emissionsStandard) activeFilters.push(`Emissions standard: ${emissionsStandard}`);
+  if (segment) activeFilters.push(`Segment: ${segment}`);
   if (minEnginePower || maxEnginePower) activeFilters.push(`Engine power: ${minEnginePower || "0"}–${maxEnginePower || "∞"} hp`);
   if (minMotorPower || maxMotorPower) activeFilters.push(`Motor power: ${minMotorPower || "0"}–${maxMotorPower || "∞"} hp`);
   if (minEngineTorque || maxEngineTorque) activeFilters.push(`Engine torque: ${minEngineTorque || "0"}–${maxEngineTorque || "∞"} Nm`);
@@ -154,7 +169,7 @@ export default function SpecSearchPage() {
     if (driveType) params.set("drive", driveType);
     if (hybridType) params.set("hybrid_type", hybridType);
     if (hybridArchitecture) params.set("hybrid_architecture", hybridArchitecture);
-    if (emissionsStandard) params.set("emissions_standard", emissionsStandard);
+    if (segment) params.set("segment", segment);
     // Power (engine/motor/combined-system) is entered in hp (matching how
     // it's displayed everywhere else in the app — see lib/units.ts) but
     // stored/queried in kW, so it's converted here rather than asking the
@@ -340,9 +355,9 @@ export default function SpecSearchPage() {
             </option>
           ))}
         </select>
-        <select className={selectClass} value={emissionsStandard} onChange={(e) => setEmissionsStandard(e.target.value)}>
-          <option value="">Emissions standard…</option>
-          {EMISSIONS_STANDARDS.map((t) => (
+        <select className={selectClass} value={segment} onChange={(e) => setSegment(e.target.value)}>
+          <option value="">Segment…</option>
+          {SEGMENTS.map((t) => (
             <option key={t} value={t}>
               {t}
             </option>
