@@ -220,11 +220,32 @@ export default function SpecSearchPage() {
         return pa - pb;
       });
     } else if (sortBy === "hp") {
-      copy.sort((a, b) => (effectiveHp(b) ?? -1) - (effectiveHp(a) ?? -1));
+      copy.sort((a, b) => {
+        const ha = effectiveHp(a);
+        const hb = effectiveHp(b);
+        if (ha == null && hb == null) return 0;
+        if (ha == null) return 1;
+        if (hb == null) return -1;
+        return ha - hb;
+      });
     } else if (sortBy === "range") {
-      copy.sort((a, b) => (effectiveRangeKm(b) ?? -1) - (effectiveRangeKm(a) ?? -1));
+      copy.sort((a, b) => {
+        const ra = effectiveRangeKm(a);
+        const rb = effectiveRangeKm(b);
+        if (ra == null && rb == null) return 0;
+        if (ra == null) return 1;
+        if (rb == null) return -1;
+        return ra - rb;
+      });
     } else if (sortBy === "battery") {
-      copy.sort((a, b) => (b.battery?.capacity_total_kwh ?? -1) - (a.battery?.capacity_total_kwh ?? -1));
+      copy.sort((a, b) => {
+        const ba = a.battery?.capacity_total_kwh;
+        const bb = b.battery?.capacity_total_kwh;
+        if (ba == null && bb == null) return 0;
+        if (ba == null) return 1;
+        if (bb == null) return -1;
+        return ba - bb;
+      });
     }
     return copy;
   }, [results, sortBy]);
@@ -553,8 +574,7 @@ export default function SpecSearchPage() {
                   <h3 className="font-semibold">
                     {pt.model_id?.brand_id?.name} {pt.model_id?.name}
                   </h3>
-                  <p className="text-sm text-zinc-500 dark:text-zinc-400">{pt.trim_name}</p>
-                  <p className="text-xs text-zinc-500 dark:text-zinc-500 mb-2">{compactSpecLabel(pt)}</p>
+                  <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-2">{compactSpecLabel(pt)}</p>
 
                   <div className="space-y-1 text-xs text-zinc-600 dark:text-zinc-400">
                     {chinaPriceUsdLabel ? (
