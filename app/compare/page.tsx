@@ -466,11 +466,13 @@ function ManufacturerBrandModelPicker({
  */
 function TrimPicker({
   label,
+  segment,
   powertrains,
   value,
   onChange,
 }: {
   label: string;
+  segment: Segment | undefined;
   powertrains: PopulatedPowertrain[];
   value: string;
   onChange: (trimId: string) => void;
@@ -492,8 +494,10 @@ function TrimPicker({
           // Always the same shape — compact canonical fields, never a raw
           // trim_name — so a single trim and a multi-trim group render as
           // visually comparable options instead of two different styles.
+          // Segment comes from the parent Model (not the Powertrain), so it's
+          // passed in and prepended here rather than inside compactSpecLabel.
           const spec = compactSpecLabel(g.trims[0]);
-          const optionLabel = g.trims.length > 1 ? `${g.trims.length} trims · ${spec}` : spec;
+          const optionLabel = segment ? `${segment} · ${spec}` : spec;
           return (
             <option key={repId} value={repId} title={optionLabel}>
               {optionLabel}
@@ -764,6 +768,7 @@ function CompareInner() {
           {modelA ? (
             <TrimPicker
               label="Trim A"
+              segment={modelA.segment}
               powertrains={trimsA}
               value={trimIdA ?? ""}
               onChange={(id) => setTrimSelection("a", id)}
@@ -774,6 +779,7 @@ function CompareInner() {
           {modelB ? (
             <TrimPicker
               label="Trim B"
+              segment={modelB.segment}
               powertrains={trimsB}
               value={trimIdB ?? ""}
               onChange={(id) => setTrimSelection("b", id)}
