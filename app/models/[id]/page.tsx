@@ -16,6 +16,7 @@ import ManualResearchImporter from "@/app/ManualResearchImporter";
 import ExportForManualResearchButton from "@/app/ExportForManualResearchButton";
 import MoroccoPriceFetcher from "@/app/MoroccoPriceFetcher";
 import { formatChinaPriceUsd } from "@/lib/priceDisplay";
+import { SegmentLabel } from "@/lib/segmentDisplay";
 import { hasFields, groupBySpec } from "@/lib/specGrouping";
 
 export const dynamic = "force-dynamic";
@@ -87,8 +88,10 @@ export default async function ModelPage({ params }: { params: Promise<{ id: stri
           </a>
         )}
       </h1>
-      <div className="text-sm text-zinc-600 dark:text-zinc-400 flex flex-wrap gap-x-4 gap-y-1 mt-1">
-        <span>{model.segment}</span>
+      <div className="text-sm text-zinc-600 dark:text-zinc-400 flex flex-wrap items-center gap-x-4 gap-y-1 mt-1">
+        <span className="px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300 text-xs font-medium">
+          <SegmentLabel model={model} />
+        </span>
         <span>{model.body_type}</span>
         <span className="px-2 py-0.5 rounded-full bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 text-xs">
           {model.production_status}
