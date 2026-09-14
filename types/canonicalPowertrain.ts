@@ -39,6 +39,7 @@ export const CONFIDENCE_VALUES: Confidence[] = ["confirmed", "unconfirmed"];
 export const ASPIRATION_VALUES: AspirationType[] = ["turbo", "naturally-aspirated", "supercharged", "twin-charged", "n/a"];
 export const FUEL_TYPE_VALUES: FuelType[] = ["gasoline", "diesel", "n/a"];
 export const BATTERY_CHEMISTRY_VALUES: BatteryChemistry[] = ["LFP", "NMC", "LTO", "semi-solid-state", "other"];
+export const COOLING_TIER_VALUES: CoolingTier[] = [0, 1, 2, 3, 4];
 
 export interface ICanonicalEngine {
   displacement_l?: number;
@@ -82,6 +83,27 @@ export interface ICanonicalBattery {
   confidence?: Confidence;
 }
 
+/**
+ * Battery thermal management tier — Morocco-market suitability classification:
+ *   0 = passive air cooling (not suitable)
+ *   1 = active air cooling (poor)
+ *   2 = active liquid cooling (minimum acceptable for Morocco)
+ *   3 = refrigerant-coupled / heat pump (recommended)
+ *   4 = hybrid intelligent / PCM (best)
+ */
+export type CoolingTier = 0 | 1 | 2 | 3 | 4;
+
+export interface ICanonicalThermalManagement {
+  cooling_tier?: CoolingTier;
+  has_liquid_cooling?: boolean;
+  has_heat_pump?: boolean;
+  /** True when cooling_tier >= 2 (minimum acceptable for Morocco's climate) — Tier 3-4 recommended for southern/inland Morocco. */
+  morocco_suitable?: boolean;
+  /** Verbatim Chinese-source cooling terminology backing this block, e.g. "液冷", "热泵", "风冷", "冷却液" — or the literal string "UNKNOWN" if genuinely unfound after searching. */
+  thermal_evidence?: string;
+  confidence?: Confidence;
+}
+
 export interface ICanonicalTransmission {
   type?: GearboxType;
   speed_count?: number;
@@ -105,6 +127,7 @@ export interface ICanonicalPowertrain {
   engine?: ICanonicalEngine;
   motor?: ICanonicalMotor;
   battery?: ICanonicalBattery;
+  thermal_management?: ICanonicalThermalManagement;
   transmission?: ICanonicalTransmission;
   performance?: ICanonicalPerformance;
   combined_range_km?: number;
@@ -170,6 +193,17 @@ export const CANONICAL_POWERTRAIN_FIELD_TEMPLATE = {
     ev_range_standard: RANGE_STANDARD_VALUES.join(" | ") + " | null",
     confidence: CONFIDENCE_VALUES.join(" | ") + " | null",
   },
+  thermal_management: {
+    cooling_tier:
+      COOLING_TIER_VALUES.join(" | ") +
+      " | null (0=passive air, 1=active air, 2=active liquid [Morocco minimum], 3=refrigerant-coupled/heat pump [Morocco recommended], 4=hybrid intelligent/PCM [best])",
+    has_liquid_cooling: "boolean | null",
+    has_heat_pump: "boolean | null",
+    morocco_suitable: "boolean | null (true only if cooling_tier >= 2)",
+    thermal_evidence:
+      'string | null (verbatim Chinese-source cooling terminology, e.g. "液冷", "热泵", "风冷", "冷却液" — use the literal string "UNKNOWN" if genuinely unfound after searching; never omit this block entirely)',
+    confidence: CONFIDENCE_VALUES.join(" | ") + " | null",
+  },
   transmission: {
     type: GEARBOX_TYPE_VALUES.join(" | ") + " | null",
     speed_count: "number | null",
@@ -207,6 +241,9 @@ type _CheckTopLevelKeys = Expect<
 type _CheckEngineKeys = Expect<KeysEqual<typeof CANONICAL_POWERTRAIN_FIELD_TEMPLATE.engine, Required<ICanonicalEngine>>>;
 type _CheckMotorKeys = Expect<KeysEqual<typeof CANONICAL_POWERTRAIN_FIELD_TEMPLATE.motor, Required<ICanonicalMotor>>>;
 type _CheckBatteryKeys = Expect<KeysEqual<typeof CANONICAL_POWERTRAIN_FIELD_TEMPLATE.battery, Required<ICanonicalBattery>>>;
+type _CheckThermalManagementKeys = Expect<
+  KeysEqual<typeof CANONICAL_POWERTRAIN_FIELD_TEMPLATE.thermal_management, Required<ICanonicalThermalManagement>>
+>;
 type _CheckTransmissionKeys = Expect<
   KeysEqual<typeof CANONICAL_POWERTRAIN_FIELD_TEMPLATE.transmission, Required<ICanonicalTransmission>>
 >;

@@ -18,6 +18,7 @@ import {
   ASPIRATION_VALUES,
   FUEL_TYPE_VALUES,
   BATTERY_CHEMISTRY_VALUES,
+  COOLING_TIER_VALUES,
   HYBRID_TYPE_VALUES,
   EMISSIONS_STANDARD_VALUES,
   HYBRID_ARCHITECTURE_VALUES,
@@ -106,6 +107,7 @@ export function describeTrimGaps(pt: PowertrainLean): string[] {
   const engine = pt.engine as Record<string, unknown> | undefined;
   const motor = pt.motor as Record<string, unknown> | undefined;
   const battery = pt.battery as Record<string, unknown> | undefined;
+  const thermalManagement = pt.thermal_management as Record<string, unknown> | undefined;
   const transmission = pt.transmission as Record<string, unknown> | undefined;
   const performance = pt.performance as Record<string, unknown> | undefined;
 
@@ -143,6 +145,13 @@ export function describeTrimGaps(pt: PowertrainLean): string[] {
     } else {
       fieldGapsFor(battery, BATTERY_FIELDS);
       if (battery.confidence === "unconfirmed") gaps.push("battery specs (currently unconfirmed — needs a citable source)");
+    }
+
+    if (thermalManagement === undefined) {
+      gaps.push("battery thermal management (cooling tier, liquid cooling, heat pump, Morocco suitability) — MANDATORY, set thermal_evidence to \"UNKNOWN\" if genuinely unfound rather than omitting the block");
+    } else {
+      fieldGapsFor(thermalManagement, THERMAL_MANAGEMENT_FIELDS);
+      if (thermalManagement.confidence === "unconfirmed") gaps.push("battery thermal management (currently unconfirmed — needs a citable source)");
     }
   }
 
@@ -219,6 +228,20 @@ const BATTERY_FIELDS: FieldSpec[] = [
   { path: "battery.ev_range_km", label: "EV range (km)" },
   { path: "battery.ev_range_standard", label: "EV range test standard (CLTC / WLTP / WLTC / NEDC)" },
 ];
+const THERMAL_MANAGEMENT_FIELDS: FieldSpec[] = [
+  {
+    path: "thermal_management.cooling_tier",
+    label:
+      "battery cooling tier (0=passive air, 1=active air, 2=active liquid [Morocco minimum], 3=refrigerant-coupled/heat pump [Morocco recommended], 4=hybrid intelligent/PCM [best]) — MANDATORY: if genuinely unknown after searching, set thermal_evidence to \"UNKNOWN\" and morocco_suitable to false rather than omitting the whole thermal_management block",
+  },
+  { path: "thermal_management.has_liquid_cooling", label: "battery has active liquid cooling (true/false)" },
+  { path: "thermal_management.has_heat_pump", label: "battery/cabin uses a refrigerant-coupled heat pump (true/false)" },
+  { path: "thermal_management.morocco_suitable", label: "Morocco climate suitability (true only if cooling_tier >= 2)" },
+  {
+    path: "thermal_management.thermal_evidence",
+    label: 'verbatim Chinese-source cooling terminology (e.g. "液冷", "热泵", "风冷", "冷却液") backing the tier — or "UNKNOWN" if unfound',
+  },
+];
 const TRANSMISSION_FIELDS: FieldSpec[] = [
   { path: "transmission.type", label: "transmission type" },
   { path: "transmission.speed_count", label: "number of gears" },
@@ -243,7 +266,7 @@ const TRIM_LEVEL_FIELDS: FieldSpec[] = [
 function getApplicableFieldSpecs(energyType?: string): FieldSpec[] {
   const specs: FieldSpec[] = [];
   if (energyType !== "BEV") specs.push(...ENGINE_FIELDS);
-  if (energyType !== "ICE") specs.push(...MOTOR_FIELDS, ...BATTERY_FIELDS);
+  if (energyType !== "ICE") specs.push(...MOTOR_FIELDS, ...BATTERY_FIELDS, ...THERMAL_MANAGEMENT_FIELDS);
   specs.push(...TRANSMISSION_FIELDS, ...PERFORMANCE_FIELDS, ...TRIM_LEVEL_FIELDS);
   return specs;
 }
@@ -292,6 +315,8 @@ Search Chinese-language automotive sources, especially: ${SOURCE_SITES.join(", "
 
 For EACH trim/variant, you must individually attempt to find every one of the following fields — this is a named checklist, not a general "get a feel for the car" request. If the field turns out not to apply once you know the actual energy type (e.g. this is a pure EV with no engine, or a pure ICE with no motor/battery), just say so and skip that block; otherwise treat every field below as something to actively go find, not something to skip because you already have a general sense of the trim:
 ${renderFieldChecklist(getApplicableFieldSpecs())}
+
+MANDATORY for every non-ICE trim (BEV/HEV/PHEV/REEV/EREV/MHEV): the thermal_management block. Cooling tiers: 0=passive air cooling (not suitable), 1=active air cooling (poor), 2=active liquid cooling (minimum acceptable for Morocco), 3=refrigerant-coupled/heat pump (recommended), 4=hybrid intelligent/PCM (best). Morocco's climate (especially southern/inland regions) means Tier 2 is the floor and Tier 3-4 is preferred — battery thermal management is safety-relevant there, not a nice-to-have. Actively search for the battery cooling method (e.g. Chinese terms like "液冷"/liquid cooling, "热泵"/heat pump, "风冷"/air cooling, "冷却液"/coolant) the same Chinese-source-first way as every other field. If, after a genuine targeted search, the cooling method truly cannot be found, still fill in the block: set thermal_evidence to the literal string "UNKNOWN" and morocco_suitable to false — never omit the thermal_management block entirely.
 
 Do not rely on a single general search to cover all of the above. For each field (or small cluster of closely related fields, e.g. motor power + torque from the same spec-sheet table), run a distinct, targeted search — vary your query wording (Chinese model name + "参数配置", + "配置表", + the specific spec you're missing, etc.) — and only give up on a field after a real, targeted search attempt for it specifically has failed to turn up a source. One search that "covers the car in general" and then filling in whatever it happened to surface is not sufficient effort.
 
@@ -346,7 +371,8 @@ CRITICAL RULES:
 - Every numeric or categorical fact must come from a search result you actually found (grounding is enabled on this request) — do not estimate or infer from similar vehicles.
 - Use "null" for any field you cannot find a sourced value for. Do NOT guess a plausible-sounding number.
 - Set each block's "confidence" to "confirmed" only if a specific cited source backs the block's claim — including a claim reported only in "note" when the structured numeric fields are null (e.g. a concept vehicle's press release quoting horsepower and wheel-torque instead of the standard kW/motor-torque_nm shape: report it in "note" and mark "confirmed" if the source is real, rather than downgrading confidence just because it didn't fit the structured fields). Otherwise "unconfirmed".
-- motor.count must be one of: ${MOTOR_COUNT_VALUES.join(", ")}. motor.drive must be one of: ${DRIVE_TYPE_VALUES.join(", ")}. transmission.type must be one of: ${GEARBOX_TYPE_VALUES.join(", ")}. battery.ev_range_standard must be one of: ${RANGE_STANDARDS_LABEL}. engine.aspiration must be one of: ${ASPIRATION_VALUES.join(", ")}. engine.fuel_type must be one of: ${FUEL_TYPE_VALUES.join(", ")} (this is ICE fuel only — do not encode "range extender" here; use the separate engine.is_range_extender boolean for a REEV/EREV's generator engine). battery.chemistry must be one of: ${BATTERY_CHEMISTRY_VALUES.join(", ")} — put any proprietary product name or extra qualifier (e.g. "Blade", "800V", "2nd gen") in battery.battery_variant instead of inventing a new chemistry value. Every "confidence" field must be one of: ${CONFIDENCE_VALUES.join(", ")}.
+- motor.count must be one of: ${MOTOR_COUNT_VALUES.join(", ")}. motor.drive must be one of: ${DRIVE_TYPE_VALUES.join(", ")}. transmission.type must be one of: ${GEARBOX_TYPE_VALUES.join(", ")}. battery.ev_range_standard must be one of: ${RANGE_STANDARDS_LABEL}. engine.aspiration must be one of: ${ASPIRATION_VALUES.join(", ")}. engine.fuel_type must be one of: ${FUEL_TYPE_VALUES.join(", ")} (this is ICE fuel only — do not encode "range extender" here; use the separate engine.is_range_extender boolean for a REEV/EREV's generator engine). battery.chemistry must be one of: ${BATTERY_CHEMISTRY_VALUES.join(", ")} — put any proprietary product name or extra qualifier (e.g. "Blade", "800V", "2nd gen") in battery.battery_variant instead of inventing a new chemistry value. thermal_management.cooling_tier must be one of: ${COOLING_TIER_VALUES.join(", ")}. Every "confidence" field must be one of: ${CONFIDENCE_VALUES.join(", ")}.
+- thermal_management is MANDATORY for every trim with a battery (i.e. energy_type !== "ICE"): 0=passive air, 1=active air, 2=active liquid (Morocco minimum), 3=refrigerant-coupled/heat pump (recommended), 4=hybrid intelligent/PCM (best). If genuinely unknown after searching, set thermal_evidence to "UNKNOWN" and morocco_suitable to false — do NOT omit the thermal_management block.
 - Do NOT add, rename, or omit any field from the JSON shape below. Use exactly these field names, nothing else.
 - "notable_facts" is separate from the structured spec fields above — only fill in "notable_facts.text" if you found something genuinely noteworthy with a citation; otherwise set both "notable_facts.text" and "notable_facts.confidence" to null. Same confirmed/unconfirmed rule applies: "confirmed" only if a specific source backs the claim.
 - If known trims were given above, "trim_name" must reuse their exact wording — a reworded, translated, or detail-appended trim_name for what is really the same trim (e.g. turning "1.6T" into "1.6T (290T / 1.6TGDI)") is treated as a data-loss bug downstream, not a helpful improvement.
@@ -367,6 +393,7 @@ const TOP_LEVEL_KEYS = new Set([
   "engine",
   "motor",
   "battery",
+  "thermal_management",
   "transmission",
   "performance",
   "combined_range_km",
@@ -383,6 +410,7 @@ const TOP_LEVEL_KEYS = new Set([
 const ENGINE_KEYS = new Set(Object.keys(CANONICAL_POWERTRAIN_FIELD_TEMPLATE.engine));
 const MOTOR_KEYS = new Set(Object.keys(CANONICAL_POWERTRAIN_FIELD_TEMPLATE.motor));
 const BATTERY_KEYS = new Set(Object.keys(CANONICAL_POWERTRAIN_FIELD_TEMPLATE.battery));
+const THERMAL_MANAGEMENT_KEYS = new Set(Object.keys(CANONICAL_POWERTRAIN_FIELD_TEMPLATE.thermal_management));
 const TRANSMISSION_KEYS = new Set(Object.keys(CANONICAL_POWERTRAIN_FIELD_TEMPLATE.transmission));
 const PERFORMANCE_KEYS = new Set(Object.keys(CANONICAL_POWERTRAIN_FIELD_TEMPLATE.performance));
 
@@ -395,6 +423,7 @@ const CONFIDENCE_SET = new Set<string>(CONFIDENCE_VALUES);
 const ASPIRATION_SET = new Set<string>(ASPIRATION_VALUES);
 const FUEL_TYPE_SET = new Set<string>(FUEL_TYPE_VALUES);
 const BATTERY_CHEMISTRY_SET = new Set<string>(BATTERY_CHEMISTRY_VALUES);
+const COOLING_TIER_SET = new Set<number>(COOLING_TIER_VALUES);
 const HYBRID_TYPE_SET = new Set<string>(HYBRID_TYPE_VALUES);
 const EMISSIONS_STANDARD_SET = new Set<string>(EMISSIONS_STANDARD_VALUES);
 const HYBRID_ARCHITECTURE_SET = new Set<string>(HYBRID_ARCHITECTURE_VALUES);
@@ -413,6 +442,13 @@ function checkExtraKeys(obj: Record<string, unknown>, allowed: Set<string>, path
 function checkEnum(value: unknown, allowed: Set<string>, path: string, errors: string[]) {
   if (value === undefined || value === null) return;
   if (typeof value !== "string" || !allowed.has(value)) {
+    errors.push(`${path}: invalid value ${JSON.stringify(value)}`);
+  }
+}
+
+function checkNumberEnum(value: unknown, allowed: Set<number>, path: string, errors: string[]) {
+  if (value === undefined || value === null) return;
+  if (typeof value !== "number" || !allowed.has(value)) {
     errors.push(`${path}: invalid value ${JSON.stringify(value)}`);
   }
 }
@@ -479,6 +515,31 @@ export function validateCanonicalVariant(raw: unknown): { valid: boolean; errors
       checkEnum(battery.chemistry, BATTERY_CHEMISTRY_SET, "variant.battery.chemistry", errors);
       checkEnum(battery.ev_range_standard, RANGE_STANDARD_SET, "variant.battery.ev_range_standard", errors);
       checkEnum(battery.confidence, CONFIDENCE_SET, "variant.battery.confidence", errors);
+    }
+  }
+
+  // MANDATORY for every non-ICE trim (has a battery) — same enforcement level
+  // as engine.displacement_l/torque_nm and motor.torque_nm's mandatory-field
+  // convention (see scripts/fill-missing-mandatory-fields.ts). energy_type
+  // undefined (older records / not-yet-known) is treated conservatively, same
+  // as describeTrimGaps()'s motorBatteryApplicable fallback.
+  const thermalManagementApplicable = v.energy_type === undefined ? true : v.energy_type !== "ICE";
+  if (thermalManagementApplicable && (v.thermal_management === undefined || v.thermal_management === null)) {
+    errors.push("variant.thermal_management: missing (required for non-ICE trims)");
+  } else if (v.thermal_management !== undefined && v.thermal_management !== null) {
+    if (typeof v.thermal_management !== "object" || Array.isArray(v.thermal_management)) {
+      errors.push("variant.thermal_management: not an object");
+    } else {
+      const thermal = v.thermal_management as Record<string, unknown>;
+      checkExtraKeys(thermal, THERMAL_MANAGEMENT_KEYS, "variant.thermal_management", errors);
+      checkNumberEnum(thermal.cooling_tier, COOLING_TIER_SET, "variant.thermal_management.cooling_tier", errors);
+      checkBoolean(thermal.has_liquid_cooling, "variant.thermal_management.has_liquid_cooling", errors);
+      checkBoolean(thermal.has_heat_pump, "variant.thermal_management.has_heat_pump", errors);
+      checkBoolean(thermal.morocco_suitable, "variant.thermal_management.morocco_suitable", errors);
+      if (thermal.thermal_evidence !== undefined && thermal.thermal_evidence !== null && typeof thermal.thermal_evidence !== "string") {
+        errors.push("variant.thermal_management.thermal_evidence: must be a string or null");
+      }
+      checkEnum(thermal.confidence, CONFIDENCE_SET, "variant.thermal_management.confidence", errors);
     }
   }
 
@@ -556,7 +617,7 @@ export function applyGroundingGate(variant: Record<string, unknown>, hasGroundin
   if (hasGrounding) return variant;
   variant.confidence = "unconfirmed";
   variant.unverified = true;
-  for (const key of ["engine", "motor", "battery", "transmission", "performance"]) {
+  for (const key of ["engine", "motor", "battery", "thermal_management", "transmission", "performance"]) {
     const block = variant[key];
     if (block && typeof block === "object" && !Array.isArray(block)) {
       (block as Record<string, unknown>).confidence = "unconfirmed";
@@ -727,6 +788,7 @@ export interface PowertrainLean {
   engine?: Record<string, unknown>;
   motor?: Record<string, unknown>;
   battery?: Record<string, unknown>;
+  thermal_management?: Record<string, unknown>;
   transmission?: Record<string, unknown>;
   performance?: Record<string, unknown>;
   combined_range_km?: number | null;

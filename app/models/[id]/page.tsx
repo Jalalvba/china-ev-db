@@ -281,6 +281,17 @@ export default async function ModelPage({ params }: { params: Promise<{ id: stri
                 )}
               />
               <Row
+                label="Battery Thermal Mgmt"
+                values={powertrains.map((p) => {
+                  const t = p.thermal_management;
+                  if (t?.cooling_tier == null) return undefined;
+                  const detail = t.has_heat_pump ? "Heat pump" : t.has_liquid_cooling ? "Liquid cooling" : t.thermal_evidence ?? "";
+                  return t.morocco_suitable
+                    ? `🌡️ Tier ${t.cooling_tier}${detail ? ` · ${detail}` : ""}`
+                    : `🌡️ Tier ${t.cooling_tier} · Not Morocco-suitable`;
+                })}
+              />
+              <Row
                 label="Gearbox"
                 values={powertrains.map((p) =>
                   p.transmission?.type

@@ -25,6 +25,7 @@ const CONFIDENCE_VALUES = ["confirmed", "unconfirmed"];
 const ASPIRATION_VALUES = ["turbo", "naturally-aspirated", "supercharged", "twin-charged", "n/a"];
 const FUEL_TYPE_VALUES = ["gasoline", "diesel", "n/a"];
 const BATTERY_CHEMISTRY_VALUES = ["LFP", "NMC", "LTO", "semi-solid-state", "other"];
+const COOLING_TIER_VALUES = [0, 1, 2, 3, 4];
 
 const EngineDetailsSchema = new Schema(
   {
@@ -71,6 +72,22 @@ const BatteryDetailsSchema = new Schema(
   { _id: false }
 );
 
+// Tier definitions — see the matching comment on ICanonicalThermalManagement
+// in types/canonicalPowertrain.ts: 0=passive air, 1=active air, 2=active
+// liquid (Morocco minimum), 3=refrigerant-coupled/heat pump (recommended),
+// 4=hybrid intelligent/PCM (best).
+const ThermalManagementSchema = new Schema(
+  {
+    cooling_tier: { type: Number, enum: COOLING_TIER_VALUES },
+    has_liquid_cooling: Boolean,
+    has_heat_pump: Boolean,
+    morocco_suitable: Boolean,
+    thermal_evidence: String,
+    confidence: { type: String, enum: CONFIDENCE_VALUES },
+  },
+  { _id: false }
+);
+
 const TransmissionSchema = new Schema(
   {
     type: { type: String, enum: GEARBOX_TYPES },
@@ -97,6 +114,7 @@ const PowertrainSchema = new Schema<PowertrainDoc>(
     engine: { type: EngineDetailsSchema },
     motor: { type: ElectricMotorDetailsSchema },
     battery: { type: BatteryDetailsSchema },
+    thermal_management: { type: ThermalManagementSchema },
     transmission: { type: TransmissionSchema },
     performance: { type: PerformanceSchema },
     combined_range_km: { type: Number },
