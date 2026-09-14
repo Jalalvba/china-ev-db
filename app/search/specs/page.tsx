@@ -208,9 +208,12 @@ export default function SpecSearchPage() {
     }
     const copy = [...results];
     if (sortBy === "price") {
+      // USD, not raw CNY — CNY is never shown anywhere in the app (see
+      // formatChinaPriceUsd), so sorting by it would rank trims by a
+      // currency the user never even sees.
       copy.sort((a, b) => {
-        const pa = a.model_id?.price_range?.min;
-        const pb = b.model_id?.price_range?.min;
+        const pa = a.model_id?.price_range?.min_usd;
+        const pb = b.model_id?.price_range?.min_usd;
         if (pa == null && pb == null) return 0;
         if (pa == null) return 1;
         if (pb == null) return -1;
