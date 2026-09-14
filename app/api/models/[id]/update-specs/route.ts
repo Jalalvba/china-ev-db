@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connectToDatabase } from "@/lib/db";
-import { GoogleGenAI } from "@google/genai";
 import "@/models/Brand";
 import ModelSchema from "@/models/Model";
 import Powertrain from "@/models/Powertrain";
-import { DEFAULT_MODEL, ModelNotFoundError, researchModel, describeTrimGaps, type PowertrainLean } from "@/lib/techSpecResearch";
+import { getDefaultModel, ModelNotFoundError, researchModel, describeTrimGaps, type PowertrainLean } from "@/lib/techSpecResearch";
 import { lookupMoteurMa, renderMoteurMaContext } from "@/lib/moteurMaScraper";
 import { appendResearchLog } from "@/lib/researchLog";
+import { getMissingConfigError } from "@/lib/aiProvider";
 import type { IBrand } from "@/types";
 
 // Runs the same per-model research pipeline as scripts/tech-spec-agent.ts
@@ -16,9 +16,12 @@ import type { IBrand } from "@/types";
 // NEVER writes to MongoDB — returns a result for the UI's review screen; see
 // app/api/models/[id]/apply-specs/route.ts for the write path.
 export async function POST(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-  if (!GEMINI_API_KEY) {
-    return NextResponse.json({ error: "Missing GEMINI_API_KEY on the server." }, { status: 500 });
+  const missingConfig = getMissingConfigError();
+  if (missingConfig) {
+    return NextResponse.json({ error: `${missingConfig} on the server.` }, { status: 500 });
+  }
+  if (!process.env.SEARCH_API_KEY) {
+    return NextResponse.json({ error: "Missing SEARCH_API_KEY on the server." }, { status: 500 });
   }
 
   await connectToDatabase();
@@ -44,8 +47,7 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
     .map((pt) => ({ trimName: pt.trim_name, fields: describeTrimGaps(pt) }))
     .filter((g) => g.fields.length > 0);
 
-  const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
-  const model = DEFAULT_MODEL;
+  const model = getDefaultModel();
 
   try {
     const brandName = brand?.name_en ?? brand?.name ?? "Unknown";
@@ -53,11 +55,11 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
 
     // Real code-level pre-fetch — an actual HTTP fetch + JSON-LD parse of
     // moteur.ma's own pages, narrowed to this specific model, not a prompt
-    // asking Gemini to go check itself.
+    // asking the AI to go check itself.
     const moteurLookup = await lookupMoteurMa(brandName, modelName);
     const moteurMaContext = renderMoteurMaContext(moteurLookup);
 
-    const result = await researchModel(ai, model, {
+    const result = await researchModel(model, {
       modelDbId: String(modelDoc._id),
       brandName,
       brandNameCn: brand?.name_cn,

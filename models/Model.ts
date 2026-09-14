@@ -59,7 +59,7 @@ const ModelSchema = new Schema<ModelDoc>(
     /** Set only by lib/applySpecUpdates.ts, only when a notable_facts write is verified as actually applied — see the comment on IModel.notable_facts_last_researched_at in types/index.ts. */
     notable_facts_last_researched_at: { type: Date },
     // Written only by app/api/models/[id]/fetch-morocco-price/route.ts — a
-    // deterministic scrape of moteur.ma/wandaloo.com, never Gemini. Kept
+    // deterministic scrape of moteur.ma/wandaloo.com, never the AI. Kept
     // separate from MoroccoListing (which is keyed by brand/model name and
     // predates Model having its own brand_id-scoped Morocco fields) so the
     // UI can show a price chip straight off the Model doc without a join.

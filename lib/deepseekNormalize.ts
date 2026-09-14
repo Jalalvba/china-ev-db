@@ -64,7 +64,7 @@ export const KNOWN_BRANDS: Record<
   "东风": { name: "Dongfeng", founded_year: 1969 },
   // Wholly-owned mainstream Dongfeng sub-brand (Shine/Mage/Huge/E70/AX7/L7 etc.) —
   // distinct from the bare "Dongfeng" group brand and from the separate Dongfeng-PSA
-  // JV (Shenlong Automobile). See BRAND_TAXONOMY.md. Source data sometimes tags these
+  // JV (Shenlong Automobile). See CLAUDE.md (Data model conventions). Source data sometimes tags these
   // models' brand generically as "东风" instead of this sub-brand string, which is
   // exactly the mismatch the cross-brand duplicate preflight check below guards against.
   "东风风神": { name: "Dongfeng Aeolus", parent_group: "Dongfeng Motor Corporation" },

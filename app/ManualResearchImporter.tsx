@@ -74,7 +74,7 @@ function DiffTable({ entries }: { entries: FieldDiffEntry[] }) {
  * The manual Kimi/DeepSeek round-trip counterpart to TechSpecUpdater.tsx —
  * deliberately a separate component rather than a shared one: the input here
  * is hand-pasted text diffed against the current DB state (including
- * genuinely new trims and _id-based matching), not a live Gemini research
+ * genuinely new trims and _id-based matching), not a live AI research
  * result keyed by array index, so the two don't share a data shape worth
  * forcing into one component.
  */

@@ -9,7 +9,7 @@
 //   unchanged — already confirmed, and the new fetch agrees with the stored
 //     price within AGREEMENT_TOLERANCE. Reported only; stage 3 never writes
 //     these (not even last_researched_at) since there's no new information.
-//   needsReview — everything else: any gemini-fallback / non-exact-match /
+//   needsReview — everything else: any ai-fallback / non-exact-match /
 //     ambiguous-multiple-candidates / not-found / error outcome, OR an
 //     already-confirmed model whose new price disagrees with the stored
 //     price beyond tolerance (a real price change — flagged for a human
@@ -96,7 +96,7 @@ function analyze(records: FetchRecord[]): Omit<AnalysisResult, "sourceFile" | "g
       continue;
     }
 
-    // Everything else: gemini-fallback, non-exact-match,
+    // Everything else: ai-fallback, non-exact-match,
     // ambiguous-multiple-candidates, not-found, error, or an unconfirmed
     // model that didn't resolve to a clean match.
     needsReview.push({ ...r, reviewReason: `outcome=${r.outcome}${r.note ? ` — ${r.note}` : ""}` });

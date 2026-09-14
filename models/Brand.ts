@@ -1,7 +1,7 @@
 import { Schema, model, models } from "mongoose";
 import type { IBrand } from "@/types";
 
-// See /BRAND_TAXONOMY.md before changing any field's meaning or adding new
+// See CLAUDE.md (Data model conventions) before changing any field's meaning or adding new
 // ownership/grouping fields — it's the frozen reference for what parent_group,
 // tech_partner, status_note, data_quality_flag, etc. are each supposed to hold.
 

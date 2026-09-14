@@ -1,10 +1,11 @@
-// See /BRAND_TAXONOMY.md before changing this prompt or its validation — it's
+// See CLAUDE.md (Data model conventions) before changing this prompt or its validation — it's
 // the frozen reference for what each ownership/grouping field is supposed to
 // hold, and requires treating new correction claims as claims to verify, not
 // facts to apply blindly.
 //
-// Tier-1 brand-identity research: for a Brand document, asks Gemini to
-// confirm/correct corporate/ownership facts — parent_group, relationship_type,
+// Tier-1 brand-identity research: for a Brand document, asks the configured
+// AI provider (see lib/aiProvider.ts) to confirm/correct corporate/
+// ownership facts — parent_group, relationship_type,
 // stake_percentage, tech_partner, status, status_note, founded_year, name_cn,
 // country_origin. Explicitly NOT models or specs — that's Tier 2
 // (lib/modelDiscovery.ts, lib/techSpecResearch.ts), which now takes this
@@ -15,9 +16,9 @@
 // one-off manual DeepSeek ownership-audit chat prompts from earlier with a
 // proper reusable, reviewed, source-cited agent.
 
-import { GoogleGenAI, ApiError } from "@google/genai";
 import { BRAND_STATUSES, RELATIONSHIP_TYPES } from "@/models/Brand";
 import { ModelNotFoundError, sleep } from "@/lib/techSpecResearch";
+import { runGroundedResearch } from "@/lib/groundedResearch";
 
 const STATUS_SET = new Set<string>(BRAND_STATUSES);
 const RELATIONSHIP_SET = new Set<string>(RELATIONSHIP_TYPES);
@@ -26,10 +27,10 @@ const CONFIDENCE_SET = new Set(["confirmed", "unconfirmed"]);
 export interface BrandResearchInput {
   brandName: string;
   brandNameCn?: string;
-  /** Current on-file values, if any — given as context so Gemini confirms/corrects rather than re-deriving from a blank slate, same idea as techSpecResearch's existingTrimNames. */
+  /** Current on-file values, if any — given as context so the AI confirms/corrects rather than re-deriving from a blank slate, same idea as techSpecResearch's existingTrimNames. */
   currentParentGroup?: string;
   currentCountryOrigin?: string;
-  /** Rendered result of a real, code-level moteur.ma pre-fetch (see lib/moteurMaScraper.ts) — actual fetched/parsed data, not a request for Gemini to go check itself. Callers (API routes) run the fetch and pass its rendered text here; omit only if the caller didn't run it. */
+  /** Rendered result of a real, code-level moteur.ma pre-fetch (see lib/moteurMaScraper.ts) — actual fetched/parsed data, not a request for the AI to go check itself. Callers (API routes) run the fetch and pass its rendered text here; omit only if the caller didn't run it. */
   moteurMaContext?: string;
 }
 
@@ -48,7 +49,7 @@ const BRAND_FIELD_TEMPLATE = {
 
 export function buildBrandResearchKickoffPrompt(input: BrandResearchInput): string {
   const { brandName, brandNameCn, currentParentGroup, currentCountryOrigin, moteurMaContext } = input;
-  return `You are a researcher building a database of Chinese-market vehicle brands' corporate structure and ownership. Use the Google Search tool to research this brand — do not answer from memory alone.
+  return `You are a researcher building a database of Chinese-market vehicle brands' corporate structure and ownership. Real web search results for this brand are provided below — base your research ONLY on those, do not answer from memory alone.
 
 Brand to research: "${brandName}"${brandNameCn ? ` (${brandNameCn})` : ""}
 ${currentParentGroup ? `Currently on file — parent group: ${currentParentGroup}` : ""}
@@ -76,6 +77,7 @@ export function buildBrandResearchFormatPrompt(): string {
 ${templateJson}
 
 CRITICAL RULES:
+- OUTPUT LANGUAGE: every string value in your JSON response must be English — "status_note", "tech_partner", "notes", everything — with exactly one exception: "name_cn" is explicitly the ORIGINAL-LANGUAGE name and must stay in its original script. If a source fact is in Chinese, translate it into English before writing it anywhere else. Never leave Chinese (or any other non-English) characters in any field other than "name_cn".
 - Every fact must come from a search result you actually found (grounding is enabled) — do not estimate or infer from similar brands.
 - Use null for anything you cannot find a sourced value for. Do NOT guess.
 - "relationship_type" must be exactly one of: ${RELATIONSHIP_TYPES.join(", ")} — or null if unclear.
@@ -160,40 +162,25 @@ function extractJson(text: string): BrandAgentResponse | null {
 }
 
 async function queryBrandResearch(
-  ai: GoogleGenAI,
   model: string,
   input: BrandResearchInput
 ): Promise<{ parsed: BrandAgentResponse | null; sourceUrls: string[]; rawText: string }> {
   const kickoffPrompt = buildBrandResearchKickoffPrompt(input);
   const formatPrompt = buildBrandResearchFormatPrompt();
+  const searchQueries = [
+    `${input.brandName} 母公司 股权`,
+    `${input.brandName} parent company ownership`,
+    input.brandNameCn ? `${input.brandNameCn} 母公司` : `${input.brandName} corporate structure`,
+  ];
 
   const maxAttempts = 3;
   let lastErr: unknown;
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     try {
-      const researchTurn = await ai.models.generateContent({
-        model,
-        contents: kickoffPrompt,
-        config: { tools: [{ googleSearch: {} }] },
-      });
-
-      const groundingChunks = researchTurn.candidates?.[0]?.groundingMetadata?.groundingChunks ?? [];
-      const sourceUrls = groundingChunks.map((c) => c.web?.uri).filter((uri): uri is string => Boolean(uri));
-
-      const formatTurn = await ai.models.generateContent({
-        model,
-        contents: [
-          { role: "user", parts: [{ text: kickoffPrompt }] },
-          { role: "model", parts: [{ text: researchTurn.text ?? "" }] },
-          { role: "user", parts: [{ text: formatPrompt }] },
-        ],
-        config: { tools: [{ googleSearch: {} }] },
-      });
-
-      const rawText = formatTurn.text ?? "";
-      return { parsed: extractJson(rawText), sourceUrls, rawText };
+      const { formattedText, sourceUrls } = await runGroundedResearch({ kickoffPrompt, formatPrompt, searchQueries, model });
+      return { parsed: extractJson(formattedText), sourceUrls, rawText: formattedText };
     } catch (err) {
-      if (err instanceof ApiError && err.status === 404) throw new ModelNotFoundError(model);
+      if (err instanceof ModelNotFoundError) throw err;
       lastErr = err;
       const backoffMs = 2000 * attempt;
       console.error(`  [retry ${attempt}/${maxAttempts}] research-brand ${input.brandName}: ${(err as Error).message} — waiting ${backoffMs}ms`);
@@ -214,9 +201,9 @@ export interface BrandResearchResult {
 }
 
 /** Runs the full brand research + validation + grounding-gate pipeline. Throws ModelNotFoundError on a 404 (fatal, same as the other research libs); any other failure is captured in the returned result's status. */
-export async function researchBrand(ai: GoogleGenAI, model: string, input: BrandResearchInput): Promise<BrandResearchResult> {
+export async function researchBrand(model: string, input: BrandResearchInput): Promise<BrandResearchResult> {
   try {
-    const { parsed, sourceUrls, rawText } = await queryBrandResearch(ai, model, input);
+    const { parsed, sourceUrls, rawText } = await queryBrandResearch(model, input);
 
     if (!parsed || !parsed.brand) {
       return {

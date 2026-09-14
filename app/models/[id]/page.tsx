@@ -231,7 +231,7 @@ export default async function ModelPage({ params }: { params: Promise<{ id: stri
                 label="Motor"
                 values={powertrains.map((p) =>
                   // "drive" (FWD/RWD/AWD) alone does NOT imply an electric motor exists —
-                  // it's a drivetrain-layout fact Gemini reports even for pure-ICE trims
+                  // it's a drivetrain-layout fact the AI reports even for pure-ICE trims
                   // (our schema has no better place to put it), so it's deliberately
                   // excluded from this check: only count/type/power/torque indicate a
                   // real motor block worth showing under a "Motor" heading.

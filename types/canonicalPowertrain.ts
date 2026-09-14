@@ -99,7 +99,7 @@ export interface ICanonicalThermalManagement {
   has_heat_pump?: boolean;
   /** True when cooling_tier >= 2 (minimum acceptable for Morocco's climate) — Tier 3-4 recommended for southern/inland Morocco. */
   morocco_suitable?: boolean;
-  /** Verbatim Chinese-source cooling terminology backing this block, e.g. "液冷", "热泵", "风冷", "冷却液" — or the literal string "UNKNOWN" if genuinely unfound after searching. */
+  /** English translation of the source's cooling terminology backing this block, e.g. "liquid cooling", "heat pump", "air cooling", "coolant" — never the original Chinese characters — or the literal string "UNKNOWN" if genuinely unfound after searching. */
   thermal_evidence?: string;
   confidence?: Confidence;
 }
@@ -201,7 +201,7 @@ export const CANONICAL_POWERTRAIN_FIELD_TEMPLATE = {
     has_heat_pump: "boolean | null",
     morocco_suitable: "boolean | null (true only if cooling_tier >= 2)",
     thermal_evidence:
-      'string | null (verbatim Chinese-source cooling terminology, e.g. "液冷", "热泵", "风冷", "冷却液" — use the literal string "UNKNOWN" if genuinely unfound after searching; never omit this block entirely)',
+      'string | null (ENGLISH translation of the source\'s cooling terminology, e.g. "liquid cooling", "heat pump", "air cooling", "coolant" — never the original Chinese characters, even when the source itself is in Chinese; use the literal string "UNKNOWN" if genuinely unfound after searching; never omit this block entirely)',
     confidence: CONFIDENCE_VALUES.join(" | ") + " | null",
   },
   transmission: {

@@ -1,6 +1,8 @@
 // Research agent: for every Brand in our DB that has no confirmed Morocco
-// distributor yet, asks Gemini (with Google Search grounding enabled) to find
-// one, and writes the results to a batch JSON file for human review.
+// distributor yet, runs a real web search (lib/webSearch.ts) and asks the
+// configured AI provider (lib/aiProvider.ts) to extract findings from
+// those real results, and writes the results to a batch JSON file for human
+// review.
 //
 // This script NEVER writes to MongoDB. It only produces
 // raw-data/morocco-agent-batch-<timestamp>.json, in the same shape consumed
@@ -11,45 +13,38 @@
 // Usage:
 //   npm run morocco-agent                  (full run over every un-confirmed brand)
 //   npm run morocco-agent -- --limit 5     (only the first 5, for a quick test)
-//   npm run morocco-agent -- --model gemini-pro-latest  (override the default flash model)
+//   npm run morocco-agent -- --model deepseek-reasoner  (override the active provider's default model)
 
 import dotenv from "dotenv";
 dotenv.config({ path: [".env.local", ".env"], quiet: true });
 import fs from "fs";
 import path from "path";
 import mongoose from "mongoose";
-import { GoogleGenAI, ApiError } from "@google/genai";
 import Brand from "../models/Brand";
 import MoroccoListing from "../models/MoroccoListing";
 import { MOROCCO_BRAND_ALIAS } from "../lib/moroccoBrandAlias";
 import { lookupMoteurMa, renderMoteurMaContext, type MoteurMaLookupResult } from "../lib/moteurMaScraper";
+import { complete, getDefaultModel, ModelNotFoundError } from "../lib/aiProvider";
+import { webSearchMulti, renderSearchResultsForPrompt } from "../lib/webSearch";
 
 const MONGODB_URI = process.env.MONGODB_URI;
 if (!MONGODB_URI) {
   throw new Error("Missing MONGODB_URI. Copy .env.example to .env and set it.");
 }
 
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-if (!GEMINI_API_KEY) {
-  throw new Error(
-    "Missing GEMINI_API_KEY. Get one at https://aistudio.google.com/apikey and set it in .env."
-  );
+// A real function call (not a module-level const — see the comment on
+// getActiveProvider() in lib/aiProvider.ts for why that matters: import
+// hoisting vs. this script's own dotenv.config() call above) that surfaces a
+// missing <PROVIDER>_API_KEY / bad AI_PROVIDER value immediately, before any
+// Mongo connection or research work starts.
+import { getActiveProvider } from "../lib/aiProvider";
+console.log(`AI provider: ${getActiveProvider()}`);
+if (!process.env.SEARCH_API_KEY) {
+  throw new Error("Missing SEARCH_API_KEY. Get a free Brave Search API key at https://api.search.brave.com/app/keys and set it in .env.");
 }
 
-// Flash is the default: this is a ~140-brand batch job, and flash is
-// materially cheaper/faster than pro for a fairly mechanical "search and
-// report back" task. Override with --model if quality turns out to matter
-// more than throughput for some brands.
-//
-// gemini-2.5-flash was retired for new API keys; gemini-3.6-flash is its
-// replacement as of this writing. Verified available on this project's key
-// via `ai.models.list()` before switching — re-check that call if this
-// starts failing again, rather than guessing the next name from an error
-// message alone.
-const DEFAULT_MODEL = "gemini-3.6-flash";
-
 // Conservative default so a ~140-brand run doesn't hit per-minute rate
-// limits on typical Gemini API tiers. Override via GEMINI_AGENT_DELAY_MS.
+// limits on typical provider free/low tiers. Override via AI_AGENT_DELAY_MS.
 const DEFAULT_DELAY_MS = 4000;
 
 const SOURCE_SITES = [
@@ -71,15 +66,7 @@ const SOURCE_SITES = [
 // ~140 brand queries would hit the exact same error, so this must abort the
 // whole run immediately rather than burn the per-brand retry budget (or
 // worse, silently log 140 "errors" that are all actually one root cause).
-class ModelNotFoundError extends Error {
-  constructor(modelName: string) {
-    super(
-      `Model '${modelName}' is not available; check available models with the API ` +
-        `(ai.models.list()) or in Google AI Studio (https://aistudio.google.com/apikey).`
-    );
-    this.name = "ModelNotFoundError";
-  }
-}
+// ModelNotFoundError itself is the shared class from lib/aiProvider.ts.
 
 interface CliOptions {
   limit?: number;
@@ -88,7 +75,7 @@ interface CliOptions {
 
 function parseArgs(): CliOptions {
   const args = process.argv.slice(2);
-  const options: CliOptions = { model: DEFAULT_MODEL };
+  const options: CliOptions = { model: getDefaultModel() };
   for (let i = 0; i < args.length; i++) {
     if (args[i] === "--limit") {
       options.limit = Number(args[++i]);
@@ -149,22 +136,21 @@ Brand to research: "${brandName}"${brandNameCn ? ` (Chinese: ${brandNameCn})` : 
 
 ${moteurMaContext}
 
-The moteur.ma facts above (if any) were fetched directly from moteur.ma's own pages by this pipeline, NOT found via your search — do not re-search for them, do not contradict them, and do not re-report a moteur.ma price/URL differently than given above. Your job below is everything moteur.ma DIDN'T already cover: the official Moroccan distributor, and any other model/price data.
+The moteur.ma facts above (if any) were fetched directly from moteur.ma's own pages by this pipeline, NOT found via search — do not re-derive them, do not contradict them, and do not re-report a moteur.ma price/URL differently than given above. Your job below is everything moteur.ma DIDN'T already cover: the official Moroccan distributor, and any other model/price data — extract these ONLY from the real search results provided below this prompt.
 
-Search Moroccan automotive press and official sources, PRIORITIZED in this order:
-1. Moroccan automotive press and official sources for anything Morocco-market-specific (distributor, launch date, local pricing not already covered above): ${SOURCE_SITES.join(", ")} — plus the brand's own official Morocco website if one exists.
-2. Only fall back to generic/global English-language sources if nothing Morocco-specific or Chinese-official exists.
+Preferred source priority for what you extract: Moroccan automotive press and official sources for anything Morocco-market-specific (distributor, launch date, local pricing not already covered above): ${SOURCE_SITES.join(", ")} — plus the brand's own official Morocco website if one exists; fall back to generic/global English-language sources only if nothing Morocco-specific or Chinese-official exists among the results below.
 
-Answer these questions using ONLY what you can find and cite from search results:
+Answer these questions using ONLY what you can find and cite from the real search results below:
 1. Is "${brandName}" officially distributed in Morocco right now (or with a confirmed, dated launch)?
 2. If yes, who is the official Moroccan importer/distributor?
 3. What specific models are sold, and at what price in Moroccan Dirhams (DH)? (Skip re-reporting models/prices already given above from the direct moteur.ma fetch — just include any ADDITIONAL models or corrections your search finds.)
 
 CRITICAL RULES:
+- OUTPUT LANGUAGE: every string value in your JSON response must be English — "dealer_morocco", "notes", "model_en", everything. If a source (Moroccan French/Arabic press or Chinese press) states a fact in another language, translate it into English before writing it. Never leave a non-English character anywhere in the response.
 - Do NOT infer Morocco distribution from corporate ownership, global press releases, or the fact that a sibling/parent brand is sold in Morocco. Only report a distributor or model as confirmed if you find a Moroccan source that says so directly.
 - Do NOT guess a price if you cannot find one; omit price fields rather than estimate.
 - If you cannot find a confirmed Moroccan source for ANY of this, set "found": false and explain briefly in "notes" — do not fabricate a plausible-sounding answer.
-- Every fact you report must be backed by a search result you actually found (grounding is enabled on this request — only state what your search results support).
+- Every fact you report must be backed by one of the real search results provided below — only state what those results actually support, never fill in a plausible-sounding answer from general knowledge.
 - Leave "moteur_ma_price_dh"/"moteur_ma_confirmed"/"moteur_ma_url" null/false for any model already listed in the direct moteur.ma fetch above — this pipeline fills those in from the fetch itself, not from your response, for those models.
 
 Respond with ONLY a single JSON object (no markdown fencing, no prose before or after) in exactly this shape:
@@ -191,43 +177,39 @@ function extractJson(text: string): AgentBrandResponse | null {
 }
 
 async function queryBrand(
-  ai: GoogleGenAI,
   model: string,
   brandName: string,
   brandNameCn: string | undefined,
   parentGroup: string | undefined,
   moteurMaContext: string
 ): Promise<{ parsed: AgentBrandResponse | null; sourceUrls: string[]; rawText: string }> {
-  const prompt = buildPrompt(brandName, brandNameCn, parentGroup, moteurMaContext);
+  const basePrompt = buildPrompt(brandName, brandNameCn, parentGroup, moteurMaContext);
+  const searchQueries = [
+    `${brandName} Maroc distributeur officiel`,
+    `${brandName} Morocco distributor`,
+    `${brandName} prix Maroc DH`,
+    brandNameCn ? `${brandNameCn} 摩洛哥` : `${brandName} wandaloo.com`,
+  ];
 
   const maxAttempts = 3;
   let lastErr: unknown;
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     try {
-      const response = await ai.models.generateContent({
-        model,
-        contents: prompt,
-        config: {
-          tools: [{ googleSearch: {} }],
-        },
-      });
+      const results = await webSearchMulti(searchQueries);
+      const sourceUrls = results.map((r) => r.url);
+      const prompt = `${basePrompt}\n\n=== REAL SEARCH RESULTS (fetched for you before this prompt was built) ===\nExtract facts ONLY from the snippets and sources below — do not use any other knowledge.\n\n${renderSearchResultsForPrompt(
+        results
+      )}`;
 
-      const rawText = response.text ?? "";
+      const rawText = await complete(prompt, { model });
       const parsed = extractJson(rawText);
-
-      const groundingChunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks ?? [];
-      const sourceUrls = groundingChunks
-        .map((chunk) => chunk.web?.uri)
-        .filter((uri): uri is string => Boolean(uri));
 
       return { parsed, sourceUrls, rawText };
     } catch (err) {
       // Model-not-found is not transient — retrying hits the same 404 every
       // time. Fail fast on attempt 1 instead of wasting the whole retry
       // budget (and the backoff delay) on a broken model name.
-      if (err instanceof ApiError && err.status === 404) {
-        throw new ModelNotFoundError(model);
-      }
+      if (err instanceof ModelNotFoundError) throw err;
 
       lastErr = err;
       const backoffMs = 2000 * attempt;
@@ -262,7 +244,7 @@ async function getConfirmedBrandNamesLower(): Promise<Set<string>> {
 
 async function run() {
   const { limit, model } = parseArgs();
-  const delayMs = Number(process.env.GEMINI_AGENT_DELAY_MS ?? DEFAULT_DELAY_MS);
+  const delayMs = Number(process.env.AI_AGENT_DELAY_MS ?? DEFAULT_DELAY_MS);
 
   await mongoose.connect(MONGODB_URI as string);
   console.log(`Connected to MongoDB. Using model: ${model}, delay: ${delayMs}ms between requests.`);
@@ -279,10 +261,9 @@ async function run() {
     }.\n`
   );
 
-  const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY as string });
-
   const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
   const outPath = path.resolve(`raw-data/morocco-agent-batch-${timestamp}.json`);
+  fs.mkdirSync(path.dirname(outPath), { recursive: true });
   const results: BatchEntry[] = [];
 
   function flush() {
@@ -303,25 +284,18 @@ async function run() {
 
     try {
       // Real code-level pre-fetch of moteur.ma — an actual HTTP fetch +
-      // JSON-LD parse of moteur.ma's own pages, not a prompt asking Gemini
-      // to "check" it. Runs before the Gemini call so its result can be
-      // handed in as pre-verified context (see buildPrompt) and used below
-      // to override whatever Gemini self-reports for moteur.ma fields.
+      // JSON-LD parse of moteur.ma's own pages, not a prompt asking the AI
+      // to "check" it. Runs before the AI call so its result can be handed
+      // in as pre-verified context (see buildPrompt) and used below to
+      // override whatever the AI self-reports for moteur.ma fields.
       const moteurLookup: MoteurMaLookupResult = await lookupMoteurMa(brand.name);
       const moteurMaContext = renderMoteurMaContext(moteurLookup);
 
-      const { parsed, sourceUrls, rawText } = await queryBrand(
-        ai,
-        model,
-        brand.name,
-        brand.name_cn,
-        brand.parent_group,
-        moteurMaContext
-      );
+      const { parsed, sourceUrls, rawText } = await queryBrand(model, brand.name, brand.name_cn, brand.parent_group, moteurMaContext);
 
-      // Unmatched moteur.ma models get consumed as we merge them into
-      // Gemini's own model list below; whatever's left here (moteur.ma
-      // found a model Gemini's response didn't mention at all) still gets
+      // Unmatched moteur.ma models get consumed as we merge them into the
+      // AI's own model list below; whatever's left here (moteur.ma
+      // found a model the AI's response didn't mention at all) still gets
       // its own result row further down, so directly-scraped data is never
       // silently dropped.
       const unmatchedMoteurModels = new Map(moteurLookup.models.map((m) => [normalizeName(m.name), m]));
@@ -341,13 +315,13 @@ async function run() {
           sourceUrls.length > 0 ? (parsed.dealer_confidence ?? "unconfirmed") : "unconfirmed";
 
         const sourceLabel = sourceUrls.length
-          ? `Gemini-grounded research (${sourceUrls.length} source${sourceUrls.length > 1 ? "s" : ""})`
-          : "Gemini research — NO grounding citations found, treat as unverified";
+          ? `AI-grounded research (${sourceUrls.length} source${sourceUrls.length > 1 ? "s" : ""})`
+          : "AI research — NO grounding citations found, treat as unverified";
 
         const models = parsed.models?.length ? parsed.models : [{ model_en: "(unspecified)" }];
         for (const m of models) {
           // moteur.ma was directly fetched and parsed by this pipeline, not
-          // self-reported by Gemini — it always wins over whatever Gemini
+          // self-reported by the AI — it always wins over whatever the AI
           // put in these three fields for a model it matches.
           const scraped = unmatchedMoteurModels.get(normalizeName(m.model_en));
           if (scraped) unmatchedMoteurModels.delete(normalizeName(m.model_en));
@@ -377,10 +351,10 @@ async function run() {
         foundCount++;
       }
 
-      // Any moteur.ma model left unmatched above — either Gemini reported
+      // Any moteur.ma model left unmatched above — either the AI reported
       // "not found" for the brand entirely, or it just didn't mention this
       // specific model — still gets its own row. A directly-scraped fact
-      // never gets dropped just because Gemini's own research missed it.
+      // never gets dropped just because the AI's own research missed it.
       for (const scraped of unmatchedMoteurModels.values()) {
         results.push({
           brand_en: brand.name,
@@ -392,7 +366,7 @@ async function run() {
           dealer_confidence: undefined,
           source: "moteur.ma (direct fetch)",
           source_url: [scraped.url],
-          agent_notes: "Found via direct moteur.ma fetch; not mentioned in this run's Gemini research response.",
+          agent_notes: "Found via direct moteur.ma fetch; not mentioned in this run's AI research response.",
           agent_query_brand_db_name: brand.name,
           agent_query_parent_group: brand.parent_group,
           agent_query_time: new Date().toISOString(),

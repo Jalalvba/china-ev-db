@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connectToDatabase } from "@/lib/db";
-import { GoogleGenAI } from "@google/genai";
 import Brand from "@/models/Brand";
 import ModelSchema from "@/models/Model";
-import { DEFAULT_MODEL, ModelNotFoundError } from "@/lib/techSpecResearch";
+import { getDefaultModel, ModelNotFoundError } from "@/lib/techSpecResearch";
 import { discoverModels } from "@/lib/modelDiscovery";
 import { lookupMoteurMa, renderMoteurMaContext } from "@/lib/moteurMaScraper";
+import { getMissingConfigError } from "@/lib/aiProvider";
 
 // Discovers candidate models for a brand that has zero (or few) Model
 // documents — a distinct first step from /api/models/[id]/update-specs,
@@ -31,9 +31,12 @@ interface BrandContextOverride {
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-    if (!GEMINI_API_KEY) {
-      return NextResponse.json({ error: "Missing GEMINI_API_KEY on the server." }, { status: 500 });
+    const missingConfig = getMissingConfigError();
+    if (missingConfig) {
+      return NextResponse.json({ error: `${missingConfig} on the server.` }, { status: 500 });
+    }
+    if (!process.env.SEARCH_API_KEY) {
+      return NextResponse.json({ error: "Missing SEARCH_API_KEY on the server." }, { status: 500 });
     }
 
     await connectToDatabase();
@@ -47,19 +50,18 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     const existingModels = await ModelSchema.find({ brand_id: brandId }, { name: 1 }).lean();
     const existingModelNames = existingModels.map((m) => m.name);
 
-    const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
-    const model = DEFAULT_MODEL;
+    const model = getDefaultModel();
 
     // Override wins over what's on file — it reflects research just done in
     // this same request sequence, more current than the stored brand doc.
     const parentGroup = override.parent_group ?? brand.parent_group;
 
     // Real code-level pre-fetch — an actual HTTP fetch + JSON-LD parse of
-    // moteur.ma's own pages, not a prompt asking Gemini to go check itself.
+    // moteur.ma's own pages, not a prompt asking the AI to go check itself.
     const moteurLookup = await lookupMoteurMa(brand.name_en ?? brand.name);
     const moteurMaContext = renderMoteurMaContext(moteurLookup);
 
-    const result = await discoverModels(ai, model, {
+    const result = await discoverModels(model, {
       brandName: brand.name_en ?? brand.name,
       brandNameCn: override.name_cn ?? brand.name_cn,
       parentGroup,

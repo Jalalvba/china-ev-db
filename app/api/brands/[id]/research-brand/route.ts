@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connectToDatabase } from "@/lib/db";
-import { GoogleGenAI } from "@google/genai";
 import Brand from "@/models/Brand";
-import { DEFAULT_MODEL, ModelNotFoundError } from "@/lib/techSpecResearch";
+import { getDefaultModel, ModelNotFoundError } from "@/lib/techSpecResearch";
 import { researchBrand } from "@/lib/brandResearch";
 import { lookupMoteurMa, renderMoteurMaContext } from "@/lib/moteurMaScraper";
+import { getMissingConfigError } from "@/lib/aiProvider";
 
 // Tier 1: brand-identity research only (parent_group, relationship_type,
 // stake_percentage, tech_partner, status, status_note, founded_year, name_cn,
@@ -14,9 +14,12 @@ import { lookupMoteurMa, renderMoteurMaContext } from "@/lib/moteurMaScraper";
 // ../apply-brand-research/route.ts for the write path.
 export async function POST(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-    if (!GEMINI_API_KEY) {
-      return NextResponse.json({ error: "Missing GEMINI_API_KEY on the server." }, { status: 500 });
+    const missingConfig = getMissingConfigError();
+    if (missingConfig) {
+      return NextResponse.json({ error: `${missingConfig} on the server.` }, { status: 500 });
+    }
+    if (!process.env.SEARCH_API_KEY) {
+      return NextResponse.json({ error: "Missing SEARCH_API_KEY on the server." }, { status: 500 });
     }
 
     await connectToDatabase();
@@ -25,15 +28,14 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
     const brand = await Brand.findById(brandId).lean();
     if (!brand) return NextResponse.json({ error: "Brand not found" }, { status: 404 });
 
-    const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
-    const model = DEFAULT_MODEL;
+    const model = getDefaultModel();
 
     // Real code-level pre-fetch — an actual HTTP fetch + JSON-LD parse of
-    // moteur.ma's own pages, not a prompt asking Gemini to go check itself.
+    // moteur.ma's own pages, not a prompt asking the AI to go check itself.
     const moteurLookup = await lookupMoteurMa(brand.name_en ?? brand.name);
     const moteurMaContext = renderMoteurMaContext(moteurLookup);
 
-    const result = await researchBrand(ai, model, {
+    const result = await researchBrand(model, {
       brandName: brand.name_en ?? brand.name,
       brandNameCn: brand.name_cn,
       currentParentGroup: brand.parent_group,

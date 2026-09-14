@@ -8,7 +8,7 @@
 // there's no new information, so nothing is touched, not even
 // last_researched_at. Pass --include-flagged to additionally write
 // analysis.needsReview — expected only after you've manually looked at that
-// set (any Gemini-fallback, non-exact-match, ambiguous-multiple-candidates,
+// set (any AI-fallback, non-exact-match, ambiguous-multiple-candidates,
 // or price change on an already-confirmed model).
 //
 // Same write-and-reverify discipline as lib/applySpecUpdates.ts: every write

@@ -6,7 +6,7 @@ import { findMismatchedKeys } from "@/lib/applySpecUpdates";
 // The only write path for discovered models: only ever called after the user
 // has reviewed results from ../discover-models/route.ts, confirmed/edited
 // segment & body_type (required by the Model schema but frequently returned
-// null by research, since Gemini isn't always confident enough to classify
+// null by research, since the AI isn't always confident enough to classify
 // them), and clicked "Create models". Same verification posture as
 // lib/applySpecUpdates.ts: every create is re-fetched and checked before
 // being counted as applied, not trusted just because the call didn't throw.

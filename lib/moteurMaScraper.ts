@@ -1,9 +1,9 @@
 // Real code-level pre-fetch of moteur.ma (Morocco's automotive reference
-// site) — NOT a prompt instruction asking Gemini to "check" it. This module
+// site) — NOT a prompt instruction asking the AI to "check" it. This module
 // does an actual HTTP fetch + JSON-LD parse of moteur.ma's own pages and
 // returns structured, code-verified data (or an explicit "not found"/"fetch
-// failed" result) that callers can hand to Gemini as pre-confirmed ground
-// truth, distinct from anything Gemini's own search tool self-reports.
+// failed" result) that callers can hand to the AI as pre-confirmed ground
+// truth, distinct from anything the AI itself self-reports.
 //
 // Scrapability, verified directly (see the PR/commit discussion this
 // shipped with for the raw curl output):
@@ -183,7 +183,7 @@ export interface MoteurMaModelSummary {
 export interface MoteurMaLookupResult {
   attempted: true;
   scrapedAt: string;
-  /** Set if the fetch itself failed (network error, timeout, non-200 unrelated to "not found") — callers should fall back to Gemini search and flag that the direct scrape didn't succeed, per the pipeline's graceful-degradation rule. */
+  /** Set if the fetch itself failed (network error, timeout, non-200 unrelated to "not found") — callers should fall back to AI-assisted search and flag that the direct scrape didn't succeed, per the pipeline's graceful-degradation rule. */
   fetchError?: string;
   brandFound: boolean;
   brandUrl?: string;
@@ -194,7 +194,7 @@ export interface MoteurMaLookupResult {
  * Looks up a brand (and optionally narrows to one model) on moteur.ma via
  * real HTTP fetches + JSON-LD parsing — never a prompt asking an LLM to do
  * this itself. Always resolves (never throws): a network failure surfaces
- * as `fetchError` so callers can fall back to Gemini-search-based research
+ * as `fetchError` so callers can fall back to AI-assisted search-based research
  * without the whole pipeline breaking.
  */
 export async function lookupMoteurMa(brandName: string, modelName?: string): Promise<MoteurMaLookupResult> {
@@ -270,7 +270,7 @@ export async function lookupMoteurMa(brandName: string, modelName?: string): Pro
 }
 
 /**
- * Renders a lookup result as a plain-language block to inject into a Gemini
+ * Renders a lookup result as a plain-language block to inject into an AI research
  * prompt as pre-verified, confirmed context — explicitly telling the model
  * not to re-search for what this already found. This is the piece that
  * makes the data "ground truth passed in" rather than "ask the model to go

@@ -1,5 +1,5 @@
 // Brand-level "discover models" research: for a brand with zero (or
-// incomplete) Model documents, asks Gemini to find its current model
+// incomplete) Model documents, asks the configured AI provider (lib/aiProvider.ts) to find its current model
 // lineup and returns candidate Model records for review — never writes to
 // MongoDB itself (see app/api/brands/[id]/create-models/route.ts for that).
 //
@@ -14,10 +14,10 @@
 // pattern and the same zero-citation confidence gate as lib/techSpecResearch.ts,
 // for the same reasons (see the comments there).
 
-import { GoogleGenAI, ApiError } from "@google/genai";
 import { SEGMENTS, PRODUCTION_STATUSES } from "@/models/Model";
 import { ModelNotFoundError, sleep } from "@/lib/techSpecResearch";
 import { buildBrandContextBlock, type BrandContext } from "@/lib/brandContext";
+import { runGroundedResearch } from "@/lib/groundedResearch";
 
 const SEGMENT_SET = new Set<string>(SEGMENTS);
 const PRODUCTION_STATUS_SET = new Set<string>(PRODUCTION_STATUSES);
@@ -27,11 +27,11 @@ export interface ModelDiscoveryInput {
   brandName: string;
   brandNameCn?: string;
   parentGroup?: string;
-  /** Model names already on file for this brand, if any — asks Gemini to skip these rather than re-suggest them as "new". */
+  /** Model names already on file for this brand, if any — asks the AI to skip these rather than re-suggest them as "new". */
   existingModelNames?: string[];
   /** Confirmed Tier-1 brand-identity facts (see lib/brandResearch.ts), if this brand has been researched. Optional: model discovery still works without it. */
   brandContext?: BrandContext;
-  /** Rendered result of a real, code-level moteur.ma pre-fetch (see lib/moteurMaScraper.ts) — actual fetched/parsed data, not a request for Gemini to go check itself. */
+  /** Rendered result of a real, code-level moteur.ma pre-fetch (see lib/moteurMaScraper.ts) — actual fetched/parsed data, not a request for the AI to go check itself. */
   moteurMaContext?: string;
 }
 
@@ -54,7 +54,7 @@ const DISCOVERY_FIELD_TEMPLATE = {
 
 export function buildModelDiscoveryKickoffPrompt(input: ModelDiscoveryInput): string {
   const { brandName, brandNameCn, parentGroup, existingModelNames, brandContext, moteurMaContext } = input;
-  return `You are a researcher building a database of Chinese-market vehicle brands and their model lineups. Use the Google Search tool to research this brand — do not answer from memory alone.
+  return `You are a researcher building a database of Chinese-market vehicle brands and their model lineups. Real web search results for this brand are provided below — base your research ONLY on those, do not answer from memory alone.
 
 Brand to research: "${brandName}"${brandNameCn ? ` (${brandNameCn})` : ""}${parentGroup ? `\nParent group / manufacturer: ${parentGroup}` : ""}${buildBrandContextBlock(brandContext)}
 
@@ -86,6 +86,7 @@ export function buildModelDiscoveryFormatPrompt(): string {
 ${templateJson}
 
 CRITICAL RULES:
+- OUTPUT LANGUAGE: every string value must be English — "regional_name_note", "notes", everything — with exactly two exceptions: "name_cn" is explicitly the ORIGINAL-LANGUAGE (Chinese) name and must stay in its original script, and "name" must stay in whatever script the vehicle's actual international/export nameplate uses (per the naming rules above). If a source fact is in Chinese, translate it into English before writing it into any other field. Never leave Chinese (or any other non-English) characters anywhere else.
 - Every fact must come from a search result you actually found (grounding is enabled) — do not estimate or infer from similar brands/models.
 - Use null for anything you cannot find a sourced value for. Do NOT guess.
 - "segment" must be exactly one of: ${SEGMENTS.join(", ")} — or null if you're not confident which one fits.
@@ -174,40 +175,25 @@ function extractJson(text: string): DiscoveryAgentResponse | null {
 }
 
 async function queryDiscovery(
-  ai: GoogleGenAI,
   model: string,
   input: ModelDiscoveryInput
 ): Promise<{ parsed: DiscoveryAgentResponse | null; sourceUrls: string[]; rawText: string }> {
   const kickoffPrompt = buildModelDiscoveryKickoffPrompt(input);
   const formatPrompt = buildModelDiscoveryFormatPrompt();
+  const searchQueries = [
+    `${input.brandName} 车型 全系列`,
+    `${input.brandName} models lineup`,
+    input.brandNameCn ? `${input.brandNameCn} 车型` : `${input.brandName} SUV sedan lineup`,
+  ];
 
   const maxAttempts = 3;
   let lastErr: unknown;
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     try {
-      const researchTurn = await ai.models.generateContent({
-        model,
-        contents: kickoffPrompt,
-        config: { tools: [{ googleSearch: {} }] },
-      });
-
-      const groundingChunks = researchTurn.candidates?.[0]?.groundingMetadata?.groundingChunks ?? [];
-      const sourceUrls = groundingChunks.map((c) => c.web?.uri).filter((uri): uri is string => Boolean(uri));
-
-      const formatTurn = await ai.models.generateContent({
-        model,
-        contents: [
-          { role: "user", parts: [{ text: kickoffPrompt }] },
-          { role: "model", parts: [{ text: researchTurn.text ?? "" }] },
-          { role: "user", parts: [{ text: formatPrompt }] },
-        ],
-        config: { tools: [{ googleSearch: {} }] },
-      });
-
-      const rawText = formatTurn.text ?? "";
-      return { parsed: extractJson(rawText), sourceUrls, rawText };
+      const { formattedText, sourceUrls } = await runGroundedResearch({ kickoffPrompt, formatPrompt, searchQueries, model });
+      return { parsed: extractJson(formattedText), sourceUrls, rawText: formattedText };
     } catch (err) {
-      if (err instanceof ApiError && err.status === 404) throw new ModelNotFoundError(model);
+      if (err instanceof ModelNotFoundError) throw err;
       lastErr = err;
       const backoffMs = 2000 * attempt;
       console.error(`  [retry ${attempt}/${maxAttempts}] discover-models ${input.brandName}: ${(err as Error).message} — waiting ${backoffMs}ms`);
@@ -232,13 +218,9 @@ export interface ModelDiscoveryResult {
 }
 
 /** Runs the full discovery + validation + grounding-gate pipeline for one brand. Throws ModelNotFoundError on a 404 (fatal, same as researchModel); any other failure is captured in the returned result's status. */
-export async function discoverModels(
-  ai: GoogleGenAI,
-  model: string,
-  input: ModelDiscoveryInput
-): Promise<ModelDiscoveryResult> {
+export async function discoverModels(model: string, input: ModelDiscoveryInput): Promise<ModelDiscoveryResult> {
   try {
-    const { parsed, sourceUrls, rawText } = await queryDiscovery(ai, model, input);
+    const { parsed, sourceUrls, rawText } = await queryDiscovery(model, input);
 
     if (!parsed || !Array.isArray(parsed.models)) {
       return {

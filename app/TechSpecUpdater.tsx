@@ -316,7 +316,7 @@ function ModelResultCard({
         {validEntries.map(({ v, idx }) => {
           const trimName = typeof v.variant.trim_name === "string" ? v.variant.trim_name : undefined;
           const existingTrimNames = Object.keys(previousData?.variantsByTrim ?? {});
-          // Gemini doesn't reliably reproduce an existing trim name
+          // the AI doesn't reliably reproduce an existing trim name
           // character-for-character across research passes — resolve the
           // SAME way the write path (lib/applySpecUpdates.ts) will, so what's
           // shown here is exactly what applying it will do: update an

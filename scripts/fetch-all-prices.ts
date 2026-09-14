@@ -4,7 +4,7 @@
 // Mongo for context (current stored price, so stage 2 can spot a changed
 // price on an already-confirmed model) but NEVER writes to Mongo. Uses the
 // exact same moteur.ma -> wandaloo.com -> suffix-strip -> brand-prefix-strip
-// -> Gemini-on-disagreement logic as scripts/sync-morocco-prices.ts, via the
+// -> AI-on-disagreement logic as scripts/sync-morocco-prices.ts, via the
 // shared lib/priceFetchCore.ts — no separate/drifting scraper-calling code.
 //
 // Safe to run alongside a live `next dev` server / other Mongo writers: this
@@ -103,7 +103,7 @@ async function run() {
   await mongoose.disconnect();
 
   const results: FetchRecord[] = [];
-  const geminiCallCounter = { count: 0 };
+  const aiCallCounter = { count: 0 };
   let httpCalls = 0;
 
   let idx = 0;
@@ -113,10 +113,10 @@ async function run() {
       const brand = brandById.get(String(model.brand_id));
       if (!brand) continue;
 
-      // dryRun=false: we still want processModel's Gemini reconciliation on
+      // dryRun=false: we still want processModel's AI reconciliation on
       // disagreement (a genuine fetch, not a Mongo write) so stage 2 sees the
       // same outcome sync-morocco-prices.ts would have produced.
-      const result = await processModel(brand.name, model.name, model.name_en, false, geminiCallCounter);
+      const result = await processModel(brand.name, model.name, model.name_en, false, aiCallCounter);
       httpCalls += 2;
 
       const record: FetchRecord = {
@@ -147,7 +147,7 @@ async function run() {
   const counts: Record<Outcome, number> = {
     "moteur.ma": 0,
     "wandaloo.com": 0,
-    "gemini-fallback": 0,
+    "ai-fallback": 0,
     "non-exact-match": 0,
     "ambiguous-multiple-candidates": 0,
     "not-found": 0,
@@ -159,17 +159,18 @@ async function run() {
   console.log(`Scanned:                 ${results.length}`);
   console.log(`moteur.ma matches:       ${counts["moteur.ma"]}`);
   console.log(`wandaloo.com matches:    ${counts["wandaloo.com"]}`);
-  console.log(`gemini-fallback:         ${counts["gemini-fallback"]}`);
+  console.log(`ai-fallback:         ${counts["ai-fallback"]}`);
   console.log(`non-exact-match:         ${counts["non-exact-match"]}`);
   console.log(`ambiguous-multiple-candidates: ${counts["ambiguous-multiple-candidates"]}`);
   console.log(`not-found:               ${counts["not-found"]}`);
   console.log(`errors:                  ${counts.error}`);
   console.log(`Total scraper HTTP calls (top-level): ~${httpCalls}`);
-  console.log(`Total Gemini calls: ${geminiCallCounter.count}`);
+  console.log(`Total AI calls: ${aiCallCounter.count}`);
   console.log(`Elapsed: ${elapsedSec}s`);
 
   const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
   const outPath = path.resolve(`raw-data/fetch-all-prices-${timestamp}.json`);
+  fs.mkdirSync(path.dirname(outPath), { recursive: true });
   fs.writeFileSync(outPath, JSON.stringify(results, null, 2) + "\n");
   console.log(`\nWrote ${results.length} result(s) to ${outPath}`);
   console.log(`Next: pnpm analyze-price-fetch -- --input ${outPath}`);

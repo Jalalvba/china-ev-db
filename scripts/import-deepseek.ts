@@ -626,7 +626,7 @@ function preflightCheckBrandNames(inputs: { raw: string; explicitEnglish?: strin
 
 /**
  * Guards against the exact bug that created the "Dongfeng" / "Dongfeng
- * Aeolus" duplicate pairs (see KNOWN_ISSUES.md): brand resolution is purely
+ * Aeolus" duplicate pairs (see CLAUDE.md's Data model conventions section): brand resolution is purely
  * per-entry (resolveBrandName only looks at *this* entry's own brand/brand_en
  * fields), and the model upsert is scoped to `{ brand_id, name }` — so if an
  * entry's source data tags a sub-brand model generically (e.g. "东风"
@@ -714,7 +714,7 @@ async function preflightCheckCrossBrandDuplicates(entries: RawVariantEntry[]): P
   console.error(`\n[preflight] Aborting: ${conflicts.length} model(s) look like duplicates of an existing model under a sibling brand.`);
   for (const c of conflicts) console.error(`  - ${c}`);
   console.error(
-    "\n[preflight] This is the exact bug that created the Dongfeng/\"Dongfeng Aeolus\" duplicate pairs — see KNOWN_ISSUES.md."
+    "\n[preflight] This is the exact bug that created the Dongfeng/\"Dongfeng Aeolus\" duplicate pairs — see CLAUDE.md's Data model conventions section."
   );
   console.error(
     "[preflight] If this is genuinely a new/different model, rename it to disambiguate from the sibling. If it should attach to\n" +

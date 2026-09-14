@@ -2,7 +2,7 @@
 // model's current document as clean JSON, generate a companion prompt, and
 // validate+diff a pasted-back response before anything is written.
 //
-// Deliberately separate from lib/techSpecResearch.ts (the Gemini pipeline) —
+// Deliberately separate from lib/techSpecResearch.ts (the shared research pipeline) —
 // this never calls an LLM API itself, it only prepares/validates JSON for a
 // human to hand-carry through an external chat UI. It DOES reuse
 // validateCanonicalVariant/validateNotableFacts from techSpecResearch.ts for
@@ -45,7 +45,7 @@ export interface ExportedPowertrain {
   combined_range_note?: string | null;
   source?: string | null;
   confidence?: string | null;
-  // Deliberately no "unverified" field — that's a Gemini-grounding-gate-only
+  // Deliberately no "unverified" field — that's a AI-grounding-gate-only
   // flag set by applyGroundingGate() based on whether the AI call actually
   // had search grounding, not something a researcher (human or external LLM)
   // should ever set directly. validateCanonicalVariant (reused as-is below)
@@ -204,7 +204,7 @@ export function buildManualResearchPrompt(exportDoc: ExportDocument): string {
 
 Below is the current database record (as JSON) for "${model.brand_name}" — "${model.name_en ?? model.name}"${
     model.name_cn ? ` (${model.name_cn})` : ""
-  }. This record was produced by an earlier, automated research pass (Gemini with search grounding) — it is a reasonable starting point, not ground truth. You are doing a SECOND, INDEPENDENT research pass on top of it, and that pass has five distinct jobs, not one:
+  }. This record was produced by an earlier, automated research pass (an automated research pass with real search grounding) — it is a reasonable starting point, not ground truth. You are doing a SECOND, INDEPENDENT research pass on top of it, and that pass has five distinct jobs, not one:
 
 1. FILL GAPS — find sourced values for whatever is currently null or unconfirmed (see "Known gaps" below).
 2. CROSS-CHECK EXISTING VALUES — independently verify fields that are already populated and marked "confirmed", using your own search rather than trusting that the first pass got them right. Do not skip a field just because it already has a value. If your independent research disagrees with a stored value — a wrong battery chemistry, a wrong power figure, a wrong transmission type, anything — correct it and explain the discrepancy in that field's "<field>_source_note", even though it was never listed as a "known gap". This matters: on a previous model (Soueast S06 DM), the original automated pass reported the wrong battery chemistry, and it only got caught because a second independent pass happened to check a field nobody had flagged as missing. Treat every "confirmed" field as a candidate to challenge, not as settled.
@@ -226,6 +226,7 @@ CRITICAL RULES — read carefully, this is a round-trip into a strict-schema dat
 1. Return the SAME JSON shape you were given below — same top-level keys ("model", "powertrains"), same nested field names. Do not add, rename, or omit any field.
 2. model._id and every powertrains[]._id MUST be returned byte-for-byte UNCHANGED from what you were given. These IDs are how the import step matches your response back to the exact existing database record — if you omit an _id, invent a new one, or alter it in any way, that entire record will be misread as a brand-new trim instead of an update to the existing one, which defeats the whole point of this workflow. If you are adding a genuinely NEW trim that wasn't in the input, give it no "_id" field at all (omit it, don't invent a placeholder) — that is the only case where a missing _id is correct.
 3. Every numeric or categorical fact must come from a source you can point to — do not estimate or infer from similar vehicles. Use null for anything you cannot find a sourced value for. The single exception is price_range per job 4 above, which must never be left null even when only an estimate is possible.
+2b. OUTPUT LANGUAGE: every string value must be English — "source", every "note" field, every "<field>_source_note", "notes", everything — with exactly two exceptions: (a) "name_cn" is explicitly the ORIGINAL-LANGUAGE (Chinese) name and must stay in its original script, and (b) an EXISTING "trim_name" you were given below must be returned byte-for-byte unchanged per rule 2 above even if it contains Chinese characters (e.g. a parenthetical like "(轻骑士BSG)") — do NOT translate or alter an existing trim_name, that would break the exact-match round-trip this workflow depends on. A genuinely NEW trim_name you are adding should itself be in English/Latin script where the vehicle's real nameplate allows it. If a source fact is in Chinese, translate it into English before writing it into any field other than these two exceptions.
 3b. "thermal_management" is REQUIRED on every powertrain entry whose "energy_type" is not "ICE" — per job 5 above, fill it with real values if you find them or with "thermal_evidence": "UNKNOWN" / "morocco_suitable": false if you genuinely can't. Omitting the "thermal_management" key entirely on a non-ICE trim is a validation failure that blocks the whole import, not a harmless gap — double-check every non-ICE trim in your response has this key before returning it.
 4. For every field you CHANGE from its current value — whether it was null (a gap you filled) or already populated (a value your independent research corrected) — add a sibling "<field>_source_note" string explaining the source and, if you're correcting an existing value, what was wrong with it (e.g. if you change "battery.chemistry" from an existing "NMC" to "LFP", include "battery.chemistry_source_note": "Corrected from NMC — official Soueast spec sheet and autohome.com.cn both list LFP"). Only changed fields need a source note — leave unchanged fields as-is with no note. A field you independently checked and confirmed matches the stored value needs no note either; notes exist only to flag a change, not to prove you checked something.
 5. Do not touch any field not listed in "model" or "powertrains[]" below — there is no other data to research.
@@ -284,12 +285,12 @@ export function validateManualModelFields(
 }
 
 // ---------------------------------------------------------------------------
-// Powertrain-field validation — reuses the Gemini pipeline's validator
+// Powertrain-field validation — reuses the shared research pipeline's validator
 // verbatim, minus the trim_name/energy_type "required" checks (a returned
 // UPDATE to an existing trim may legitimately omit trim_name/energy_type if
 // unchanged... but our export always includes them, and the prompt asks for
 // the full shape back, so we still require them for a clean, unambiguous
-// diff — same rule as Gemini's response).
+// diff — same rule as the AI's response).
 // ---------------------------------------------------------------------------
 
 /** Strips "<field>_source_note" sibling keys (recursively, one level into each block) before running the canonical validator, which doesn't know about them — returns the stripped copy plus a flat map of path -> source note for display in the diff. Also accepts the bare "source_note" spelling (no leading field name) as shorthand for "source_source_note" — a recurring Kimi/DeepSeek mistake where it means "a note about my source citation" rather than "a note about a field named source", since the trim already has its own top-level "source" field this clearly refers to. */
@@ -416,7 +417,7 @@ function relocateKnownMisplacedFields(rest: Record<string, unknown>): Record<str
  * is deliberately NOT one of them, since it's a real, distinct test standard
  * from "WLTP" (different correction factors, not guaranteed to produce the
  * same figure for the same car) and is accepted as its own valid enum value
- * rather than relabeled. Reusing the same table the Gemini and DeepSeek
+ * rather than relabeled. Reusing the same table the the AI-research and DeepSeek
  * batch pipelines use keeps all three import paths agreeing on what counts
  * as an alias vs. a distinct standard, instead of maintaining separate
  * answers to the same question.

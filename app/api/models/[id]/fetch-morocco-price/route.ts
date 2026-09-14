@@ -7,7 +7,7 @@ import { lookupWandaloo } from "@/lib/wandalooScraper";
 import type { IBrand } from "@/types";
 
 // Deterministic, code-level price scrape — no LLM involved. Separate from
-// update-specs (Gemini research) on purpose: this is a fact a script can
+// update-specs (AI research) on purpose: this is a fact a script can
 // just go get, not something that needs AI judgment.
 export async function POST(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   await connectToDatabase();

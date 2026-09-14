@@ -18,7 +18,7 @@ export type ResearchLogEvent =
   | {
       kind: "manual-apply";
       modelDbId: string;
-      /** Distinguishes a hand-carried Kimi/DeepSeek round trip from the Gemini-automated "research" / "apply" events above. */
+      /** Distinguishes a hand-carried Kimi/DeepSeek round trip from the AI-automated "research" / "apply" events above. */
       source: "manual-kimi-import" | "manual-deepseek-import";
       modelDiff: unknown;
       powertrainResults: unknown;

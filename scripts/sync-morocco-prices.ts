@@ -3,7 +3,7 @@
 // (that endpoint is untouched — it stays for manual one-off re-checks).
 //
 // Fetch/reconcile logic (moteur.ma -> wandaloo.com -> suffix-strip ->
-// brand-prefix-strip -> Gemini-on-disagreement) lives in
+// brand-prefix-strip -> AI-on-disagreement) lives in
 // lib/priceFetchCore.ts, shared with scripts/fetch-all-prices.ts (the
 // review-first, three-stage alternative to this script — see
 // scripts/analyze-price-fetch.ts and scripts/import-price-fetch.ts). This
@@ -15,7 +15,7 @@
 //   pnpm sync-prices                          (all models missing a confirmed Morocco price)
 //   pnpm sync-prices -- --force               (re-check every model, including already-confirmed ones)
 //   pnpm sync-prices -- --brand=Dongfeng       (scope to one brand, for testing)
-//   pnpm sync-prices -- --dry-run              (scrape + log only, write nothing, never call Gemini)
+//   pnpm sync-prices -- --dry-run              (scrape + log only, write nothing, never call the AI)
 //   pnpm sync-prices -- --concurrency=3 --delay=1500
 
 import dotenv from "dotenv";
@@ -93,7 +93,7 @@ async function run() {
   console.log(`${targets.length} model(s) to process.\n`);
 
   const results: ModelResult[] = [];
-  const geminiCallCounter = { count: 0 };
+  const aiCallCounter = { count: 0 };
   let httpCalls = 0; // rough count: 2 scraper lookups per model, each internally does more, but this tracks top-level calls
 
   let idx = 0;
@@ -103,7 +103,7 @@ async function run() {
       const brand = brandById.get(String(model.brand_id));
       if (!brand) continue;
 
-      const result = await processModel(brand.name, model.name, model.name_en, opts.dryRun, geminiCallCounter);
+      const result = await processModel(brand.name, model.name, model.name_en, opts.dryRun, aiCallCounter);
       httpCalls += 2;
       results.push(result);
 
@@ -123,11 +123,11 @@ async function run() {
             morocco_price_confirmed: true,
           },
         });
-      } else if (!opts.dryRun && result.outcome === "gemini-fallback") {
+      } else if (!opts.dryRun && result.outcome === "ai-fallback") {
         await ModelSchema.findByIdAndUpdate(model._id, {
           $set: {
             morocco_price_dh: result.finalPriceDh,
-            morocco_price_source: "gemini-fallback",
+            morocco_price_source: "ai-fallback",
             morocco_price_url: result.finalUrl,
             morocco_price_confirmed: false,
           },
@@ -138,7 +138,7 @@ async function run() {
       // instead. A failed/uncertain lookup this run is never grounds to
       // clear a price that may have been confirmed some other way (manual
       // verification, a prior run, etc.) — only a fresh successful match
-      // (moteur.ma / wandaloo.com / gemini-fallback, handled above) writes.
+      // (moteur.ma / wandaloo.com / ai-fallback, handled above) writes.
 
       if (idx < targets.length) await sleep(opts.delayMs);
     }
@@ -152,7 +152,7 @@ async function run() {
   const counts: Record<Outcome, number> = {
     "moteur.ma": 0,
     "wandaloo.com": 0,
-    "gemini-fallback": 0,
+    "ai-fallback": 0,
     "non-exact-match": 0,
     "ambiguous-multiple-candidates": 0,
     "not-found": 0,
@@ -164,18 +164,18 @@ async function run() {
   console.log(`Scanned:               ${results.length}`);
   console.log(`Updated via moteur.ma:  ${counts["moteur.ma"]}`);
   console.log(`Updated via wandaloo:   ${counts["wandaloo.com"]}`);
-  console.log(`Gemini-fallback (review): ${counts["gemini-fallback"]}`);
+  console.log(`AI-fallback (review): ${counts["ai-fallback"]}`);
   console.log(`Non-exact match (review): ${counts["non-exact-match"]}`);
   console.log(`Ambiguous, multiple candidates (review): ${counts["ambiguous-multiple-candidates"]}`);
   console.log(`Failed both / no data:  ${counts["not-found"]}`);
   console.log(`Errors:                 ${counts.error}`);
   console.log(`Total scraper HTTP calls (top-level): ~${httpCalls}`);
-  console.log(`Total Gemini calls: ${geminiCallCounter.count}${opts.dryRun ? " (dry-run — not actually called)" : ""}`);
+  console.log(`Total AI calls: ${aiCallCounter.count}${opts.dryRun ? " (dry-run — not actually called)" : ""}`);
   console.log(`Elapsed: ${elapsedSec}s`);
 
   const reviewNeeded = results.filter(
     (r) =>
-      r.outcome === "gemini-fallback" ||
+      r.outcome === "ai-fallback" ||
       r.outcome === "non-exact-match" ||
       r.outcome === "ambiguous-multiple-candidates" ||
       r.outcome === "not-found" ||
@@ -184,6 +184,7 @@ async function run() {
   if (reviewNeeded.length > 0 && !opts.dryRun) {
     const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
     const outPath = path.resolve(`raw-data/morocco-sync-${timestamp}.review.json`);
+    fs.mkdirSync(path.dirname(outPath), { recursive: true });
     fs.writeFileSync(outPath, JSON.stringify(reviewNeeded, null, 2) + "\n");
     console.log(`\nWrote ${reviewNeeded.length} item(s) needing manual review to ${outPath}`);
   }

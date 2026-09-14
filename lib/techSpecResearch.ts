@@ -1,12 +1,15 @@
-// Shared core for AI-assisted technical-spec research: builds the Gemini
-// prompt from the canonical schema, calls Gemini with Google Search
-// grounding, validates the response against ICanonicalPowertrain, and applies
-// the zero-citation "force unconfirmed" gate. Used by both the CLI batch tool
+// Shared core for AI-assisted technical-spec research: builds the research
+// prompt from the canonical schema, runs it through the shared real-search-
+// first grounding pipeline (lib/groundedResearch.ts) against whatever model
+// the active provider is configured for (lib/aiProvider.ts — DeepSeek by default),
+// validates the response against ICanonicalPowertrain, and applies the
+// zero-citation "force unconfirmed" gate. Used by both the CLI batch tool
 // (scripts/tech-spec-agent.ts) and the per-model API route
 // (app/api/models/[id]/update-specs/route.ts) so there is exactly one
 // implementation of this logic, not two copies that can drift apart.
 
-import { GoogleGenAI, ApiError } from "@google/genai";
+import { runGroundedResearch, buildVehicleSearchQueries, ModelNotFoundError } from "./groundedResearch";
+import { getDefaultModel as getAiDefaultModel } from "./aiProvider";
 import {
   CANONICAL_POWERTRAIN_FIELD_TEMPLATE,
   ENERGY_TYPE_VALUES,
@@ -26,13 +29,11 @@ import {
 import { buildBrandContextBlock, type BrandContext } from "./brandContext";
 import { correctRangeStandard } from "./deepseekNormalize";
 
-// gemini-3.6-flash confirmed available on this project's key via
-// `ai.models.list()` — re-run that check if this starts 404ing, rather than
-// guessing the next name from an error message alone.
-export const DEFAULT_MODEL = "gemini-3.6-flash";
+/** The active provider's default chat model (DeepSeek by default) — see lib/aiProvider.ts. Override via that provider's own <PROVIDER>_MODEL env var. A FUNCTION, not a constant — call it at the point of use, never capture its result into a module-level const anywhere in this file's own import chain. See the comment on getActiveProvider() in lib/aiProvider.ts: ES `import` hoisting means a module-level `const X = getDefaultModel()` here would resolve before a script's own dotenv.config() call runs, silently ignoring .env.local/.env — this bit a live Qwen smoke test for real. */
+export const getDefaultModel = getAiDefaultModel;
 
 // Conservative default so a large batch run doesn't hit per-minute rate
-// limits on typical Gemini API tiers. Override via GEMINI_AGENT_DELAY_MS.
+// limits on typical provider free/low tiers. Override via AI_AGENT_DELAY_MS.
 export const DEFAULT_DELAY_MS = 4000;
 
 const SOURCE_SITES = [
@@ -43,18 +44,11 @@ const SOURCE_SITES = [
   "MIIT (工信部) filings",
 ];
 
-// A 404 here means the model name itself is wrong/retired — every query
-// would hit the exact same error, so callers should treat this as fatal for
-// the whole run/request rather than a per-model retry candidate.
-export class ModelNotFoundError extends Error {
-  constructor(modelName: string) {
-    super(
-      `Model '${modelName}' is not available; check available models with the API ` +
-        `(ai.models.list()) or in Google AI Studio (https://aistudio.google.com/apikey).`
-    );
-    this.name = "ModelNotFoundError";
-  }
-}
+// Re-exported so existing call sites (`instanceof ModelNotFoundError` from
+// scripts/tech-spec-agent.ts etc.) keep working against the one shared class
+// thrown by lib/aiProvider.ts — see that file for why this is fatal for the
+// whole run rather than a per-model retry candidate.
+export { ModelNotFoundError };
 
 export function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -62,7 +56,7 @@ export function sleep(ms: number): Promise<void> {
 
 // ---------------------------------------------------------------------------
 // Prompt — standalone so a future DeepSeek verifier pass can reuse the exact
-// same canonical-schema instructions Gemini is given here.
+// same canonical-schema instructions the AI is given here.
 // ---------------------------------------------------------------------------
 
 export interface TechSpecPromptInput {
@@ -73,11 +67,11 @@ export interface TechSpecPromptInput {
   generation?: string;
   segment?: string;
   bodyType?: string;
-  /** Trim names already on file, if any — asks Gemini to fill these in rather than invent a different lineup. */
+  /** Trim names already on file, if any — asks the AI to fill these in rather than invent a different lineup. */
   existingTrimNames?: string[];
   /** Confirmed Tier-1 brand-identity facts (see lib/brandResearch.ts), if this brand has been researched — lets this call focus on the model itself instead of re-deriving ownership. Optional: Tier 2 still works without it. */
   brandContext?: BrandContext;
-  /** Rendered result of a real, code-level moteur.ma pre-fetch (see lib/moteurMaScraper.ts) — actual fetched/parsed data, not a request for Gemini to go check itself. */
+  /** Rendered result of a real, code-level moteur.ma pre-fetch (see lib/moteurMaScraper.ts) — actual fetched/parsed data, not a request for the AI to go check itself. */
   moteurMaContext?: string;
   /** Per-trim list of currently-missing/unconfirmed field labels (see describeTrimGaps) — lets the prompt name exactly what to look for instead of a generic "research this car" ask. Omit if there's nothing on file yet to diff against. */
   knownGaps?: { trimName: string; fields: string[] }[];
@@ -188,7 +182,7 @@ const RANGE_STANDARDS_LABEL = RANGE_STANDARD_VALUES.join(", ");
 // ---------------------------------------------------------------------------
 // Shared field-list — single source of truth for "what does a field-by-field
 // research target list look like", consumed by both describeTrimGaps() (to
-// report per-field gaps on an existing record) and the Gemini kickoff prompt
+// report per-field gaps on an existing record) and the kickoff prompt
 // (to give a full checklist even when there's no existing record to diff
 // against yet). Keeping one definition means the two can't silently drift on
 // what "every field" means.
@@ -239,7 +233,7 @@ const THERMAL_MANAGEMENT_FIELDS: FieldSpec[] = [
   { path: "thermal_management.morocco_suitable", label: "Morocco climate suitability (true only if cooling_tier >= 2)" },
   {
     path: "thermal_management.thermal_evidence",
-    label: 'verbatim Chinese-source cooling terminology (e.g. "液冷", "热泵", "风冷", "冷却液") backing the tier — or "UNKNOWN" if unfound',
+    label: 'English translation of the source\'s cooling terminology (e.g. "liquid cooling", "heat pump", "air cooling", "coolant") backing the tier — or "UNKNOWN" if unfound. Translate even if the source itself is in Chinese; never write the original Chinese characters here.',
   },
 ];
 const TRANSMISSION_FIELDS: FieldSpec[] = [
@@ -261,7 +255,7 @@ const TRIM_LEVEL_FIELDS: FieldSpec[] = [
  * dropped for a pure ICE, everything else (transmission, performance,
  * trim-level) always applies. Pass `undefined` (energy type not yet known,
  * e.g. before first-pass research) to get the full union — the prompt then
- * tells Gemini to disregard whichever half turns out not to apply.
+ * tells the AI to disregard whichever half turns out not to apply.
  */
 function getApplicableFieldSpecs(energyType?: string): FieldSpec[] {
   const specs: FieldSpec[] = [];
@@ -277,7 +271,7 @@ function renderFieldChecklist(specs: FieldSpec[]): string {
 }
 
 /**
- * First-turn prompt: prose, not JSON. Gemini's Google Search grounding is
+ * First-turn prompt: prose, not JSON. the real-search-first grounding pipeline is
  * invoked at the model's own discretion, and empirically a "respond with
  * ONLY a JSON object" instruction makes it skip search entirely and answer
  * from its own training data instead — even with an explicit "you must
@@ -290,7 +284,7 @@ function renderFieldChecklist(specs: FieldSpec[]): string {
 export function buildResearchKickoffPrompt(input: TechSpecPromptInput): string {
   const { brandName, brandNameCn, modelName, modelNameCn, generation, segment, bodyType, existingTrimNames, brandContext, moteurMaContext, knownGaps } = input;
 
-  return `You are a technical researcher building a spec database of Chinese-market EVs/ICE/hybrids. Use the Google Search tool to research this vehicle — do not answer from memory alone.
+  return `You are a technical researcher building a spec database of Chinese-market EVs/ICE/hybrids. Real web search results for this vehicle are provided below — base your research ONLY on those, do not answer from memory alone.
 
 Vehicle to research: "${brandName}"${brandNameCn ? ` (${brandNameCn})` : ""} — "${modelName}"${
     modelNameCn ? ` (${modelNameCn})` : ""
@@ -316,7 +310,7 @@ Search Chinese-language automotive sources, especially: ${SOURCE_SITES.join(", "
 For EACH trim/variant, you must individually attempt to find every one of the following fields — this is a named checklist, not a general "get a feel for the car" request. If the field turns out not to apply once you know the actual energy type (e.g. this is a pure EV with no engine, or a pure ICE with no motor/battery), just say so and skip that block; otherwise treat every field below as something to actively go find, not something to skip because you already have a general sense of the trim:
 ${renderFieldChecklist(getApplicableFieldSpecs())}
 
-MANDATORY for every non-ICE trim (BEV/HEV/PHEV/REEV/EREV/MHEV): the thermal_management block. Cooling tiers: 0=passive air cooling (not suitable), 1=active air cooling (poor), 2=active liquid cooling (minimum acceptable for Morocco), 3=refrigerant-coupled/heat pump (recommended), 4=hybrid intelligent/PCM (best). Morocco's climate (especially southern/inland regions) means Tier 2 is the floor and Tier 3-4 is preferred — battery thermal management is safety-relevant there, not a nice-to-have. Actively search for the battery cooling method (e.g. Chinese terms like "液冷"/liquid cooling, "热泵"/heat pump, "风冷"/air cooling, "冷却液"/coolant) the same Chinese-source-first way as every other field. If, after a genuine targeted search, the cooling method truly cannot be found, still fill in the block: set thermal_evidence to the literal string "UNKNOWN" and morocco_suitable to false — never omit the thermal_management block entirely.
+MANDATORY for every non-ICE trim (BEV/HEV/PHEV/REEV/EREV/MHEV): the thermal_management block. Cooling tiers: 0=passive air cooling (not suitable), 1=active air cooling (poor), 2=active liquid cooling (minimum acceptable for Morocco), 3=refrigerant-coupled/heat pump (recommended), 4=hybrid intelligent/PCM (best). Morocco's climate (especially southern/inland regions) means Tier 2 is the floor and Tier 3-4 is preferred — battery thermal management is safety-relevant there, not a nice-to-have. Actively search for the battery cooling method — Chinese sources commonly use terms like "液冷" (liquid cooling), "热泵" (heat pump), "风冷" (air cooling), "冷却液" (coolant); translate whichever term you find into English before writing it into thermal_evidence — the same Chinese-source-first way as every other field. If, after a genuine targeted search, the cooling method truly cannot be found, still fill in the block: set thermal_evidence to the literal string "UNKNOWN" and morocco_suitable to false — never omit the thermal_management block entirely.
 
 Do not rely on a single general search to cover all of the above. For each field (or small cluster of closely related fields, e.g. motor power + torque from the same spec-sheet table), run a distinct, targeted search — vary your query wording (Chinese model name + "参数配置", + "配置表", + the specific spec you're missing, etc.) — and only give up on a field after a real, targeted search attempt for it specifically has failed to turn up a source. One search that "covers the car in general" and then filling in whatever it happened to surface is not sufficient effort.
 
@@ -368,6 +362,7 @@ Search Chinese-language automotive sources, especially: ${SOURCE_SITES.join(", "
 For EACH trim/variant, report the full technical specification: engine (if any), electric motor (if any), battery (if any), transmission, and performance figures, plus a top-level energy type classification (${ENERGY_TYPE_VALUES.join(", ")}).
 
 CRITICAL RULES:
+- OUTPUT LANGUAGE: every string value in your JSON response must be English — trim names, notes, source names, "note" fields, "thermal_evidence", everything. Never leave a single Chinese (or any other non-English) character in the output. If a source is in Chinese, translate the fact/term into English before writing it (e.g. a spec sheet says "液冷" -> write "liquid cooling", not "液冷"). This applies even to fields whose earlier guidance shows a Chinese example — those examples describe what to look FOR in the source, not what to write in the response.
 - Every numeric or categorical fact must come from a search result you actually found (grounding is enabled on this request) — do not estimate or infer from similar vehicles.
 - Use "null" for any field you cannot find a sourced value for. Do NOT guess a plausible-sounding number.
 - Set each block's "confidence" to "confirmed" only if a specific cited source backs the block's claim — including a claim reported only in "note" when the structured numeric fields are null (e.g. a concept vehicle's press release quoting horsepower and wheel-torque instead of the standard kW/motor-torque_nm shape: report it in "note" and mark "confirmed" if the source is real, rather than downgrading confidence just because it didn't fit the structured fields). Otherwise "unconfirmed".
@@ -612,7 +607,7 @@ function buildNotableFactsResult(raw: unknown, hasGrounding: boolean): Researche
   return { notableFacts: gated ?? null, valid: true, errors: [] };
 }
 
-/** Zero grounding citations means none of this response's claims are actually search-backed — force every confidence field to "unconfirmed" regardless of what Gemini self-reported, and flag the record as unverified. Mutates and returns `variant`. */
+/** Zero grounding citations means none of this response's claims are actually search-backed — force every confidence field to "unconfirmed" regardless of what the AI self-reported, and flag the record as unverified. Mutates and returns `variant`. */
 export function applyGroundingGate(variant: Record<string, unknown>, hasGrounding: boolean): Record<string, unknown> {
   if (hasGrounding) return variant;
   variant.confidence = "unconfirmed";
@@ -627,7 +622,7 @@ export function applyGroundingGate(variant: Record<string, unknown>, hasGroundin
 }
 
 // ---------------------------------------------------------------------------
-// Gemini call
+// AI call
 // ---------------------------------------------------------------------------
 
 interface AgentResponse {
@@ -697,49 +692,30 @@ function extractJson(text: string): AgentResponse | null {
 }
 
 async function queryModel(
-  ai: GoogleGenAI,
   model: string,
   promptInput: TechSpecPromptInput
 ): Promise<{ parsed: AgentResponse | null; sourceUrls: string[]; rawText: string }> {
   const kickoffPrompt = buildResearchKickoffPrompt(promptInput);
   const formatPrompt = buildTechSpecPrompt(promptInput);
+  const searchQueries = buildVehicleSearchQueries(promptInput.brandName, promptInput.modelName, promptInput.brandNameCn, promptInput.modelNameCn);
 
   const maxAttempts = 3;
   let lastErr: unknown;
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     try {
-      // Turn 1: prose research request — this is the call that actually
-      // triggers Google Search grounding. Its groundingChunks are the
-      // authoritative source list for the whole exchange.
-      const researchTurn = await ai.models.generateContent({
+      // Real search first, then a prose research turn that sees the fetched
+      // results, then a format turn (same conversation) that reformats those
+      // grounded findings into the canonical JSON shape — see
+      // lib/groundedResearch.ts. sourceUrls below are the actual URLs Brave
+      // Search returned, never a claim the model makes about itself.
+      const { formattedText, sourceUrls } = await runGroundedResearch({
+        kickoffPrompt,
+        formatPrompt,
+        searchQueries,
         model,
-        contents: kickoffPrompt,
-        config: {
-          tools: [{ googleSearch: {} }],
-        },
       });
 
-      const groundingChunks = researchTurn.candidates?.[0]?.groundingMetadata?.groundingChunks ?? [];
-      const sourceUrls = groundingChunks
-        .map((chunk) => chunk.web?.uri)
-        .filter((uri): uri is string => Boolean(uri));
-
-      // Turn 2: reformat turn 1's grounded findings into the canonical JSON
-      // shape. Passed as conversation history so it has turn 1's actual
-      // findings to draw from, rather than re-answering from scratch.
-      const formatTurn = await ai.models.generateContent({
-        model,
-        contents: [
-          { role: "user", parts: [{ text: kickoffPrompt }] },
-          { role: "model", parts: [{ text: researchTurn.text ?? "" }] },
-          { role: "user", parts: [{ text: formatPrompt }] },
-        ],
-        config: {
-          tools: [{ googleSearch: {} }],
-        },
-      });
-
-      const rawText = formatTurn.text ?? "";
+      const rawText = formattedText;
       const parsed = extractJson(rawText);
 
       // A malformed/truncated JSON response is usually a one-off flaky
@@ -761,9 +737,7 @@ async function queryModel(
       // Model-not-found is not transient — retrying hits the same 404 every
       // time. Fail fast on attempt 1 instead of wasting the whole retry
       // budget (and the backoff delay) on a broken model name.
-      if (err instanceof ApiError && err.status === 404) {
-        throw new ModelNotFoundError(model);
-      }
+      if (err instanceof ModelNotFoundError) throw err;
       // Rate-limit responses ARE transient — let the retry loop's backoff handle them.
       lastErr = err;
       const backoffMs = 2000 * attempt;
@@ -839,7 +813,7 @@ export interface ModelResearchResult {
   sourceUrls: string[];
   hasGrounding: boolean;
   variants: ResearchedVariant[];
-  /** Model-level (not per-trim) prose findings, if any — see types/index.ts's IModel.notable_facts. Present (valid: true) even when Gemini found nothing notable; `notableFacts` itself is then null. */
+  /** Model-level (not per-trim) prose findings, if any — see types/index.ts's IModel.notable_facts. Present (valid: true) even when the AI found nothing notable; `notableFacts` itself is then null. */
   notableFacts?: ResearchedNotableFacts;
   agentModelUsed: string;
   queriedAt: string;
@@ -850,11 +824,7 @@ export interface ResearchModelInput extends TechSpecPromptInput {
 }
 
 /** Runs the full research + validation + grounding-gate pipeline for one model. Throws ModelNotFoundError on a 404 (fatal for the whole run/request); any other per-model failure is captured in the returned result's `status: "error"`. */
-export async function researchModel(
-  ai: GoogleGenAI,
-  model: string,
-  input: ResearchModelInput
-): Promise<ModelResearchResult> {
+export async function researchModel(model: string, input: ResearchModelInput): Promise<ModelResearchResult> {
   const queriedAt = new Date().toISOString();
   const base = {
     modelDbId: input.modelDbId,
@@ -867,7 +837,7 @@ export async function researchModel(
   };
 
   try {
-    const { parsed, sourceUrls, rawText } = await queryModel(ai, model, input);
+    const { parsed, sourceUrls, rawText } = await queryModel(model, input);
 
     if (!parsed || !Array.isArray(parsed.variants)) {
       return {

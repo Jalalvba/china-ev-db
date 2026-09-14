@@ -3,13 +3,13 @@
 // (lib/applySpecUpdates.ts) — one implementation, so the match the user sees
 // in review is guaranteed to be the match the write path acts on.
 //
-// Why this exists: Gemini does not reliably reproduce an existing trim name
+// Why this exists: the AI does not reliably reproduce an existing trim name
 // character-for-character across separate research passes, even when told
 // the exact existing name (e.g. stored "1.6T" came back as
 // "1.6T (290T / 1.6TGDI)" on a re-research pass). Matching Powertrain writes
 // on exact `trim_name` string equality alone would silently create a
 // duplicate trim doc instead of updating the existing one. Positional/
-// ordinal matching was considered and rejected: it breaks the moment Gemini
+// ordinal matching was considered and rejected: it breaks the moment the AI
 // returns trims in a different order or count, which is the common case for
 // a partial re-research pass, not the exception.
 

@@ -168,7 +168,7 @@ import type { ICanonicalPowertrain } from "./canonicalPowertrain";
 
 /**
  * The canonical AI-facing Powertrain shape, plus operational fields that are
- * never part of the Gemini prompt/response (see CANONICAL_POWERTRAIN_FIELD_TEMPLATE's
+ * never part of the AI prompt/response (see CANONICAL_POWERTRAIN_FIELD_TEMPLATE's
  * drift guard in canonicalPowertrain.ts) — they're set directly by our own
  * write path, not researched.
  */

@@ -136,7 +136,7 @@ export async function applySpecUpdates(opts: {
         continue;
       }
 
-      // Gemini does not reliably reproduce an existing trim name
+      // the AI does not reliably reproduce an existing trim name
       // character-for-character across research passes (see
       // lib/trimMatching.ts) — match against what's already stored before
       // deciding whether this is an update or a genuinely new trim, so a
@@ -145,7 +145,7 @@ export async function applySpecUpdates(opts: {
       const existingNames = await getExistingTrimNames(modelIdStr);
       const { matchedTrimName } = matchTrimName(researchedTrimName, existingNames);
       // Keep the ORIGINAL stored trim name stable across research passes
-      // rather than overwriting it with whatever wording Gemini used this
+      // rather than overwriting it with whatever wording the AI used this
       // time — trim_name is this doc's identity, not a researched field.
       const trim_name = matchedTrimName ?? researchedTrimName;
 

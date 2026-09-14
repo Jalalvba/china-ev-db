@@ -1,36 +1,47 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# China EV DB
 
-## Getting Started
+A database of Chinese-market EVs/ICE/hybrids, cross-referenced against Morocco-market
+pricing and availability. Browse and compare vehicles by brand, spec, and price;
+research is AI-assisted (real web search + an LLM, see below).
 
-First, run the development server:
+**Stack:** Next.js (App Router) + MongoDB/Mongoose, deployed on Vercel.
+
+## Setup
+
+```bash
+npm install
+cp .env.example .env.local
+```
+
+Fill in `.env.local`:
+- `MONGODB_URI` — a MongoDB connection string.
+- `AI_GATEWAY_API_KEY` — for AI-assisted research (spec/brand/pricing lookups). Create
+  one at [Vercel AI Gateway](https://vercel.com/d?to=%2F%5Bteam%5D%2F%7E%2Fai-gateway%2Fapi-keys),
+  or leave blank and run `vercel link && vercel env pull` for local OIDC auth instead.
+- `SEARCH_API_KEY` — a free [Brave Search API](https://api.search.brave.com/app/keys)
+  key, used to fetch real search results before any AI call.
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Project layout
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- `app/` — Next.js pages, API routes, and client components.
+- `models/` — Mongoose schemas (`Brand`, `Model`, `Powertrain`, `MoroccoListing`).
+- `lib/` — shared logic: the AI research pipeline (`aiProvider.ts`, `webSearch.ts`,
+  `groundedResearch.ts`, `techSpecResearch.ts`, `brandResearch.ts`,
+  `modelDiscovery.ts`), data scrapers, and display helpers.
+- `scripts/` — CLI tools for batch research/import/price-sync (run via `npm run
+  <script-name>` — see `package.json`).
+- `types/` — shared TypeScript types, including the canonical Powertrain schema that
+  the database, prompts, and validation all derive from.
 
-## Learn More
+For project conventions, the data model, and other durable notes, see `CLAUDE.md`.
 
-To learn more about Next.js, take a look at the following resources:
+## Deployment
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Deployed on [Vercel](https://vercel.com). Pushing to `main` triggers a production
+deploy automatically.

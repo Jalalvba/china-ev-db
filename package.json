@@ -9,9 +9,6 @@
     "lint": "eslint",
     "seed": "tsx scripts/seed.ts",
     "import": "tsx scripts/import-deepseek.ts",
-    "migrate-schema": "tsx scripts/migrate-schema.ts",
-    "migrate-canonical-powertrain": "tsx scripts/migrate-canonical-powertrain.ts",
-    "migrate-canonical-powertrain-v2": "tsx scripts/migrate-canonical-powertrain-v2.ts",
     "export-manual-research": "tsx scripts/export-model-for-manual-research.ts",
     "import-morocco": "tsx scripts/import-morocco.ts",
     "morocco-agent": "tsx scripts/morocco-agent.ts",
@@ -20,21 +17,15 @@
     "import-tech-spec-batch": "tsx scripts/import-tech-spec-batch.ts",
     "update-morocco-dealers": "tsx scripts/update-morocco-dealers.ts",
     "sync-prices": "tsx scripts/sync-morocco-prices.ts",
-    "backfill-price-usd": "tsx scripts/backfill-price-usd.ts",
-    "backfill-morocco-china-ratio": "tsx scripts/backfill-morocco-china-ratio.ts",
-    "flag-price-range-outliers": "tsx scripts/flag-price-range-outliers.ts",
     "fetch-all-prices": "tsx scripts/fetch-all-prices.ts",
     "analyze-price-fetch": "tsx scripts/analyze-price-fetch.ts",
-    "import-price-fetch": "tsx scripts/import-price-fetch.ts",
-    "migrate-parent-groups": "tsx scripts/migrate-parent-groups.ts",
-    "fix-deepseek-audit": "tsx scripts/fix-deepseek-audit-corrections.ts",
-    "backfill-hybrid-architecture": "tsx scripts/backfill-hybrid-architecture.ts"
+    "import-price-fetch": "tsx scripts/import-price-fetch.ts"
   },
   "dependencies": {
-    "@google/genai": "^2.22.0",
     "dotenv": "^17.4.2",
     "mongoose": "^9.10.0",
     "next": "16.3.4",
+    "openai": "^7.15.0",
     "react": "19.2.8",
     "react-dom": "19.2.8",
     "tsx": "^4.23.13"

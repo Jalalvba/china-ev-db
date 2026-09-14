@@ -1,7 +1,7 @@
 // Mandatory-field backfill: finds every Model whose Powertrain record(s) are
 // missing one of a small, explicitly-named set of "mandatory" canonical
 // fields (engine.displacement_l, engine.torque_nm, motor.torque_nm — see
-// MANDATORY note below), researches it with the existing Gemini +
+// MANDATORY note below), researches it via the direct-provider AI stack (DeepSeek by default) +
 // grounding + validation + confidence-gate pipeline (lib/techSpecResearch.ts),
 // and writes the result straight to MongoDB via the existing
 // lib/applySpecUpdates.ts (with its write-verification check) — one model at
@@ -44,14 +44,13 @@
 import dotenv from "dotenv";
 dotenv.config({ path: [".env.local", ".env"], quiet: true });
 import mongoose from "mongoose";
-import { GoogleGenAI } from "@google/genai";
 // Side-effect import only: registers the "Brand" model so ModelSchema.find().populate("brand_id")
 // below can resolve it — see the identical comment in scripts/tech-spec-agent.ts.
 import "../models/Brand";
 import ModelSchema from "../models/Model";
 import Powertrain from "../models/Powertrain";
 import type { IBrand } from "../types";
-import { DEFAULT_MODEL, DEFAULT_DELAY_MS, ModelNotFoundError, sleep, researchModel, type PowertrainLean } from "../lib/techSpecResearch";
+import { getDefaultModel, DEFAULT_DELAY_MS, ModelNotFoundError, sleep, researchModel, type PowertrainLean } from "../lib/techSpecResearch";
 import { applySpecUpdates } from "../lib/applySpecUpdates";
 import { lookupMoteurMa, renderMoteurMaContext } from "../lib/moteurMaScraper";
 
@@ -60,9 +59,15 @@ if (!MONGODB_URI) {
   throw new Error("Missing MONGODB_URI. Copy .env.example to .env and set it.");
 }
 
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-if (!GEMINI_API_KEY) {
-  throw new Error("Missing GEMINI_API_KEY. Get one at https://aistudio.google.com/apikey and set it in .env.");
+// A real function call (not a module-level const — see the comment on
+// getActiveProvider() in lib/aiProvider.ts for why that matters: import
+// hoisting vs. this script's own dotenv.config() call above) that surfaces a
+// missing <PROVIDER>_API_KEY / bad AI_PROVIDER value immediately, before any
+// Mongo connection or research work starts.
+import { getActiveProvider } from "../lib/aiProvider";
+console.log(`AI provider: ${getActiveProvider()}`);
+if (!process.env.SEARCH_API_KEY) {
+  throw new Error("Missing SEARCH_API_KEY. Get a free Brave Search API key at https://api.search.brave.com/app/keys and set it in .env.");
 }
 
 interface CliOptions {
@@ -72,7 +77,7 @@ interface CliOptions {
 
 function parseArgs(): CliOptions {
   const args = process.argv.slice(2);
-  const options: CliOptions = { model: DEFAULT_MODEL };
+  const options: CliOptions = { model: getDefaultModel() };
   for (let i = 0; i < args.length; i++) {
     if (args[i] === "--limit") {
       options.limit = Number(args[++i]);
@@ -109,7 +114,7 @@ function missingMandatoryField(pt: PowertrainLean): boolean {
 
 async function run() {
   const { limit, model } = parseArgs();
-  const delayMs = Number(process.env.GEMINI_AGENT_DELAY_MS ?? DEFAULT_DELAY_MS);
+  const delayMs = Number(process.env.AI_AGENT_DELAY_MS ?? DEFAULT_DELAY_MS);
 
   await mongoose.connect(MONGODB_URI as string);
   console.log(`Connected to MongoDB. Using model: ${model}, delay: ${delayMs}ms between models.`);
@@ -138,8 +143,6 @@ async function run() {
     }.\n`
   );
 
-  const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY as string });
-
   let modelsProcessed = 0;
   let modelsWriteSucceeded = 0;
   let modelsWriteFailed = 0;
@@ -164,7 +167,7 @@ async function run() {
       const moteurLookup = await lookupMoteurMa(brandName, modelName);
       const moteurMaContext = renderMoteurMaContext(moteurLookup);
 
-      const result = await researchModel(ai, model, {
+      const result = await researchModel(model, {
         modelDbId: String(m._id),
         brandName,
         brandNameCn: brand?.name_cn,

@@ -1,6 +1,6 @@
 // Research agent: for every Model in our DB with zero Powertrain records, or
 // with existing Powertrain records missing engine/motor/battery/transmission/
-// performance data (or still marked "unconfirmed"), asks Gemini (with Google
+// performance data (or still marked "unconfirmed"), asks the configured AI provider (with real search
 // Search grounding enabled) to fill in the canonical spec, and writes the
 // results to a batch JSON file for human review.
 //
@@ -18,7 +18,7 @@
 // Usage:
 //   npm run tech-spec-agent                  (full run over every incomplete model)
 //   npm run tech-spec-agent -- --limit 5     (only the first 5, for a quick test)
-//   npm run tech-spec-agent -- --model gemini-pro-latest  (override the default flash model)
+//   npm run tech-spec-agent -- --model deepseek-reasoner  (override the active provider's default model)
 //   npm run tech-spec-agent -- --brand-ids <id1>,<id2>    (only these brands)
 //   npm run tech-spec-agent -- --zero-only   (only models with zero Powertrain docs — skip
 //                                              re-researching models that already have some,
@@ -29,7 +29,6 @@ dotenv.config({ path: [".env.local", ".env"], quiet: true });
 import fs from "fs";
 import path from "path";
 import mongoose from "mongoose";
-import { GoogleGenAI } from "@google/genai";
 // Side-effect import only: registers the "Brand" model so ModelSchema.find().populate("brand_id")
 // below can resolve it. A default import here would be elided by esbuild since the binding
 // is otherwise unused in this file — see debug notes in the PR/commit that added this.
@@ -38,7 +37,7 @@ import ModelSchema from "../models/Model";
 import Powertrain from "../models/Powertrain";
 import type { IBrand } from "../types";
 import {
-  DEFAULT_MODEL,
+  getDefaultModel,
   DEFAULT_DELAY_MS,
   ModelNotFoundError,
   sleep,
@@ -53,11 +52,15 @@ if (!MONGODB_URI) {
   throw new Error("Missing MONGODB_URI. Copy .env.example to .env and set it.");
 }
 
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-if (!GEMINI_API_KEY) {
-  throw new Error(
-    "Missing GEMINI_API_KEY. Get one at https://aistudio.google.com/apikey and set it in .env."
-  );
+// A real function call (not a module-level const — see the comment on
+// getActiveProvider() in lib/aiProvider.ts for why that matters: import
+// hoisting vs. this script's own dotenv.config() call above) that surfaces a
+// missing <PROVIDER>_API_KEY / bad AI_PROVIDER value immediately, before any
+// Mongo connection or research work starts.
+import { getActiveProvider } from "../lib/aiProvider";
+console.log(`AI provider: ${getActiveProvider()}`);
+if (!process.env.SEARCH_API_KEY) {
+  throw new Error("Missing SEARCH_API_KEY. Get a free Brave Search API key at https://api.search.brave.com/app/keys and set it in .env.");
 }
 
 interface CliOptions {
@@ -71,7 +74,7 @@ interface CliOptions {
 
 function parseArgs(): CliOptions {
   const args = process.argv.slice(2);
-  const options: CliOptions = { model: DEFAULT_MODEL };
+  const options: CliOptions = { model: getDefaultModel() };
   for (let i = 0; i < args.length; i++) {
     if (args[i] === "--limit") {
       options.limit = Number(args[++i]);
@@ -106,7 +109,7 @@ interface RejectedBatchEntry extends TechSpecBatchEntry {
 
 async function run() {
   const { limit, model, brandIds, zeroOnly } = parseArgs();
-  const delayMs = Number(process.env.GEMINI_AGENT_DELAY_MS ?? DEFAULT_DELAY_MS);
+  const delayMs = Number(process.env.AI_AGENT_DELAY_MS ?? DEFAULT_DELAY_MS);
 
   await mongoose.connect(MONGODB_URI as string);
   console.log(`Connected to MongoDB. Using model: ${model}, delay: ${delayMs}ms between requests.`);
@@ -145,10 +148,9 @@ async function run() {
     }.\n`
   );
 
-  const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY as string });
-
   const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
   const outPath = path.resolve(`raw-data/tech-spec-batch-${timestamp}.json`);
+  fs.mkdirSync(path.dirname(outPath), { recursive: true });
   const rejectedPath = path.resolve(`raw-data/tech-spec-batch-${timestamp}.rejected.json`);
   const results: TechSpecBatchEntry[] = [];
   const rejected: RejectedBatchEntry[] = [];
@@ -180,11 +182,11 @@ async function run() {
     try {
       const modelName = m.name_en ?? m.name;
       // Real code-level pre-fetch — an actual HTTP fetch + JSON-LD parse of
-      // moteur.ma's own pages, not a prompt asking Gemini to go check itself.
+      // moteur.ma's own pages, not a prompt asking the AI to go check itself.
       const moteurLookup = await lookupMoteurMa(brandName, modelName);
       const moteurMaContext = renderMoteurMaContext(moteurLookup);
 
-      const result = await researchModel(ai, model, {
+      const result = await researchModel(model, {
         modelDbId: String(m._id),
         brandName,
         brandNameCn: brand?.name_cn,
