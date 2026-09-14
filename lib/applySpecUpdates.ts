@@ -21,6 +21,7 @@ import { Types } from "mongoose";
 import ModelSchema from "@/models/Model";
 import Powertrain from "@/models/Powertrain";
 import { matchTrimName } from "@/lib/trimMatching";
+import { assertSchemaKnowsFields } from "@/lib/schemaGuard";
 
 export interface ApplyVariantUpdate {
   modelDbId: string;
@@ -154,6 +155,7 @@ export async function applySpecUpdates(opts: {
       // landed but whose timestamp didn't would be a half-applied write.
       const expected = { ...rest, last_researched_at: new Date() };
 
+      assertSchemaKnowsFields(Powertrain, Object.keys(expected), "Powertrain");
       await Powertrain.findOneAndUpdate(
         { model_id: modelDoc._id, trim_name },
         { $set: expected, $setOnInsert: { model_id: modelDoc._id, trim_name } },
@@ -202,6 +204,7 @@ export async function applySpecUpdates(opts: {
         notable_facts_last_researched_at: new Date(),
       };
 
+      assertSchemaKnowsFields(ModelSchema, Object.keys(expected), "Model");
       await ModelSchema.findByIdAndUpdate(modelDoc._id, { $set: expected });
 
       // Re-fetch and verify, same as above — this is the exact write path

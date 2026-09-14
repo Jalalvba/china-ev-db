@@ -4,6 +4,7 @@ import ModelSchema from "@/models/Model";
 import Powertrain from "@/models/Powertrain";
 import { parseManualImport } from "@/lib/manualResearchImport";
 import { findMismatchedKeys } from "@/lib/applySpecUpdates";
+import { assertSchemaKnowsFields } from "@/lib/schemaGuard";
 import { appendResearchLog } from "@/lib/researchLog";
 import { getCnyPerUsdRate } from "@/lib/deepseekNormalize";
 import type { PowertrainLean } from "@/lib/techSpecResearch";
@@ -79,6 +80,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       // converting at the CNY rate would be wrong.
     }
 
+    assertSchemaKnowsFields(ModelSchema, Object.keys(expected), "Model");
     await ModelSchema.findByIdAndUpdate(modelId, { $set: expected });
     const persisted = (await ModelSchema.findById(modelId).lean()) as Record<string, unknown> | null;
     const badFields = findMismatchedKeys(expected, persisted);
@@ -96,6 +98,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         powertrainOutcomes.push({ trimName: pt.trimName, status: "unchanged", applied: true });
         continue;
       }
+      assertSchemaKnowsFields(Powertrain, Object.keys(pt.variant), "Powertrain");
       await Powertrain.findByIdAndUpdate(pt.existingId, { $set: pt.variant });
       const persisted = (await Powertrain.findById(pt.existingId).lean()) as Record<string, unknown> | null;
       const badFields = findMismatchedKeys(pt.variant, persisted);
@@ -107,6 +110,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         powertrainOutcomes.push({ trimName: pt.trimName, status: "update", applied: true });
       }
     } else {
+      assertSchemaKnowsFields(Powertrain, Object.keys(pt.variant), "Powertrain");
       const created = await Powertrain.create({ ...pt.variant, model_id: modelId });
       const persisted = (await Powertrain.findById(created._id).lean()) as Record<string, unknown> | null;
       const badFields = findMismatchedKeys(pt.variant, persisted);

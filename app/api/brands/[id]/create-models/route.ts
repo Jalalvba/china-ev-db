@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { connectToDatabase } from "@/lib/db";
 import ModelSchema from "@/models/Model";
 import { findMismatchedKeys } from "@/lib/applySpecUpdates";
+import { assertSchemaKnowsFields } from "@/lib/schemaGuard";
 
 // The only write path for discovered models: only ever called after the user
 // has reviewed results from ../discover-models/route.ts, confirmed/edited
@@ -80,6 +81,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         };
       }
 
+      assertSchemaKnowsFields(ModelSchema, Object.keys(expected), "Model");
       const created_doc = await ModelSchema.create(expected);
 
       // Re-fetch and verify — same posture as lib/applySpecUpdates.ts: a
