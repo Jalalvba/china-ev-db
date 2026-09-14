@@ -2,11 +2,24 @@
 
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import type { IBrand, IModel, IPowertrain } from "@/types";
+import type { IBrand, IModel, IPowertrain, Segment } from "@/types";
 import { kwToHp } from "@/lib/units";
 import { groupBrands } from "@/lib/brandGrouping";
 import { formatChinaPriceUsd } from "@/lib/priceDisplay";
 import { groupBySpec, compactSpecLabel } from "@/lib/specGrouping";
+
+const SEGMENTS: Segment[] = [
+  "A-segment/City",
+  "B-segment/Compact",
+  "C-segment/Mid-size",
+  "D-segment/Large",
+  "SUV-compact",
+  "SUV-mid",
+  "SUV-full",
+  "MPV",
+  "Pickup",
+  "Sports",
+];
 
 type PopulatedModel = Omit<IModel, "brand_id"> & { brand_id: IBrand };
 type PopulatedPowertrain = Omit<IPowertrain, "model_id"> & {
@@ -511,6 +524,7 @@ function CompareInner() {
   const trimIdBParam = searchParams.get("tb") ?? "";
   const priceMinParam = searchParams.get("pmin") ?? "";
   const priceMaxParam = searchParams.get("pmax") ?? "";
+  const segmentParam = searchParams.get("segment") ?? "";
 
   // Only the two dropdown pickers need data up front — powertrains (the
   // heaviest of the three, and double-populated: model_id -> brand_id) are
@@ -599,6 +613,13 @@ function CompareInner() {
     router.replace(`/compare?${params.toString()}`);
   };
 
+  const setSegmentFilter = (value: string) => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (value) params.set("segment", value);
+    else params.delete("segment");
+    router.replace(`/compare?${params.toString()}`);
+  };
+
   const priceMin = priceMinParam ? Number(priceMinParam) : undefined;
   const priceMax = priceMaxParam ? Number(priceMaxParam) : undefined;
 
@@ -609,15 +630,17 @@ function CompareInner() {
     [allModels],
   );
 
+  /** Same "narrows both pickers at once" pattern as the price range — composes with it (both filters AND together), not a separate axis per side. */
   const priceRangeModels = useMemo(
     () =>
       priceConfirmedModels.filter((m) => {
         const price = m.morocco_price_dh!;
         if (priceMin !== undefined && price < priceMin) return false;
         if (priceMax !== undefined && price > priceMax) return false;
+        if (segmentParam && m.segment !== segmentParam) return false;
         return true;
       }),
-    [priceConfirmedModels, priceMin, priceMax],
+    [priceConfirmedModels, priceMin, priceMax, segmentParam],
   );
 
   // A model selected before the range narrowed (or shared via a ?a=/?b=
@@ -666,37 +689,58 @@ function CompareInner() {
         meaningful difference are highlighted.
       </p>
 
-      <div className="mb-3">
-        <label className="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1">
-          Morocco price range (DH) — applies to both cars
-        </label>
-        <div className="flex items-center gap-2 max-w-sm">
-          <input
-            type="number"
-            inputMode="numeric"
-            min={0}
-            placeholder="Min"
-            value={priceMinParam}
-            onChange={(e) => setPriceFilter("min", e.target.value)}
-            className="border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 rounded px-3 py-2 text-sm w-full"
-          />
-          <span className="text-zinc-400 dark:text-zinc-500">–</span>
-          <input
-            type="number"
-            inputMode="numeric"
-            min={0}
-            placeholder="Max"
-            value={priceMaxParam}
-            onChange={(e) => setPriceFilter("max", e.target.value)}
-            className="border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 rounded px-3 py-2 text-sm w-full"
-          />
+      <div className="flex flex-col sm:flex-row gap-4 mb-3">
+        <div>
+          <label className="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1">
+            Morocco price range (DH) — applies to both cars
+          </label>
+          <div className="flex items-center gap-2 max-w-sm">
+            <input
+              type="number"
+              inputMode="numeric"
+              min={0}
+              placeholder="Min"
+              value={priceMinParam}
+              onChange={(e) => setPriceFilter("min", e.target.value)}
+              className="border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 rounded px-3 py-2 text-sm w-full"
+            />
+            <span className="text-zinc-400 dark:text-zinc-500">–</span>
+            <input
+              type="number"
+              inputMode="numeric"
+              min={0}
+              placeholder="Max"
+              value={priceMaxParam}
+              onChange={(e) => setPriceFilter("max", e.target.value)}
+              className="border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 rounded px-3 py-2 text-sm w-full"
+            />
+          </div>
         </div>
-        {(priceMinParam || priceMaxParam) && (
-          <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
-            {priceRangeModels.length} of {priceConfirmedModels.length} priced model(s) in range
-          </p>
-        )}
+
+        <div>
+          <label className="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1">
+            Segment — applies to both cars
+          </label>
+          <select
+            value={segmentParam}
+            onChange={(e) => setSegmentFilter(e.target.value)}
+            className="border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 rounded px-3 py-2 text-sm w-full max-w-xs"
+          >
+            <option value="">All segments</option>
+            {SEGMENTS.map((s) => (
+              <option key={s} value={s}>
+                {s}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
+
+      {(priceMinParam || priceMaxParam || segmentParam) && (
+        <p className="mb-3 text-xs text-zinc-500 dark:text-zinc-400">
+          {priceRangeModels.length} of {priceConfirmedModels.length} priced model(s) match current filters
+        </p>
+      )}
 
       <div className="flex flex-col sm:flex-row gap-3 mb-3">
         <ManufacturerBrandModelPicker
