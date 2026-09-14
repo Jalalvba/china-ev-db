@@ -275,6 +275,12 @@ async function runVariantImport(entries: RawVariantEntry[], filePath: string) {
       name_en: englishModelName,
       generation: entry.generation,
       segment,
+      // guessSegment() is a keyword-regex heuristic over the delta report's
+      // free-text segment/body strings, never a real search result of its
+      // own — this import path has no grounded citation for the segment
+      // classification specifically, so it's always "inferred", never
+      // "confirmed", regardless of how confident the keyword match looks.
+      segment_confidence: "inferred",
       body_type: entry.body ?? "Unknown",
       production_status: entry.production_status ?? "in production",
       unverified: entry.variants.some((v) => v.confidence === "unconfirmed"),

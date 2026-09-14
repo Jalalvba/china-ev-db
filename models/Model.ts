@@ -45,6 +45,11 @@ const ModelSchema = new Schema<ModelDoc>(
     generation: { type: String },
     year: { type: Number },
     segment: { type: String, enum: SEGMENTS, required: true },
+    // "confirmed" only when a real search result backed the segment;
+    // "inferred" when the AI fell back to its own best-effort classification
+    // (see lib/modelDiscovery.ts) — segment itself is never left null, so
+    // this is the field that actually distinguishes sourced fact from guess.
+    segment_confidence: { type: String, enum: ["confirmed", "inferred"] },
     body_type: { type: String, required: true },
     price_range: { type: PRICE_RANGE_SCHEMA },
     production_status: {

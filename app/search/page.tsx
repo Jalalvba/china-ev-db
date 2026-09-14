@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import type { IBrand, IModel, ProductionStatus, Segment } from "@/types";
+import { SegmentLabel } from "@/lib/segmentDisplay";
 
 type PopulatedModel = Omit<IModel, "brand_id"> & { brand_id: IBrand };
 
@@ -156,7 +157,9 @@ export default function SearchPage() {
                       </Link>
                     </td>
                     <td className="p-3">{m.brand_id?.name}</td>
-                    <td className="p-3">{m.segment}</td>
+                    <td className="p-3">
+                      <SegmentLabel model={m} />
+                    </td>
                     <td className="p-3">{m.body_type}</td>
                     <td className="p-3">{m.production_status}</td>
                     <td className="p-3">

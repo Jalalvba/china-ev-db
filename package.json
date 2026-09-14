@@ -14,6 +14,7 @@
     "morocco-agent": "tsx scripts/morocco-agent.ts",
     "tech-spec-agent": "tsx scripts/tech-spec-agent.ts",
     "fill-missing-mandatory-fields": "tsx scripts/fill-missing-mandatory-fields.ts",
+    "backfill-segment": "tsx scripts/backfill-segment.ts",
     "import-tech-spec-batch": "tsx scripts/import-tech-spec-batch.ts",
     "update-morocco-dealers": "tsx scripts/update-morocco-dealers.ts",
     "sync-prices": "tsx scripts/sync-morocco-prices.ts",

@@ -7,6 +7,7 @@ import { hpToKw, kwToHp } from "@/lib/units";
 import { bestMatchScores } from "@/lib/bestMatchScore";
 import { formatChinaPriceUsd } from "@/lib/priceDisplay";
 import { compactSpecLabel } from "@/lib/specGrouping";
+import { SegmentLabel } from "@/lib/segmentDisplay";
 
 type PopulatedModel = Omit<IModel, "brand_id"> & { brand_id: IBrand };
 type PopulatedPowertrain = Omit<IPowertrain, "model_id"> & { model_id: PopulatedModel };
@@ -601,7 +602,7 @@ export default function SpecSearchPage() {
                   </h3>
                   {pt.model_id?.segment && (
                     <p className="text-xs font-medium text-zinc-400 dark:text-zinc-500 mb-0.5">
-                      {pt.model_id.segment}
+                      <SegmentLabel model={pt.model_id} />
                     </p>
                   )}
                   <p

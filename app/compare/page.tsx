@@ -2,7 +2,8 @@
 
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import type { IBrand, IModel, IPowertrain, Segment } from "@/types";
+import type { IBrand, IModel, IPowertrain, Segment, SegmentConfidence } from "@/types";
+import { segmentText } from "@/lib/segmentDisplay";
 import { kwToHp } from "@/lib/units";
 import { groupBrands } from "@/lib/brandGrouping";
 import { formatChinaPriceUsd } from "@/lib/priceDisplay";
@@ -65,7 +66,7 @@ function simpleDiff(a: string, b: string) {
 
 const ROWS: Row[] = [
   { label: "Brand / Model", get: (m) => (m ? modelLabel(m) : "N/A") },
-  { label: "Segment", get: (m) => m?.segment ?? "N/A", diff: simpleDiff },
+  { label: "Segment", get: (m) => (m ? segmentText(m) : "N/A"), diff: simpleDiff },
   { label: "Body Type", get: (m) => m?.body_type ?? "N/A", diff: simpleDiff },
   {
     label: "Production Status",
@@ -467,12 +468,14 @@ function ManufacturerBrandModelPicker({
 function TrimPicker({
   label,
   segment,
+  segmentConfidence,
   powertrains,
   value,
   onChange,
 }: {
   label: string;
   segment: Segment | undefined;
+  segmentConfidence: SegmentConfidence | undefined;
   powertrains: PopulatedPowertrain[];
   value: string;
   onChange: (trimId: string) => void;
@@ -497,7 +500,8 @@ function TrimPicker({
           // Segment comes from the parent Model (not the Powertrain), so it's
           // passed in and prepended here rather than inside compactSpecLabel.
           const spec = compactSpecLabel(g.trims[0]);
-          const optionLabel = segment ? `${segment} · ${spec}` : spec;
+          const segmentLabel = segment ? (segmentConfidence === "inferred" ? `~${segment}` : segment) : undefined;
+          const optionLabel = segmentLabel ? `${segmentLabel} · ${spec}` : spec;
           return (
             <option key={repId} value={repId} title={optionLabel}>
               {optionLabel}
@@ -769,6 +773,7 @@ function CompareInner() {
             <TrimPicker
               label="Trim A"
               segment={modelA.segment}
+              segmentConfidence={modelA.segment_confidence}
               powertrains={trimsA}
               value={trimIdA ?? ""}
               onChange={(id) => setTrimSelection("a", id)}
@@ -780,6 +785,7 @@ function CompareInner() {
             <TrimPicker
               label="Trim B"
               segment={modelB.segment}
+              segmentConfidence={modelB.segment_confidence}
               powertrains={trimsB}
               value={trimIdB ?? ""}
               onChange={(id) => setTrimSelection("b", id)}

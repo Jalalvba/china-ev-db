@@ -68,6 +68,18 @@ export type BrandStatus = "active" | "discontinued" | "bankrupt" | "merged";
  */
 export type Confidence = "confirmed" | "unconfirmed";
 
+/**
+ * Confidence specifically for Model.segment — deliberately its own type
+ * rather than reusing Confidence ("confirmed" | "unconfirmed"), because
+ * segment is never allowed to be left null/unset (see IModel.segment):
+ * "inferred" means the AI's own best-effort classification with no source
+ * found, not "unconfirmed" in the sense of "attempted and failed" that
+ * Confidence's other fields use. A model whose segment came from a real
+ * search result is "confirmed"; everything else the research pipeline
+ * produces for this field is "inferred".
+ */
+export type SegmentConfidence = "confirmed" | "inferred";
+
 /** Nature of the parent_group relationship (ownership/control) — distinct from tech_partner, which is about technology/co-development rather than equity. */
 export type BrandRelationshipType =
   | "equity_subsidiary"
@@ -132,6 +144,8 @@ export interface IModel {
   generation?: string;
   year?: number;
   segment: Segment;
+  /** "confirmed" when backed by an actual search result, "inferred" when it's the AI's own best-effort classification with no source found — segment itself is never left null (see lib/modelDiscovery.ts), so this is what actually tells a "real fact" segment apart from a "best guess" one. Undefined only for legacy records written before this field existed. */
+  segment_confidence?: SegmentConfidence;
   body_type: string;
   price_range?: IPriceRange;
   production_status: ProductionStatus;

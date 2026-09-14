@@ -5,9 +5,11 @@ import { findMismatchedKeys } from "@/lib/applySpecUpdates";
 
 // The only write path for discovered models: only ever called after the user
 // has reviewed results from ../discover-models/route.ts, confirmed/edited
-// segment & body_type (required by the Model schema but frequently returned
-// null by research, since the AI isn't always confident enough to classify
-// them), and clicked "Create models". Same verification posture as
+// segment (mandatory — the discovery prompt always fills it, falling back to
+// its own best-effort classification tagged segment_confidence: "inferred"
+// when no source was found — see lib/modelDiscovery.ts) & body_type
+// (required by the Model schema but still frequently returned null by
+// research), and clicked "Create models". Same verification posture as
 // lib/applySpecUpdates.ts: every create is re-fetched and checked before
 // being counted as applied, not trusted just because the call didn't throw.
 
@@ -17,6 +19,7 @@ interface CreateModelInput {
   name_en?: string;
   generation?: string;
   segment: string;
+  segment_confidence?: string;
   body_type: string;
   production_status?: string;
   price_range?: { min?: number; max?: number; currency_local?: string };
@@ -64,6 +67,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         name_en: m.name_en,
         generation: m.generation,
         segment: m.segment,
+        segment_confidence: m.segment_confidence,
         body_type: m.body_type,
         production_status: m.production_status ?? "in production",
         unverified: m.confidence !== "confirmed",

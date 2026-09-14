@@ -22,6 +22,7 @@ import { runGroundedResearch } from "@/lib/groundedResearch";
 const SEGMENT_SET = new Set<string>(SEGMENTS);
 const PRODUCTION_STATUS_SET = new Set<string>(PRODUCTION_STATUSES);
 const CONFIDENCE_SET = new Set(["confirmed", "unconfirmed"]);
+const SEGMENT_CONFIDENCE_SET = new Set(["confirmed", "inferred"]);
 
 export interface ModelDiscoveryInput {
   brandName: string;
@@ -41,7 +42,8 @@ const DISCOVERY_FIELD_TEMPLATE = {
   name_en: "string | null",
   regional_name_note: "string | null (if this model is sold under DIFFERENT names in different export regions, note the other regional names here as free text, e.g. \"Sold as Coolray in most export markets; also marketed as Vision X6 Pro in some Middle East/Africa markets.\" — do not create a separate model entry per regional name)",
   generation: "string | null (e.g. \"2026\" or a generation label, if known)",
-  segment: SEGMENTS.join(" | ") + " | null (null if you can't confidently classify it)",
+  segment: SEGMENTS.join(" | ") + " (NEVER null — see segment_confidence below and the CRITICAL RULES for how to fill this in even without a source)",
+  segment_confidence: "\"confirmed\" | \"inferred\" (\"confirmed\" only if a real search result backs this segment; \"inferred\" if you had to classify it from your own knowledge of the vehicle's body type/size/positioning with no direct source)",
   body_type: "string | null (e.g. \"5-door SUV\", \"4-door sedan\")",
   production_status: PRODUCTION_STATUSES.join(" | ") + " | null",
   price_range: {
@@ -88,8 +90,8 @@ ${templateJson}
 CRITICAL RULES:
 - OUTPUT LANGUAGE: every string value must be English — "regional_name_note", "notes", everything — with exactly two exceptions: "name_cn" is explicitly the ORIGINAL-LANGUAGE (Chinese) name and must stay in its original script, and "name" must stay in whatever script the vehicle's actual international/export nameplate uses (per the naming rules above). If a source fact is in Chinese, translate it into English before writing it into any other field. Never leave Chinese (or any other non-English) characters anywhere else.
 - Every fact must come from a search result you actually found (grounding is enabled) — do not estimate or infer from similar brands/models.
-- Use null for anything you cannot find a sourced value for. Do NOT guess.
-- "segment" must be exactly one of: ${SEGMENTS.join(", ")} — or null if you're not confident which one fits.
+- Use null for anything you cannot find a sourced value for. Do NOT guess. The ONE explicit exception is "segment" — see below.
+- SEGMENT IS MANDATORY, NEVER NULL: you MUST classify this vehicle's segment (${SEGMENTS.join(", ")}) even if you cannot find a direct source confirming it. If no source is found, use your own knowledge of the vehicle's body type, size, and market positioning to infer the most likely segment — never return null or skip this field. A best-effort classification is always better than no classification. Set "segment_confidence" to "confirmed" if a real search result backs your classification, or "inferred" if you had to reason it out yourself with no direct source.
 - "production_status" must be exactly one of: ${PRODUCTION_STATUSES.join(", ")} — or null if unclear.
 - Do NOT add, rename, or omit any field from the shape above.
 - Do not include a model already listed as "already on file" above unless you have new/corrected details about it — this is for discovering models not yet in the database, not re-describing known ones.
@@ -105,6 +107,7 @@ const TOP_LEVEL_KEYS = new Set([
   "regional_name_note",
   "generation",
   "segment",
+  "segment_confidence",
   "body_type",
   "production_status",
   "price_range",
@@ -112,7 +115,7 @@ const TOP_LEVEL_KEYS = new Set([
 ]);
 const PRICE_RANGE_KEYS = new Set(["min", "max", "currency_local"]);
 
-/** Validates one discovered-model object's shape (extra/renamed keys, bad enum values) — does NOT require segment/body_type to be present, since those commonly come back null and the review UI lets a person fill them in before creating the Model doc. */
+/** Validates one discovered-model object's shape (extra/renamed keys, bad enum values) — does NOT require body_type to be present (it commonly comes back null and the review UI lets a person fill it in before creating the Model doc), but DOES require segment: unlike every other field here, segment is mandatory per the prompt (never null) — see applyDiscoveryGroundingGate for how segment_confidence gets force-corrected when grounding is missing. */
 export function validateDiscoveredModel(raw: unknown): { valid: boolean; errors: string[] } {
   const errors: string[] = [];
   if (typeof raw !== "object" || raw === null || Array.isArray(raw)) {
@@ -125,8 +128,15 @@ export function validateDiscoveredModel(raw: unknown): { valid: boolean; errors:
   if (typeof v.name !== "string" || v.name.trim() === "") {
     errors.push("name: missing or not a non-empty string");
   }
-  if (v.segment !== undefined && v.segment !== null && (typeof v.segment !== "string" || !SEGMENT_SET.has(v.segment))) {
-    errors.push(`segment: invalid value ${JSON.stringify(v.segment)}`);
+  if (typeof v.segment !== "string" || !SEGMENT_SET.has(v.segment)) {
+    errors.push(`segment: missing or invalid value ${JSON.stringify(v.segment)} — segment is mandatory, never null`);
+  }
+  if (
+    v.segment_confidence !== undefined &&
+    v.segment_confidence !== null &&
+    (typeof v.segment_confidence !== "string" || !SEGMENT_CONFIDENCE_SET.has(v.segment_confidence))
+  ) {
+    errors.push(`segment_confidence: invalid value ${JSON.stringify(v.segment_confidence)}`);
   }
   if (
     v.production_status !== undefined &&
@@ -150,9 +160,12 @@ export function validateDiscoveredModel(raw: unknown): { valid: boolean; errors:
   return { valid: errors.length === 0, errors };
 }
 
-/** Same rule as lib/techSpecResearch.ts's applyGroundingGate: zero citations means force "unconfirmed" regardless of self-report. Mutates and returns the model. */
+/** Same rule as lib/techSpecResearch.ts's applyGroundingGate: zero citations means force "unconfirmed" regardless of self-report. Also forces segment_confidence to "inferred" with no grounding — segment can never be "confirmed" without a real search result behind it, regardless of what the model self-reported. Mutates and returns the model. */
 export function applyDiscoveryGroundingGate(model: Record<string, unknown>, hasGrounding: boolean): Record<string, unknown> {
-  if (!hasGrounding) model.confidence = "unconfirmed";
+  if (!hasGrounding) {
+    model.confidence = "unconfirmed";
+    model.segment_confidence = "inferred";
+  }
   return model;
 }
 

@@ -8,6 +8,7 @@ import type { IBrand, IModel } from "@/types";
 import TechSpecUpdater from "@/app/TechSpecUpdater";
 import MoroccoPriceFetcher from "@/app/MoroccoPriceFetcher";
 import MoroccoPriceChipLink from "@/app/MoroccoPriceChipLink";
+import { SegmentLabel } from "@/lib/segmentDisplay";
 import BrandAndModelDiscovery from "@/app/BrandAndModelDiscovery";
 import { formatRelativeTime } from "@/lib/relativeTime";
 
@@ -152,7 +153,7 @@ export default async function BrandPage({
             </div>
             <Link href={`/models/${m._id}`} className="block">
               <p className="text-sm text-zinc-500 dark:text-zinc-400">
-                {m.segment} · {m.body_type}
+                <SegmentLabel model={m} /> · {m.body_type}
               </p>
               <div className="mt-2 flex items-center gap-2 text-xs">
                 <span className="px-2 py-0.5 rounded-full bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">

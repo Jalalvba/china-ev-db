@@ -15,6 +15,7 @@ import { validateCanonicalVariant, describeTrimGaps, type PowertrainLean } from 
 import { CANONICAL_POWERTRAIN_FIELD_TEMPLATE } from "@/types/canonicalPowertrain";
 import { findMismatchedKeys } from "./applySpecUpdates";
 import { correctRangeStandard } from "./deepseekNormalize";
+import { SEGMENTS } from "@/models/Model";
 import type { IBrand } from "@/types";
 
 /** Model fields this workflow may ever read from an import and write back — deliberately excludes _id, brand_id, timestamps, Morocco fields (a different scraped-data pipeline), and any research-log bookkeeping field. Adding a field here means adding it to RESEARCHABLE_MODEL_KEYS below too — kept as two names for the same Set so a future editor sees why both exist. */
@@ -24,6 +25,7 @@ export const RESEARCHABLE_MODEL_KEYS = [
   "name_en",
   "generation",
   "segment",
+  "segment_confidence",
   "body_type",
   "notable_facts",
   "notable_facts_confidence",
@@ -31,6 +33,7 @@ export const RESEARCHABLE_MODEL_KEYS = [
 ] as const;
 
 const RESEARCHABLE_MODEL_KEY_SET = new Set<string>(RESEARCHABLE_MODEL_KEYS);
+const SEGMENT_SET = new Set<string>(SEGMENTS);
 
 export interface ExportedPowertrain {
   _id: string;
@@ -73,6 +76,7 @@ export interface ExportDocument {
     name_en?: string;
     generation?: string;
     segment: string;
+    segment_confidence?: string;
     body_type: string;
     production_status: string;
     unverified?: boolean;
@@ -147,6 +151,7 @@ export function buildExportDocument(
       name_en: modelDoc.name_en as string | undefined,
       generation: modelDoc.generation as string | undefined,
       segment: modelDoc.segment as string,
+      segment_confidence: modelDoc.segment_confidence as string | undefined,
       body_type: modelDoc.body_type as string,
       production_status: modelDoc.production_status as string,
       unverified: modelDoc.unverified as boolean | undefined,
@@ -193,8 +198,10 @@ export function buildCombinedExportText(exportDoc: ExportDocument): string {
 
 export function buildManualResearchPrompt(exportDoc: ExportDocument): string {
   const { model, powertrains } = exportDoc;
-  const modelGapLines =
-    model.price_range?.min == null || model.price_range?.max == null ? ['- model.price_range: missing — see job 4 below.'] : [];
+  const modelGapLines = [
+    ...(model.price_range?.min == null || model.price_range?.max == null ? ['- model.price_range: missing — see job 4 below.'] : []),
+    ...(model.segment_confidence !== "confirmed" ? ['- model.segment: currently unconfirmed/inferred — see job 6 below.'] : []),
+  ];
   const gapLines = [
     ...modelGapLines,
     ...powertrains.filter((p) => p.research_gaps.length > 0).map((p) => `- "${p.trim_name}": ${p.research_gaps.join("; ")}`),
@@ -204,7 +211,7 @@ export function buildManualResearchPrompt(exportDoc: ExportDocument): string {
 
 Below is the current database record (as JSON) for "${model.brand_name}" — "${model.name_en ?? model.name}"${
     model.name_cn ? ` (${model.name_cn})` : ""
-  }. This record was produced by an earlier, automated research pass (an automated research pass with real search grounding) — it is a reasonable starting point, not ground truth. You are doing a SECOND, INDEPENDENT research pass on top of it, and that pass has five distinct jobs, not one:
+  }. This record was produced by an earlier, automated research pass (an automated research pass with real search grounding) — it is a reasonable starting point, not ground truth. You are doing a SECOND, INDEPENDENT research pass on top of it, and that pass has six distinct jobs, not one:
 
 1. FILL GAPS — find sourced values for whatever is currently null or unconfirmed (see "Known gaps" below).
 2. CROSS-CHECK EXISTING VALUES — independently verify fields that are already populated and marked "confirmed", using your own search rather than trusting that the first pass got them right. Do not skip a field just because it already has a value. If your independent research disagrees with a stored value — a wrong battery chemistry, a wrong power figure, a wrong transmission type, anything — correct it and explain the discrepancy in that field's "<field>_source_note", even though it was never listed as a "known gap". This matters: on a previous model (Soueast S06 DM), the original automated pass reported the wrong battery chemistry, and it only got caught because a second independent pass happened to check a field nobody had flagged as missing. Treat every "confirmed" field as a candidate to challenge, not as settled.
@@ -212,6 +219,8 @@ Below is the current database record (as JSON) for "${model.brand_name}" — "${
 4. RESEARCH PRICE — "model.price_range" (min/max CHINA MSRP, in CNY) is one of the fields to fill/cross-check exactly like any other, and it is MANDATORY: price_range must never be left null in your response. If it's null, first try to find the real China starting-price range for this model (the manufacturer's official listed price, or the lowest/highest trim MSRP from autohome.com.cn / dongchedi.com's price pages — not a used-market or export price). ONLY if no sourced China MSRP exists anywhere (a genuinely unlaunched or export-only model), this is the one explicit exception to rule 3 below: give a reasonable approximate price instead, estimated from comparable vehicles in the same segment/body_type/powertrain class (e.g. "similar C-segment PHEV SUVs in China retail for roughly 150,000-200,000 CNY, used as an estimate since no listed price exists for this specific model") — set "unverified": true and put the comparison reasoning in "price_range_source_note" so a reader can tell at a glance this is an estimate, not a quoted price. If it's already populated, cross-check it per job 2 above. Only "min", "max", "currency_local" (should be "CNY"), and "unverified" belong in price_range — do NOT add "min_usd"/"max_usd"/"exchange_rate_used": the USD conversion is always computed separately from a live exchange rate, never from your own math, so those fields are deliberately absent from the record below and must stay absent from your response.
 
 5. BATTERY THERMAL MANAGEMENT — "thermal_management" is one of the fields to fill/cross-check exactly like any other, and for every trim where "energy_type" is NOT "ICE" (i.e. HEV/PHEV/BEV/REEV/EREV/MHEV — anything with a battery) it is MANDATORY: the "thermal_management" object must never be left out of your response for such a trim, even if it isn't listed under "Known gaps" below (older trims in this record predate this field and won't be flagged as a gap for it, but the requirement still applies to them). Cooling tiers: 0=passive air cooling (not suitable), 1=active air cooling (poor), 2=active liquid cooling (minimum acceptable for Morocco), 3=refrigerant-coupled/heat pump (recommended), 4=hybrid intelligent/PCM (best) — Morocco's climate makes this safety-relevant, not cosmetic. Actively search for the battery cooling method (Chinese terms like "液冷"/liquid cooling, "热泵"/heat pump, "风冷"/air cooling, "冷却液"/coolant) the same way as every other field. If, after a genuine targeted search, the cooling method truly cannot be found, still return the full "thermal_management" object with "thermal_evidence" set to the literal string "UNKNOWN" and "morocco_suitable" set to false — an entirely missing "thermal_management" key on a non-ICE trim will fail validation and block this entire import, so never omit it, not even by oversight while focusing on other fields.
+
+6. VEHICLE SEGMENT — "model.segment" is MANDATORY and must NEVER be left null, same posture as price_range in job 4. If "model.segment_confidence" is currently "inferred" (or the field is missing), actively try to find a real source (autohome.com.cn / dongchedi.com's own segment classification, or a comparable-vehicle listing) that confirms which of ${SEGMENTS.join(", ")} this model belongs to, and set "segment_confidence" to "confirmed" if you find one. If no source is found even after a genuine search, keep (or set) "segment" to your own best-effort classification based on the vehicle's body type, size, and market positioning — never null, never omitted — and set "segment_confidence" to "inferred". A best-effort classification is always better than no classification.
 
 Research this vehicle using Chinese-language automotive sources as your first priority (autohome.com.cn, dongchedi.com, gasgoo.com, official manufacturer press/spec pages, MIIT/工信部 filings), then Moroccan automotive press, then generic English-language sources only if nothing more specific exists.
 
@@ -225,7 +234,7 @@ This record may be INCOMPLETE at the trim/variant level, not just at the field l
 CRITICAL RULES — read carefully, this is a round-trip into a strict-schema database:
 1. Return the SAME JSON shape you were given below — same top-level keys ("model", "powertrains"), same nested field names. Do not add, rename, or omit any field.
 2. model._id and every powertrains[]._id MUST be returned byte-for-byte UNCHANGED from what you were given. These IDs are how the import step matches your response back to the exact existing database record — if you omit an _id, invent a new one, or alter it in any way, that entire record will be misread as a brand-new trim instead of an update to the existing one, which defeats the whole point of this workflow. If you are adding a genuinely NEW trim that wasn't in the input, give it no "_id" field at all (omit it, don't invent a placeholder) — that is the only case where a missing _id is correct.
-3. Every numeric or categorical fact must come from a source you can point to — do not estimate or infer from similar vehicles. Use null for anything you cannot find a sourced value for. The single exception is price_range per job 4 above, which must never be left null even when only an estimate is possible.
+3. Every numeric or categorical fact must come from a source you can point to — do not estimate or infer from similar vehicles. Use null for anything you cannot find a sourced value for. The exceptions are price_range per job 4 above (never left null even when only an estimate is possible) and segment per job 6 above (never left null even when only your own best-effort classification is possible — tag it "inferred" via segment_confidence in that case).
 2b. OUTPUT LANGUAGE: every string value must be English — "source", every "note" field, every "<field>_source_note", "notes", everything — with exactly two exceptions: (a) "name_cn" is explicitly the ORIGINAL-LANGUAGE (Chinese) name and must stay in its original script, and (b) an EXISTING "trim_name" you were given below must be returned byte-for-byte unchanged per rule 2 above even if it contains Chinese characters (e.g. a parenthetical like "(轻骑士BSG)") — do NOT translate or alter an existing trim_name, that would break the exact-match round-trip this workflow depends on. A genuinely NEW trim_name you are adding should itself be in English/Latin script where the vehicle's real nameplate allows it. If a source fact is in Chinese, translate it into English before writing it into any field other than these two exceptions.
 3b. "thermal_management" is REQUIRED on every powertrain entry whose "energy_type" is not "ICE" — per job 5 above, fill it with real values if you find them or with "thermal_evidence": "UNKNOWN" / "morocco_suitable": false if you genuinely can't. Omitting the "thermal_management" key entirely on a non-ICE trim is a validation failure that blocks the whole import, not a harmless gap — double-check every non-ICE trim in your response has this key before returning it.
 4. For every field you CHANGE from its current value — whether it was null (a gap you filled) or already populated (a value your independent research corrected) — add a sibling "<field>_source_note" string explaining the source and, if you're correcting an existing value, what was wrong with it (e.g. if you change "battery.chemistry" from an existing "NMC" to "LFP", include "battery.chemistry_source_note": "Corrected from NMC — official Soueast spec sheet and autohome.com.cn both list LFP"). Only changed fields need a source note — leave unchanged fields as-is with no note. A field you independently checked and confirmed matches the stored value needs no note either; notes exist only to flag a change, not to prove you checked something.
@@ -278,6 +287,18 @@ export function validateManualModelFields(
   if (v.notable_facts_confidence !== undefined && v.notable_facts_confidence !== null) {
     if (v.notable_facts_confidence !== "confirmed" && v.notable_facts_confidence !== "unconfirmed") {
       errors.push(`model.notable_facts_confidence: invalid value ${JSON.stringify(v.notable_facts_confidence)}`);
+    }
+  }
+
+  // segment is mandatory (never null) per job 6 of the prompt — unlike every
+  // other researchable field here, a missing/null value is rejected outright
+  // rather than silently accepted as "not researched this round".
+  if (typeof v.segment !== "string" || !SEGMENT_SET.has(v.segment)) {
+    errors.push(`model.segment: missing or invalid value ${JSON.stringify(v.segment)} — segment is mandatory, never null`);
+  }
+  if (v.segment_confidence !== undefined && v.segment_confidence !== null) {
+    if (v.segment_confidence !== "confirmed" && v.segment_confidence !== "inferred") {
+      errors.push(`model.segment_confidence: invalid value ${JSON.stringify(v.segment_confidence)}`);
     }
   }
 
