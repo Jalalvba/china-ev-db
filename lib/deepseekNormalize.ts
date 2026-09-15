@@ -2,6 +2,8 @@
 // (Chinese brand/model names, 万-denominated prices, loosely-typed fields)
 // into the app's Brand/Model/Powertrain shape.
 
+import { GEARBOX_TYPE_VALUES } from "../types/canonicalPowertrain";
+
 /**
  * Real CNY->USD exchange rate, fetched from Frankfurter (frankfurter.dev,
  * ECB reference rates, free/no-key) — never hardcoded. Previously this was a
@@ -614,6 +616,63 @@ export function parseCombinedRange(v: unknown): number | undefined {
 
 export function num(v: unknown): number | undefined {
   return v === null || v === undefined ? undefined : (v as number);
+}
+
+// The real, current GEARBOX_TYPE_VALUES, not another hardcoded duplicate
+// list — VALID_GEARBOX above is its own separate, older list that's already
+// missing "E-CVT" (added to the canonical enum after VALID_GEARBOX was
+// written; left alone here since correctGearbox is a separate, already-
+// working legacy pipeline not touched by this change). Importing the real
+// enum means correctGearboxType can't go stale the same way.
+const VALID_GEARBOX_TYPES = new Set<string>(GEARBOX_TYPE_VALUES);
+
+/**
+ * Alias/normalization table for transmission.type free text -> the strict
+ * GEARBOX_TYPE_VALUES enum — used by the manual Kimi/DeepSeek round-trip
+ * (lib/manualResearchImport.ts), same "resolve known aliases, else undefined
+ * rather than guess" contract as correctRangeStandard above. Added after a
+ * real Geely Coolray/Binyue import where Kimi/DeepSeek returned descriptive
+ * strings like "5MT manual" and "7-speed wet DCT" instead of the enum
+ * tokens "MT"/"DCT" — the THIRD recurring "AI free text vs. strict enum"
+ * friction point in one evening (after ev_range_standard and the
+ * thermal_management has_liquid_cooling/has_heat_pump field-naming
+ * mismatch) — see the "AI free text needs a normalization layer" note in
+ * CLAUDE.md for why this is now a standing pattern to check for on any new
+ * enum field, not just this one.
+ *
+ * Deliberately a SEPARATE function from correctGearbox above rather than a
+ * shared core refactor: correctGearbox's contract (fall back to the raw
+ * string, unresolved, with a console.warn) is relied on by its existing
+ * caller (scripts/import-deepseek.ts) and changing it risks an unrelated
+ * regression there; this function's contract (undefined on no match, never
+ * a passthrough) is what the strict manual-import validator needs. Some
+ * alias overlap between the two is accepted as the cost of not touching a
+ * working, differently-contracted pipeline for an unrelated fix.
+ */
+export function correctGearboxType(v: unknown): string | undefined {
+  if (!v) return undefined;
+  const s = String(v).trim();
+  if (VALID_GEARBOX_TYPES.has(s)) return s;
+
+  // Exact-match aliases first (whole-string, case-sensitive forms actually
+  // seen in practice).
+  const exact: Record<string, string> = { eCVT: "E-CVT", "e-CVT": "E-CVT" };
+  if (exact[s]) return exact[s];
+
+  // Keyword/substring detection for descriptive strings — ordered so a more
+  // specific token (AMT, DHT) is checked before a token it could otherwise
+  // be mistaken to contain (MT, CVT's own "variable" family).
+  if (/单速/.test(s) || /single.?speed/i.test(s) || (s.includes("电动车") && s.includes("变速箱"))) return "single-speed reducer";
+  if (/DHT/i.test(s)) return "multi-speed EV transmission";
+  if (/\bE-?CVT\b/i.test(s)) return "E-CVT";
+  if (/双离合/.test(s) || /dual.?clutch/i.test(s) || /\bDCT\b/i.test(s)) return "DCT";
+  if (/CVT/i.test(s) || /continuously variable/i.test(s)) return "CVT";
+  if (/\bAMT\b/i.test(s) || /automated manual/i.test(s)) return "AMT";
+  if (/手自一体|自动挡/.test(s) || /\bAT\b/i.test(s) || /\bautomatic\b/i.test(s) || /torque converter/i.test(s)) return "AT";
+  if (/手动挡/.test(s) || /\bmanual\b/i.test(s) || /\bMT\b/i.test(s)) return "MT";
+
+  console.warn(`[manual-import] Unknown transmission.type "${v}" — no known alias, leaving unresolved (will be dropped, not guessed).`);
+  return undefined;
 }
 
 export function correctRangeStandard(v: unknown): string | undefined {

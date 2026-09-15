@@ -22,9 +22,10 @@
 import { validateCanonicalVariant, checkPriceCurrencyFidelity, describeTrimGaps, type PowertrainLean } from "./techSpecResearch";
 import { CANONICAL_POWERTRAIN_FIELD_TEMPLATE, CONFIDENCE_VALUES } from "@/types/canonicalPowertrain";
 import { findMismatchedKeys } from "./applySpecUpdates";
-import { correctRangeStandard } from "./deepseekNormalize";
+import { correctRangeStandard, correctGearboxType } from "./deepseekNormalize";
 import { buildOutputLanguageRule, THERMAL_MANAGEMENT_MANDATORY_RULE, TRIM_NAME_FIDELITY_RULE, CURRENCY_SOURCE_FIDELITY_RULE } from "./researchPromptRules";
 import { SEGMENTS } from "@/models/Model";
+import { matchTrimName } from "./trimMatching";
 import type { IBrand } from "@/types";
 
 /** Model fields this workflow may ever read from an import and write back — deliberately excludes _id, brand_id, timestamps, Morocco fields (a different scraped-data pipeline), and any research-log bookkeeping field. Adding a field here means adding it to RESEARCHABLE_MODEL_KEYS below too — kept as two names for the same Set so a future editor sees why both exist. */
@@ -101,7 +102,7 @@ export interface ExportDocument {
   powertrains: ExportedPowertrain[];
 }
 
-/** Fields that only exist to give the external LLM context (e.g. brand_name) or are read-only display (production_status, _id, brand_id) — never accepted back as a change on import, regardless of what the returned JSON says. "unverified_note" isn't a real field at all — Kimi/DeepSeek reliably invents it anyway to explain why it set "unverified", so it's silently dropped here rather than hard-failing every import that touches that field (the same reasoning as "unverified" itself being context-only: whatever it says is redundant with the field-level "<field>_source_note"s already required elsewhere). */
+/** Fields that only exist to give the external LLM context (e.g. brand_name) or are read-only display (production_status, _id, brand_id) — never accepted back as a change on import, regardless of what the returned JSON says. "unverified_note" isn't a real field at all — Kimi/DeepSeek reliably invents it anyway to explain why it set "unverified", so it's silently dropped here rather than hard-failing every import that touches that field (the same reasoning as "unverified" itself being context-only: whatever it says is redundant with the field-level "<field>_source_note"s already required elsewhere). "segment_note" is the same pattern for "segment" — harmless AI-added color commentary explaining its segment classification (seen for real on a Geely Coolray/Binyue import), not a real schema field; not worth rejecting the whole model diff over, unlike a genuine data-shape or enum mismatch. */
 const MODEL_CONTEXT_ONLY_KEYS = new Set([
   "_id",
   "brand_id",
@@ -110,6 +111,7 @@ const MODEL_CONTEXT_ONLY_KEYS = new Set([
   "production_status",
   "unverified",
   "unverified_note",
+  "segment_note",
 ]);
 
 // ---------------------------------------------------------------------------
@@ -241,7 +243,7 @@ ${
 This record may be INCOMPLETE at the trim/variant level, not just at the field level: the "powertrains" list below is only whatever trims happen to already be in our database, which may be a subset of the real production lineup for this model (e.g. we might only have a base trim on file when the actual market lineup also includes a higher-output engine option, a PHEV variant, a special edition, etc.). Actively check whether additional trims exist for this model beyond what's listed below — don't limit your research to filling gaps in the trims you were given. If you find a real trim that isn't in the list, add it as a new entry in "powertrains" per rule 2 below (omit "_id" entirely for it).
 
 CRITICAL RULES — read carefully, this is a round-trip into a strict-schema database:
-1. Return the SAME JSON shape you were given below — same top-level keys ("model", "powertrains"), same nested field names. Do not add, rename, or omit any field.
+1. Return the SAME JSON shape you were given below — same top-level keys ("model", "powertrains"), same nested field names. Do not add, rename, or omit any field. This means NESTED fields stay nested — e.g. transmission type is "transmission": {"type": ...}, never a flat trim-level "transmission_type"; gear count is "transmission": {"speed_count": ...}, never a flat "number_of_gears"; 0-100 acceleration is "performance": {"accel_0_100_s": ...}, never a flat "acceleration_0_100_s"; battery capacity is "battery": {"capacity_total_kwh": ...}, never "battery": {"total_capacity_kwh": ...}. A response using a different-but-plausible-looking flat naming scheme instead of the exact nested shape below is rejected by the importer's strict schema validator, not silently accepted — it must match exactly.
 2. model._id and every powertrains[]._id MUST be returned byte-for-byte UNCHANGED from what you were given. These IDs are how the import step matches your response back to the exact existing database record — if you omit an _id, invent a new one, or alter it in any way, that entire record will be misread as a brand-new trim instead of an update to the existing one, which defeats the whole point of this workflow. If you are adding a genuinely NEW trim that wasn't in the input, give it no "_id" field at all (omit it, don't invent a placeholder) — that is the only case where a missing _id is correct. ${TRIM_NAME_FIDELITY_RULE}
 3. Every numeric or categorical fact must come from a source you can point to — do not estimate or infer from similar vehicles. Use null for anything you cannot find a sourced value for. The exceptions are price_range per job 4 above (never left null even when only an estimate is possible) and segment per job 6 above (never left null even when only your own best-effort classification is possible — tag it "inferred" via segment_confidence in that case).
 2b. ${buildOutputLanguageRule([
@@ -393,6 +395,31 @@ const KNOWN_FIELD_RELOCATIONS: { from: string; to: string }[] = [
   { from: "motor.ev_range_km", to: "battery.ev_range_km" },
   // battery -> battery, name mismatch only
   { from: "battery.capacity_kwh", to: "battery.capacity_total_kwh" },
+  // Confirmed on a real Geely Coolray/Binyue response (14 trims, all
+  // rejected — see the incident this table was extended for): Kimi/DeepSeek
+  // flattened transmission/performance into trim-level fields under a
+  // different, more "natural" flat naming scheme, despite the prompt
+  // embedding the exact canonical shape verbatim (buildManualResearchPrompt
+  // rule 7 / CANONICAL_POWERTRAIN_FIELD_TEMPLATE) and rule 1 explicitly
+  // forbidding renamed fields. Prompt fidelity alone isn't reliable here —
+  // same reasoning as the trim_name-translation fix — so these are
+  // mechanically relocated/renamed before validation runs, exactly like the
+  // battery.capacity_kwh case above.
+  { from: "transmission_type", to: "transmission.type" },
+  { from: "number_of_gears", to: "transmission.speed_count" },
+  { from: "acceleration_0_100_s", to: "performance.accel_0_100_s" },
+  { from: "top_speed_kmh", to: "performance.top_speed_kmh" },
+  { from: "battery.total_capacity_kwh", to: "battery.capacity_total_kwh" },
+  { from: "battery.usable_capacity_kwh", to: "battery.capacity_usable_kwh" },
+  { from: "battery.ac_charging_kw", to: "battery.ac_charge_kw" },
+  { from: "battery.dc_charging_kw", to: "battery.dc_charge_kw" },
+  // Same response also renamed these two thermal_management booleans —
+  // matches the earlier Geely Atlas Pro/Azkarra/Boyue Pro incident
+  // (thermal_management fields nested under the wrong block entirely) as a
+  // second, independent confirmation that thermal_management's exact shape
+  // is a recurring trouble spot for the AI, not a one-off.
+  { from: "thermal_management.active_liquid_cooling", to: "thermal_management.has_liquid_cooling" },
+  { from: "thermal_management.heat_pump", to: "thermal_management.has_heat_pump" },
 ];
 
 function getPath(obj: Record<string, unknown>, path: string[]): unknown {
@@ -475,6 +502,16 @@ function normalizeKnownValueAliases(rest: Record<string, unknown>): Record<strin
     const b = battery as Record<string, unknown>;
     if (typeof b.ev_range_standard === "string") {
       b.ev_range_standard = correctRangeStandard(b.ev_range_standard) ?? null;
+    }
+  }
+  // Same "resolve a known alias, else drop rather than guess" contract as
+  // ev_range_standard above — see correctGearboxType's own comment for why
+  // this exists as a separate function from the legacy correctGearbox.
+  const transmission = out.transmission;
+  if (transmission && typeof transmission === "object" && !Array.isArray(transmission)) {
+    const t = transmission as Record<string, unknown>;
+    if (typeof t.type === "string") {
+      t.type = correctGearboxType(t.type) ?? null;
     }
   }
   return out;
@@ -560,6 +597,18 @@ export interface PowertrainImportResult {
   variant: Record<string, unknown>;
   valid: boolean;
   errors: string[];
+  /**
+   * True when this "update" was resolved via trim_name fallback matching,
+   * not a real _id match — i.e. the response's _id was missing, fabricated,
+   * or altered in transit (e.g. truncated by an external chat UI), but
+   * exactly one existing trim's name matched closely enough to be
+   * confident. Surfaced so the reviewer can tell "the app matched this by
+   * name, not because the AI actually returned the right _id" apart from a
+   * normal, trusted _id match — same transparency the automated path's
+   * "matched to existing trim" badge already gives for its own trim_name
+   * fallback (see lib/trimMatching.ts's matchTrimName, reused here).
+   */
+  matchedViaNameFallback?: boolean;
 }
 
 export interface ManualImportParseResult {
@@ -645,6 +694,45 @@ export function parseManualImport(
 
   const existingById = new Map(existingPowertrains.map((pt) => [String(pt._id), pt]));
 
+  // trim_name -> every existing doc under that exact name. Length >1 means
+  // this model ALREADY has duplicate trims sharing a name (the exact
+  // scenario that caused the 09-14 Coolray duplicates in the first place) —
+  // never silently pick one of them, same "ambiguous means no match" rule
+  // matchTrimName itself already applies for a normalized multi-match.
+  const existingByName = new Map<string, (PowertrainLean & Record<string, unknown>)[]>();
+  for (const pt of existingPowertrains) {
+    if (!pt.trim_name) continue;
+    const arr = existingByName.get(pt.trim_name) ?? [];
+    arr.push(pt);
+    existingByName.set(pt.trim_name, arr);
+  }
+  const allExistingTrimNames = existingPowertrains.map((pt) => pt.trim_name).filter((t): t is string => Boolean(t));
+  // Names already claimed by an earlier entry in THIS SAME import via the
+  // fallback below — excluded from later candidates so two incoming trims
+  // with missing/wrong _ids can't both silently fall back onto the same
+  // existing doc (which would make the second overwrite the first on apply).
+  const claimedByFallback = new Set<string>();
+
+  /**
+   * Trim-name fallback matching (mirrors the automated path's
+   * lib/trimMatching.ts matchTrimName, used the SAME way here) — used only
+   * when this entry's _id was missing or didn't match anything. Returns the
+   * one existing doc to treat this as an update against, or null if no
+   * confident, unambiguous match exists (including when the matched name
+   * itself maps to more than one existing doc) — in which case the caller
+   * falls through to "new", exactly today's behavior, never a guess.
+   */
+  function fallbackMatchByName(trimName: unknown): (PowertrainLean & Record<string, unknown>) | null {
+    if (typeof trimName !== "string" || trimName.trim() === "") return null;
+    const candidates = allExistingTrimNames.filter((n) => !claimedByFallback.has(n));
+    const { matchedTrimName } = matchTrimName(trimName, candidates);
+    if (!matchedTrimName) return null;
+    const docs = existingByName.get(matchedTrimName) ?? [];
+    if (docs.length !== 1) return null; // ambiguous — this model already has duplicates under this name
+    claimedByFallback.add(matchedTrimName);
+    return docs[0];
+  }
+
   const rawPowertrains = top.powertrains;
   if (!Array.isArray(rawPowertrains)) {
     errors.push('"powertrains" must be an array.');
@@ -659,7 +747,25 @@ export function parseManualImport(
     }
 
     if (parsedVariant._id === null) {
-      // Declared as a brand-new trim — diff against nothing (every field is "new").
+      // Declared as a brand-new trim by omitting "_id" — but that's also
+      // exactly what an _id dropped/altered in transit looks like, so try a
+      // name-based fallback before trusting "genuinely new" (see the
+      // 09-14 Coolray duplicates this closes the gap for).
+      const fallback = fallbackMatchByName(parsedVariant.variant.trim_name);
+      if (fallback) {
+        const diff = buildFieldDiff(fallback as Record<string, unknown>, parsedVariant.variant, parsedVariant.sourceNotes);
+        return {
+          status: "update",
+          existingId: String(fallback._id),
+          trimName: fallback.trim_name,
+          diff,
+          variant: parsedVariant.variant,
+          valid: true,
+          errors: [],
+          matchedViaNameFallback: true,
+        };
+      }
+      // Diff against nothing (every field is "new").
       const diff = buildFieldDiff(null, parsedVariant.variant, parsedVariant.sourceNotes);
       return { status: "new", diff, variant: parsedVariant.variant, valid: true, errors: [] };
     }
@@ -668,14 +774,26 @@ export function parseManualImport(
     if (!existing) {
       // A recurring DeepSeek/Kimi mistake: inventing a plausible-looking
       // ObjectId for a genuinely new trim instead of omitting "_id" as
-      // instructed. Since existingById only covers THIS model's trims, an
-      // unmatched id can never mean "silently overwrite the wrong document"
-      // — the only two possibilities are a fabricated id (this case) or a
-      // stale id from a trim that's since been deleted, and in both cases
-      // treating it as a new trim (identical to what omitting "_id" would
-      // have produced) is the correct, safe fallback rather than blocking
-      // the whole import on a naming mistake the response's actual data
-      // already tells you how to resolve.
+      // instructed — or, per the 09-14 Coolray incident, the real _id
+      // dropped/altered in transit through an external chat UI. Since
+      // existingById only covers THIS model's trims, an unmatched id can
+      // never mean "silently overwrite the wrong document" — try the same
+      // name-based fallback as the missing-_id case above before concluding
+      // "new".
+      const fallback = fallbackMatchByName(parsedVariant.variant.trim_name);
+      if (fallback) {
+        const diff = buildFieldDiff(fallback as Record<string, unknown>, parsedVariant.variant, parsedVariant.sourceNotes);
+        return {
+          status: "update",
+          existingId: String(fallback._id),
+          trimName: fallback.trim_name,
+          diff,
+          variant: parsedVariant.variant,
+          valid: true,
+          errors: [],
+          matchedViaNameFallback: true,
+        };
+      }
       const diff = buildFieldDiff(null, parsedVariant.variant, parsedVariant.sourceNotes);
       return { status: "new", diff, variant: parsedVariant.variant, valid: true, errors: [] };
     }

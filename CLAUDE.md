@@ -160,6 +160,36 @@ compile-time type check (`_CheckTopLevelKeys` etc. at the bottom of that file) f
 `tsc` if a field is renamed/added/removed on the interfaces without updating the
 template — adding a new Powertrain field means updating both in the same change.
 
+## AI free text needs a normalization layer before enum validation
+
+A recurring pattern, hit three separate times in one evening (2026-09-15): an AI research
+response reports a real fact correctly, but in free-text/descriptive form instead of the
+exact enum token the schema requires — `battery.ev_range_standard` coming back as `"NEDC2"`
+instead of `"NEDC"`; `thermal_management.has_liquid_cooling`/`has_heat_pump` arriving as
+differently-named booleans (`active_liquid_cooling`/`heat_pump`) on one real Geely response;
+`transmission.type` arriving as `"5MT manual"` / `"7-speed wet DCT"` instead of `"MT"`/`"DCT"`
+on another. Prompt instructions and an embedded canonical-shape template (both already in
+place for all three cases before they happened) are not sufficient on their own — an external
+chat UI (the manual Kimi/DeepSeek round-trip) especially can't be relied on to follow them.
+
+**When adding a new strict-enum field to the canonical Powertrain schema** (or auditing an
+existing one), proactively ask: what free-text variants would a real AI response plausibly use
+for this value, and does an alias/normalization function exist to resolve them before
+`validateCanonicalVariant`/`validateManualPowertrain` runs? See `correctRangeStandard()` and
+`correctGearboxType()` in `lib/deepseekNormalize.ts` for the established pattern: resolve a
+known alias, and return `undefined` (never a guessed/passthrough value) when nothing matches —
+the caller drops the field to `null` rather than either accepting an invalid enum value or
+rejecting the whole record over one unresolved field. `lib/manualResearchImport.ts`'s
+`KNOWN_FIELD_RELOCATIONS` table is the sibling mechanism for the same underlying problem one
+level up — a field landing in the wrong shape/location entirely rather than the right location
+with the wrong value.
+
+(Known follow-up, not yet fixed: `lib/deepseekNormalize.ts`'s older `correctGearbox()` — used
+by `scripts/import-deepseek.ts`, a separate pipeline — has its own `VALID_GEARBOX` list that's
+missing `"E-CVT"`, added to the canonical enum after that list was written. Left alone when
+`correctGearboxType()` was added rather than fixed as a drive-by, to avoid an unrelated
+behavior change to a different, already-working pipeline.)
+
 ## Mandatory Powertrain fields
 
 A small, explicitly-named set of fields is required (not just optional-but-common) on

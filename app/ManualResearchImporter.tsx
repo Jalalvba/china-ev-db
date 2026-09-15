@@ -23,6 +23,8 @@ interface PowertrainImportResult {
   diff: FieldDiffEntry[];
   valid: boolean;
   errors: string[];
+  /** True when this "update" was resolved by trim-name fallback, not a real _id match from the pasted response — see lib/manualResearchImport.ts's parseManualImport. */
+  matchedViaNameFallback?: boolean;
 }
 
 interface ValidateResponse {
@@ -185,6 +187,11 @@ export default function ManualResearchImporter({ modelDbId }: Props) {
               <p className="text-sm font-medium mb-1">
                 {pt.status === "new" ? "New trim" : `Trim: ${pt.trimName}`}
                 {pt.status === "new" && !pt.existingId ? " (no matching _id found — will insert as new)" : ""}
+                {pt.matchedViaNameFallback && (
+                  <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400 align-middle">
+                    matched by trim name, not _id — the pasted response&apos;s _id for this trim was missing or didn&apos;t match anything
+                  </span>
+                )}
                 {!pt.valid && <span className="text-red-600 dark:text-red-400"> — invalid</span>}
               </p>
               {pt.errors.length > 0 ? (
