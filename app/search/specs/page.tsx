@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import type { IBrand, IModel, IPowertrain } from "@/types";
 import { hpToKw, kwToHp } from "@/lib/units";
@@ -78,7 +78,12 @@ export default function SpecSearchPage() {
   const [hybridType, setHybridType] = useState("");
   const [hybridArchitecture, setHybridArchitecture] = useState("");
   const [segment, setSegment] = useState("");
-  const [sortBy, setSortBy] = useState<SortMode>("best_match");
+  // Cheapest-first is the app-wide default sort convention (see the
+  // Listing-conventions rule in CLAUDE.md for the same "cheapest first"
+  // posture on the homepage/brand pages) — Best Match is still available,
+  // just not the default anymore.
+  const [sortBy, setSortBy] = useState<SortMode>("price");
+  const [advancedOpen, setAdvancedOpen] = useState(false);
   const [minEnginePower, setMinEnginePower] = useState("");
   const [maxEnginePower, setMaxEnginePower] = useState("");
   const [minMotorPower, setMinMotorPower] = useState("");
@@ -200,9 +205,6 @@ export default function SpecSearchPage() {
       const res = await fetch(`/api/powertrains?${params.toString()}`);
       if (!res.ok) throw new Error(`Request failed with status ${res.status}`);
       const data = await res.json();
-      // A fresh search always defaults back to Best Match — the previous
-      // sort choice was scoped to the previous result set.
-      setSortBy("best_match");
       setResults(data);
     } catch (err) {
       setError((err as Error).message);
@@ -211,6 +213,60 @@ export default function SpecSearchPage() {
       setLoading(false);
     }
   }
+
+  /**
+   * Auto-apply — every filter (primary or behind the Advanced toggle)
+   * re-runs the search automatically, debounced 300ms after the last
+   * change, so there's no explicit "Search" button to click for any filter
+   * anymore. Clears results back to the empty state when every filter is
+   * cleared, since nothing would otherwise re-trigger that now that there's
+   * no button click left to notice the stale results on.
+   */
+  useEffect(() => {
+    if (!hasAnyFilter) {
+      // Resetting results/error when every filter is cleared genuinely
+      // belongs in this effect — it's reacting to filter state changing,
+      // same as the rest of the effect does for the non-empty case.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setResults(null);
+      setError(null);
+      return;
+    }
+    const timer = setTimeout(() => {
+      runSearch();
+    }, 300);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    energyType,
+    fuelType,
+    aspiration,
+    gearbox,
+    driveType,
+    hybridType,
+    hybridArchitecture,
+    segment,
+    minEnginePower,
+    maxEnginePower,
+    minMotorPower,
+    maxMotorPower,
+    minEngineTorque,
+    maxEngineTorque,
+    minMotorTorque,
+    maxMotorTorque,
+    minDisplacement,
+    maxDisplacement,
+    minEvRange,
+    maxEvRange,
+    minCombinedPower,
+    maxCombinedPower,
+    minBattery,
+    maxBattery,
+    minPriceUsd,
+    maxPriceUsd,
+    minMoroccoPrice,
+    maxMoroccoPrice,
+  ]);
 
   /** Recomputed whenever `results` or `sortBy` changes — Best Match scores are always relative to the CURRENTLY FILTERED set (Part 5), never a fixed global range, so this can't be cached across a different search. */
   const sortedResults = useMemo(() => {
@@ -298,7 +354,7 @@ export default function SpecSearchPage() {
         Search by engine, motor, battery, and transmission specs — not by name, brand, or price.
       </p>
 
-      <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-4 mb-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+      <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-4 mb-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
         <select className={selectClass} value={energyType} onChange={(e) => setEnergyType(e.target.value)}>
           <option value="">Energy type…</option>
           {ENERGY_TYPES.map((t) => (
@@ -307,6 +363,27 @@ export default function SpecSearchPage() {
             </option>
           ))}
         </select>
+        <select className={selectClass} value={segment} onChange={(e) => setSegment(e.target.value)}>
+          <option value="">Segment…</option>
+          {SEGMENTS.map((t) => (
+            <option key={t} value={t}>
+              {t}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <button
+        type="button"
+        onClick={() => setAdvancedOpen((v) => !v)}
+        className="text-sm text-blue-600 dark:text-blue-400 hover:underline mb-3 flex items-center gap-1"
+        aria-expanded={advancedOpen}
+      >
+        Advanced filters {advancedOpen ? "▴" : "▾"}
+      </button>
+
+      {advancedOpen && (
+      <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-4 mb-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
         <select className={selectClass} value={fuelType} onChange={(e) => setFuelType(e.target.value)}>
           <option value="">Fuel type…</option>
           {FUEL_TYPES.map((t) => (
@@ -352,14 +429,6 @@ export default function SpecSearchPage() {
           {HYBRID_ARCHITECTURES.map((t) => (
             <option key={t} value={t}>
               {HYBRID_ARCHITECTURE_LABELS[t]}
-            </option>
-          ))}
-        </select>
-        <select className={selectClass} value={segment} onChange={(e) => setSegment(e.target.value)}>
-          <option value="">Segment…</option>
-          {SEGMENTS.map((t) => (
-            <option key={t} value={t}>
-              {t}
             </option>
           ))}
         </select>
@@ -559,6 +628,7 @@ export default function SpecSearchPage() {
           />
         </div>
       </div>
+      )}
 
       {activeFilters.length > 0 && (
         <p className="text-xs text-zinc-500 dark:text-zinc-400 mb-2">
@@ -567,16 +637,12 @@ export default function SpecSearchPage() {
         </p>
       )}
 
-      <button
-        onClick={runSearch}
-        disabled={!hasAnyFilter || loading}
-        className="px-4 py-2 rounded-md bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed mb-6"
-      >
-        {loading ? "Searching…" : "Search"}
-      </button>
-      {!hasAnyFilter && (
-        <p className="text-xs text-zinc-500 dark:text-zinc-400 -mt-4 mb-6">
-          Set at least one filter above to search.
+      {/* Results update automatically (debounced) as filters change above —
+          no Search button. loading only shows a brief inline indicator. */}
+      {loading && <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-4">Searching…</p>}
+      {!hasAnyFilter && !loading && (
+        <p className="text-xs text-zinc-500 dark:text-zinc-400 mb-6">
+          Set at least Energy type or Segment above to see results.
         </p>
       )}
 

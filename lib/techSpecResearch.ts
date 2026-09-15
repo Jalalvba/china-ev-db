@@ -8,7 +8,7 @@
 // (app/api/models/[id]/update-specs/route.ts) so there is exactly one
 // implementation of this logic, not two copies that can drift apart.
 
-import { runGroundedResearch, buildVehicleSearchQueries, buildTrimPriceSearchQueries, ModelNotFoundError } from "./groundedResearch";
+import { runGroundedResearch, buildVehicleSearchQueries, buildTrimPriceSearchQueries, ModelNotFoundError, SearchProviderError } from "./groundedResearch";
 import { getDefaultModel as getAiDefaultModel } from "./aiProvider";
 import {
   CANONICAL_POWERTRAIN_FIELD_TEMPLATE,
@@ -28,7 +28,7 @@ import {
 } from "../types/canonicalPowertrain";
 import { buildBrandContextBlock, type BrandContext } from "./brandContext";
 import { correctRangeStandard } from "./deepseekNormalize";
-import { buildOutputLanguageRule, THERMAL_MANAGEMENT_MANDATORY_RULE, TRIM_NAME_FIDELITY_RULE } from "./researchPromptRules";
+import { buildOutputLanguageRule, THERMAL_MANAGEMENT_MANDATORY_RULE, TRIM_NAME_FIDELITY_RULE, CURRENCY_SOURCE_FIDELITY_RULE } from "./researchPromptRules";
 
 /** The active provider's default chat model (DeepSeek by default) — see lib/aiProvider.ts. Override via that provider's own <PROVIDER>_MODEL env var. A FUNCTION, not a constant — call it at the point of use, never capture its result into a module-level const anywhere in this file's own import chain. See the comment on getActiveProvider() in lib/aiProvider.ts: ES `import` hoisting means a module-level `const X = getDefaultModel()` here would resolve before a script's own dotenv.config() call runs, silently ignoring .env.local/.env — this bit a live Qwen smoke test for real. */
 export const getDefaultModel = getAiDefaultModel;
@@ -49,7 +49,7 @@ const SOURCE_SITES = [
 // scripts/tech-spec-agent.ts etc.) keep working against the one shared class
 // thrown by lib/aiProvider.ts — see that file for why this is fatal for the
 // whole run rather than a per-model retry candidate.
-export { ModelNotFoundError };
+export { ModelNotFoundError, SearchProviderError };
 
 export function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -329,6 +329,8 @@ Search Chinese-language automotive sources, especially: ${SOURCE_SITES.join(", "
 For EACH trim/variant, you must individually attempt to find every one of the following fields — this is a named checklist, not a general "get a feel for the car" request. If the field turns out not to apply once you know the actual energy type (e.g. this is a pure EV with no engine, or a pure ICE with no motor/battery), just say so and skip that block; otherwise treat every field below as something to actively go find, not something to skip because you already have a general sense of the trim:
 ${renderFieldChecklist(getApplicableFieldSpecs())}
 
+${CURRENCY_SOURCE_FIDELITY_RULE}
+
 ${
   priceFocus
     ? `THIS RESEARCH PASS'S SPECIFIC FOCUS IS PRICE — every trim's own itemized price (trim_price_min/trim_price_max) is what this pass exists to find, more than any other field below. Do NOT settle for the model's overall "starting from" price applied to every trim — that is exactly the wrong answer here. Search specifically for the itemized price list (配置价格表 / 指导价) for this model: Chinese auto sites like Autohome/Dongchedi typically publish a full trim-by-trim price table on the model's configuration/comparison page (配置对比 or 参数配置), showing ALL trims side-by-side with their own individual prices — that page, not a headline article quoting only the cheapest trim, is the real source you need. Run a distinct search per trim using the trim's own name plus "价格" (e.g. "<model> <trim name> 价格"), not just the model name alone — a model-name-only price search reliably surfaces the entry-level price and nothing else, which is the failure mode this pass exists to fix. If, after that specifically-targeted search, a trim's own price genuinely isn't separately published anywhere (some trims really do share one listed price), say so explicitly rather than defaulting to the model's overall price range.\n\n`
@@ -392,6 +394,7 @@ ${
 }
 CRITICAL RULES:
 - ${buildOutputLanguageRule()}
+- ${CURRENCY_SOURCE_FIDELITY_RULE}
 - Every numeric or categorical fact must come from a search result you actually found (grounding is enabled on this request) — do not estimate or infer from similar vehicles.
 - Use "null" for any field you cannot find a sourced value for. Do NOT guess a plausible-sounding number.
 - Set each block's "confidence" to "confirmed" only if a specific cited source backs the block's claim — including a claim reported only in "note" when the structured numeric fields are null (e.g. a concept vehicle's press release quoting horsepower and wheel-torque instead of the standard kW/motor-torque_nm shape: report it in "note" and mark "confirmed" if the source is real, rather than downgrading confidence just because it didn't fit the structured fields). Otherwise "unconfirmed".
@@ -481,6 +484,41 @@ function checkNumberEnum(value: unknown, allowed: Set<number>, path: string, err
   }
 }
 
+/**
+ * Defense-in-depth for CURRENCY_SOURCE_FIDELITY_RULE (lib/researchPromptRules.ts)
+ * — that prompt rule alone isn't trustworthy any more than the trim-name
+ * fidelity rule was (see isLikelyTranslation() in lib/trimMatching.ts for
+ * the same reasoning): reject rather than silently accept a price that
+ * looks like the AI self-converted to USD despite being told never to.
+ * "USD" specifically is the tell — every price this pipeline researches is
+ * Chinese-market pricing, so a currency field claiming USD is either a
+ * self-converted figure (the exact failure mode this rule exists to catch)
+ * or, at minimum, not the real currency the source published, either way
+ * not something to trust. A price present with no currency at all is
+ * likewise rejected rather than defaulted to CNY — the currency must be an
+ * actual reported fact, not an assumption this validator makes for it.
+ */
+export function checkPriceCurrencyFidelity(
+  min: unknown,
+  max: unknown,
+  currency: unknown,
+  path: string,
+  currencyFieldName: string,
+  errors: string[]
+): void {
+  const hasPrice = (min !== undefined && min !== null) || (max !== undefined && max !== null);
+  if (!hasPrice) return;
+  if (currency === undefined || currency === null || (typeof currency === "string" && currency.trim() === "")) {
+    errors.push(`${path}.${currencyFieldName}: required when a price is present — the app never assumes a currency.`);
+    return;
+  }
+  if (typeof currency === "string" && currency.trim().toUpperCase() === "USD") {
+    errors.push(
+      `${path}.${currencyFieldName}: "USD" is not a valid source currency for this pipeline — this looks like a self-converted price, which the prompt explicitly forbids (see CURRENCY_SOURCE_FIDELITY_RULE). Report the price in the currency the source actually published (almost always CNY) and let the app convert it.`
+    );
+  }
+}
+
 /** Validates one variant object against ICanonicalPowertrain's shape. Does not mutate. */
 export function validateCanonicalVariant(raw: unknown): { valid: boolean; errors: string[] } {
   const errors: string[] = [];
@@ -516,6 +554,7 @@ export function validateCanonicalVariant(raw: unknown): { valid: boolean; errors
     errors.push("variant.trim_price_currency: must be a string or null");
   }
   checkEnum(v.trim_price_confidence, CONFIDENCE_SET, "variant.trim_price_confidence", errors);
+  checkPriceCurrencyFidelity(v.trim_price_min, v.trim_price_max, v.trim_price_currency, "variant", "trim_price_currency", errors);
 
   if (v.engine !== undefined && v.engine !== null) {
     if (typeof v.engine !== "object" || Array.isArray(v.engine)) {
@@ -793,7 +832,14 @@ async function queryModel(
       // time. Fail fast on attempt 1 instead of wasting the whole retry
       // budget (and the backoff delay) on a broken model name.
       if (err instanceof ModelNotFoundError) throw err;
-      // Rate-limit responses ARE transient — let the retry loop's backoff handle them.
+      // A search-provider failure (rate limit, exhausted credit) is not
+      // transient on THIS run's timescale either — a short backoff won't
+      // clear a monthly quota, and retrying 3x here just burns more of an
+      // already-exhausted budget before the fatal error finally surfaces.
+      // Fail fast so the caller (researchModel below, then the batch
+      // script's own loop) can abort the whole run immediately instead of
+      // silently grinding through the rest of it with zero grounding.
+      if (err instanceof SearchProviderError) throw err;
       lastErr = err;
       const backoffMs = 2000 * attempt;
       console.error(
@@ -956,7 +1002,10 @@ export async function researchModel(model: string, input: ResearchModelInput): P
       notableFacts,
     };
   } catch (err) {
-    if (err instanceof ModelNotFoundError) throw err;
+    // Same fatal-for-the-whole-run treatment as ModelNotFoundError: propagate
+    // rather than swallowing into a per-model "error" result, so the calling
+    // batch script's own FATAL-abort handling catches it too.
+    if (err instanceof ModelNotFoundError || err instanceof SearchProviderError) throw err;
     return {
       ...base,
       status: "error",

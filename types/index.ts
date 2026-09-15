@@ -189,6 +189,25 @@ import type { ICanonicalPowertrain } from "./canonicalPowertrain";
 export type IPowertrain = ICanonicalPowertrain & {
   /** Set by lib/applySpecUpdates.ts only when a write to this document is verified as actually applied (re-fetched and confirmed) — distinct from `updatedAt`, which changes on any write attempt regardless of whether it succeeded. Undefined means this document has never been touched by the research pipeline (still original seed/import data). */
   last_researched_at?: string;
+  /**
+   * USD conversion of trim_price_min/trim_price_max — computed server-side
+   * at write time (lib/applySpecUpdates.ts, same lib/deepseekNormalize.ts
+   * getCnyPerUsdRate() the Model.price_range.min_usd/max_usd conversion
+   * already uses) from whatever currency trim_price_currency says, never
+   * researched/set by the AI directly — same exclusion-from-the-canonical-
+   * template convention as IPriceRange.min_usd/max_usd. This is the ONLY
+   * form the UI is ever allowed to display for a trim's own price: raw CNY
+   * trim_price_min/max must never be rendered directly anywhere (see
+   * lib/priceDisplay.ts's formatTrimPrice, which reads only these _usd
+   * fields) — the app shows USD everywhere except the explicitly-flagged
+   * Morocco DH figure.
+   */
+  trim_price_min_usd?: number;
+  trim_price_max_usd?: number;
+  /** CNY-per-USD rate used for the conversion above, from getCnyPerUsdRate() at write time — same convention as IPriceRange.exchange_rate_used. */
+  trim_price_exchange_rate_used?: number;
+  /** Date the exchange_rate_used value was published for (Frankfurter's `data.date`), not the write's own date — same convention as IPriceRange.exchange_rate_date. */
+  trim_price_exchange_rate_date?: string;
   /** Set by mongoose (`timestamps: true`); not touched by the research pipeline. Used as the "Original import data" fallback timestamp when last_researched_at is unset. */
   createdAt?: string;
   updatedAt?: string;

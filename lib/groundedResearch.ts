@@ -9,10 +9,10 @@
 // always the literal list of URLs Brave Search actually returned — never
 // something the model claims to have visited.
 
-import { webSearchMulti, renderSearchResultsForPrompt } from "./webSearch";
+import { webSearchMulti, renderSearchResultsForPrompt, SearchProviderError } from "./webSearch";
 import { completeTwoTurn, ModelNotFoundError } from "./aiProvider";
 
-export { ModelNotFoundError };
+export { ModelNotFoundError, SearchProviderError };
 
 const REAL_SEARCH_HEADER =
   "=== REAL SEARCH RESULTS (fetched for you before this prompt was built) ===\n" +

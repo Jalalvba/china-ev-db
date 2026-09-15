@@ -15,15 +15,30 @@ export function formatChinaPriceUsd(priceRange: IPriceRange | undefined | null):
   }`;
 }
 
-type TrimPriceFields = Pick<IPowertrain, "trim_price_min" | "trim_price_max" | "trim_price_currency" | "trim_price_confidence">;
+type TrimPriceFields = Pick<IPowertrain, "trim_price_min_usd" | "trim_price_max_usd" | "trim_price_confidence">;
 
-/** This trim's own price, e.g. "129,900 – 149,900 CNY" (or a single figure when min===max), or undefined if neither bound is set. Appends "⚠" when unconfirmed — same gating convention as every other researched field. Shared by the model detail page, Tech Search cards, and the Compare page so all three render a trim's price identically. */
+/**
+ * This trim's own price, e.g. "$18,000 – $24,000" (or a single figure when
+ * min===max), or undefined if neither USD bound is set. Appends "⚠" when
+ * unconfirmed — same gating convention as every other researched field.
+ * Shared by the model detail page, Tech Search cards, and the Compare page
+ * so all three render a trim's price identically.
+ *
+ * Deliberately reads ONLY the _usd fields, never the raw
+ * trim_price_min/max/currency (always CNY as researched) — those must never
+ * be displayed directly anywhere in this app (Morocco's DH figure is the
+ * one intentional, explicitly-flagged exception). lib/applySpecUpdates.ts
+ * computes trim_price_min_usd/max_usd at write time for every write that
+ * includes a trim_price, so a trim with a price but no _usd figures means
+ * that write predates the USD-conversion fix (see
+ * scripts/backfill-trim-price-usd.ts) rather than a genuinely-priceless trim
+ * — correctly shows nothing rather than a wrong/unconverted number either way.
+ */
 export function formatTrimPrice(p: TrimPriceFields | undefined | null): string | undefined {
-  if (!p || (p.trim_price_min == null && p.trim_price_max == null)) return undefined;
-  const currency = p.trim_price_currency ?? "CNY";
+  if (!p || (p.trim_price_min_usd == null && p.trim_price_max_usd == null)) return undefined;
   const label =
-    p.trim_price_min != null && p.trim_price_max != null && p.trim_price_min !== p.trim_price_max
-      ? `${p.trim_price_min.toLocaleString()} – ${p.trim_price_max.toLocaleString()} ${currency}`
-      : `${(p.trim_price_min ?? p.trim_price_max)!.toLocaleString()} ${currency}`;
+    p.trim_price_min_usd != null && p.trim_price_max_usd != null && p.trim_price_min_usd !== p.trim_price_max_usd
+      ? `$${p.trim_price_min_usd.toLocaleString()} – $${p.trim_price_max_usd.toLocaleString()}`
+      : `$${(p.trim_price_min_usd ?? p.trim_price_max_usd)!.toLocaleString()}`;
   return `${label}${p.trim_price_confidence === "unconfirmed" ? " ⚠" : ""}`;
 }

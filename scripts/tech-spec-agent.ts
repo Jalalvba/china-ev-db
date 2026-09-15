@@ -40,6 +40,7 @@ import {
   getDefaultModel,
   DEFAULT_DELAY_MS,
   ModelNotFoundError,
+  SearchProviderError,
   sleep,
   needsResearch,
   researchModel,
@@ -259,12 +260,18 @@ async function run() {
       else modelsNotFoundCount++;
       flush();
     } catch (err) {
-      if (err instanceof ModelNotFoundError) {
-        // Every remaining model would hit this same 404 — stop now rather
-        // than grinding through the rest logging the same root cause
-        // repeatedly. Flush first so any results found before the failure
-        // aren't lost.
-        console.error(`\n${progress} ${brandName} ${m.name}: FATAL — ${err.message}`);
+      if (err instanceof ModelNotFoundError || err instanceof SearchProviderError) {
+        // Every remaining model would hit this same 404, or a search-
+        // provider failure (rate limit, exhausted credit) that won't clear
+        // itself mid-run — stop now rather than grinding through the rest
+        // logging the same root cause repeatedly. Flush first so any results
+        // found before the failure aren't lost.
+        const remaining = targets.length - i;
+        const reason =
+          err instanceof SearchProviderError
+            ? `Brave Search credit exhausted (HTTP ${err.status}) — ${i} model(s) processed successfully before failure, ${remaining} model(s) remain unprocessed.`
+            : err.message;
+        console.error(`\n${progress} ${brandName} ${m.name}: FATAL — ${reason}`);
         console.error(
           `\n=== PARTIAL SUMMARY (aborted early) ===\n` +
             `Models processed before abort: ${i} / ${targets.length}\n` +

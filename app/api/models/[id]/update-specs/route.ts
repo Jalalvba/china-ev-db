@@ -3,7 +3,7 @@ import { connectToDatabase } from "@/lib/db";
 import "@/models/Brand";
 import ModelSchema from "@/models/Model";
 import Powertrain from "@/models/Powertrain";
-import { getDefaultModel, ModelNotFoundError, researchModel, describeTrimGaps, type PowertrainLean } from "@/lib/techSpecResearch";
+import { getDefaultModel, ModelNotFoundError, SearchProviderError, researchModel, describeTrimGaps, type PowertrainLean } from "@/lib/techSpecResearch";
 import { lookupMoteurMa, renderMoteurMaContext } from "@/lib/moteurMaScraper";
 import { appendResearchLog } from "@/lib/researchLog";
 import { getMissingConfigError } from "@/lib/aiProvider";
@@ -100,6 +100,13 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
   } catch (err) {
     if (err instanceof ModelNotFoundError) {
       return NextResponse.json({ error: err.message }, { status: 502 });
+    }
+    if (err instanceof SearchProviderError) {
+      // Distinct from a generic 500 so the UI can tell "Brave itself
+      // rejected the request" (rate limit / exhausted credit / outage) apart
+      // from an unexpected app bug — see the comment on SearchProviderError
+      // in lib/webSearch.ts for why this distinction matters.
+      return NextResponse.json({ error: `Search provider error: ${err.message}` }, { status: 503 });
     }
     // Defensive top-level catch: same reasoning as the brand-level routes —
     // always return JSON so the client's res.json() never chokes on Next's

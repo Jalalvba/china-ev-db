@@ -17,7 +17,7 @@
 // proper reusable, reviewed, source-cited agent.
 
 import { BRAND_STATUSES, RELATIONSHIP_TYPES } from "@/models/Brand";
-import { ModelNotFoundError, sleep } from "@/lib/techSpecResearch";
+import { ModelNotFoundError, SearchProviderError, sleep } from "@/lib/techSpecResearch";
 import { runGroundedResearch } from "@/lib/groundedResearch";
 
 const STATUS_SET = new Set<string>(BRAND_STATUSES);
@@ -181,6 +181,11 @@ async function queryBrandResearch(
       return { parsed: extractJson(formattedText), sourceUrls, rawText: formattedText };
     } catch (err) {
       if (err instanceof ModelNotFoundError) throw err;
+      // Same fail-fast reasoning as lib/techSpecResearch.ts's queryModel —
+      // a search-provider failure (rate limit, exhausted credit) won't clear
+      // within this retry loop's backoff, so retrying just burns more of an
+      // already-exhausted budget before the fatal error surfaces anyway.
+      if (err instanceof SearchProviderError) throw err;
       lastErr = err;
       const backoffMs = 2000 * attempt;
       console.error(`  [retry ${attempt}/${maxAttempts}] research-brand ${input.brandName}: ${(err as Error).message} — waiting ${backoffMs}ms`);
@@ -225,7 +230,7 @@ export async function researchBrand(model: string, input: BrandResearchInput): P
     const gated = applyBrandGroundingGate({ ...(parsed.brand as Record<string, unknown>) }, hasGrounding);
     return { status: "found", sourceUrls, hasGrounding, brand: gated, valid: true, errors: [] };
   } catch (err) {
-    if (err instanceof ModelNotFoundError) throw err;
+    if (err instanceof ModelNotFoundError || err instanceof SearchProviderError) throw err;
     return { status: "error", errorMessage: (err as Error).message, sourceUrls: [], hasGrounding: false, valid: false, errors: [] };
   }
 }

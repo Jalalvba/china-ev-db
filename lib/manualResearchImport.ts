@@ -19,11 +19,11 @@
 // two paths can't disagree on what a valid confidence value is, even though
 // they can't share the literal validator function.
 
-import { validateCanonicalVariant, describeTrimGaps, type PowertrainLean } from "./techSpecResearch";
+import { validateCanonicalVariant, checkPriceCurrencyFidelity, describeTrimGaps, type PowertrainLean } from "./techSpecResearch";
 import { CANONICAL_POWERTRAIN_FIELD_TEMPLATE, CONFIDENCE_VALUES } from "@/types/canonicalPowertrain";
 import { findMismatchedKeys } from "./applySpecUpdates";
 import { correctRangeStandard } from "./deepseekNormalize";
-import { buildOutputLanguageRule, THERMAL_MANAGEMENT_MANDATORY_RULE, TRIM_NAME_FIDELITY_RULE } from "./researchPromptRules";
+import { buildOutputLanguageRule, THERMAL_MANAGEMENT_MANDATORY_RULE, TRIM_NAME_FIDELITY_RULE, CURRENCY_SOURCE_FIDELITY_RULE } from "./researchPromptRules";
 import { SEGMENTS } from "@/models/Model";
 import type { IBrand } from "@/types";
 
@@ -247,6 +247,7 @@ CRITICAL RULES — read carefully, this is a round-trip into a strict-schema dat
 2b. ${buildOutputLanguageRule([
     '"name_cn" is explicitly the ORIGINAL-LANGUAGE (Chinese) name and must stay in its original script',
   ])} A genuinely NEW trim_name you are adding should itself be in English/Latin script where the vehicle's real nameplate allows it.
+2c. ${CURRENCY_SOURCE_FIDELITY_RULE} This applies to every price field in this record — both "model.price_range" (job 4 above) and any per-trim price you fill in on a "powertrains[]" entry.
 3b. "thermal_management" is REQUIRED on every powertrain entry whose "energy_type" is not "ICE" — per job 5 above, fill it with real values if you find them or with "thermal_evidence": "UNKNOWN" / "morocco_suitable": false if you genuinely can't. Omitting the "thermal_management" key entirely on a non-ICE trim is a validation failure that blocks the whole import, not a harmless gap — double-check every non-ICE trim in your response has this key before returning it.
 4. For every field you CHANGE from its current value — whether it was null (a gap you filled) or already populated (a value your independent research corrected) — add a sibling "<field>_source_note" string explaining the source and, if you're correcting an existing value, what was wrong with it (e.g. if you change "battery.chemistry" from an existing "NMC" to "LFP", include "battery.chemistry_source_note": "Corrected from NMC — official Soueast spec sheet and autohome.com.cn both list LFP"). Only changed fields need a source note — leave unchanged fields as-is with no note. A field you independently checked and confirmed matches the stored value needs no note either; notes exist only to flag a change, not to prove you checked something.
 5. Do not touch any field not listed in "model" or "powertrains[]" below — there is no other data to research.
@@ -316,6 +317,14 @@ export function validateManualModelFields(
     if (v.segment_confidence !== "confirmed" && v.segment_confidence !== "inferred") {
       errors.push(`model.segment_confidence: invalid value ${JSON.stringify(v.segment_confidence)}`);
     }
+  }
+
+  // Same defense-in-depth as validateCanonicalVariant's trim_price check —
+  // catches a self-converted-to-USD price_range that CURRENCY_SOURCE_FIDELITY_RULE
+  // (job 2c above) told the model never to produce.
+  if (v.price_range && typeof v.price_range === "object" && !Array.isArray(v.price_range)) {
+    const pr = v.price_range as Record<string, unknown>;
+    checkPriceCurrencyFidelity(pr.min, pr.max, pr.currency_local, "model.price_range", "currency_local", errors);
   }
 
   return { valid: errors.length === 0, errors, cleaned, sourceNotes: notes };

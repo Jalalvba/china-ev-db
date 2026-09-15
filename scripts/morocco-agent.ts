@@ -25,7 +25,7 @@ import MoroccoListing from "../models/MoroccoListing";
 import { MOROCCO_BRAND_ALIAS } from "../lib/moroccoBrandAlias";
 import { lookupMoteurMa, renderMoteurMaContext, type MoteurMaLookupResult } from "../lib/moteurMaScraper";
 import { complete, getDefaultModel, ModelNotFoundError } from "../lib/aiProvider";
-import { webSearchMulti, renderSearchResultsForPrompt } from "../lib/webSearch";
+import { webSearchMulti, renderSearchResultsForPrompt, SearchProviderError } from "../lib/webSearch";
 
 const MONGODB_URI = process.env.MONGODB_URI;
 if (!MONGODB_URI) {
@@ -210,6 +210,11 @@ async function queryBrand(
       // time. Fail fast on attempt 1 instead of wasting the whole retry
       // budget (and the backoff delay) on a broken model name.
       if (err instanceof ModelNotFoundError) throw err;
+      // A search-provider failure (rate limit, exhausted credit) won't clear
+      // within this retry loop's backoff either — fail fast so the caller's
+      // loop can abort the whole run instead of grinding through the rest
+      // of the brand list with zero grounding.
+      if (err instanceof SearchProviderError) throw err;
 
       lastErr = err;
       const backoffMs = 2000 * attempt;
@@ -375,12 +380,18 @@ async function run() {
       }
       if (unmatchedMoteurModels.size > 0 || (parsed?.found && parsed.dealer_morocco)) flush();
     } catch (err) {
-      if (err instanceof ModelNotFoundError) {
-        // Every remaining brand would hit this same 404 — stop now rather
+      if (err instanceof ModelNotFoundError || err instanceof SearchProviderError) {
+        // Every remaining brand would hit this same 404, or a search-
+        // provider failure that won't clear itself mid-run — stop now rather
         // than grinding through the rest logging the same root cause 100+
         // times. Flush first so any results found before the failure aren't
         // lost — results.length may be 0 if this hit on the very first brand.
-        console.error(`\n${progress} ${brand.name}: FATAL — ${err.message}`);
+        const remaining = targets.length - i;
+        const reason =
+          err instanceof SearchProviderError
+            ? `Brave Search credit exhausted (HTTP ${err.status}) — ${i} brand(s) processed successfully before failure, ${remaining} brand(s) remain unprocessed.`
+            : err.message;
+        console.error(`\n${progress} ${brand.name}: FATAL — ${reason}`);
         if (results.length > 0) {
           flush();
           console.error(`Stopping the run — this is not a per-brand issue. ${results.length} already-found result(s) saved to ${outPath}.`);

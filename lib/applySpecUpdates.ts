@@ -22,6 +22,7 @@ import ModelSchema from "@/models/Model";
 import Powertrain from "@/models/Powertrain";
 import { matchTrimName } from "@/lib/trimMatching";
 import { assertSchemaKnowsFields } from "@/lib/schemaGuard";
+import { getCnyPerUsdRate } from "@/lib/deepseekNormalize";
 
 export interface ApplyVariantUpdate {
   modelDbId: string;
@@ -40,6 +41,43 @@ export interface ApplyResult {
   notableFactsApplied: number;
   /** Every problem, including a write that succeeded but failed verification (see message) — never silently swallowed. */
   errors: { modelDbId: string; message: string }[];
+}
+
+/**
+ * Converts a trim's raw price (trim_price_min/max, in whatever currency
+ * trim_price_currency says — always "CNY" in practice, per the research
+ * prompt) into the USD figures the UI is actually allowed to display — see
+ * the comment on IPowertrain.trim_price_min_usd (types/index.ts). Mirrors
+ * lib/deepseekNormalize.ts's own CNY->USD math for Model.price_range
+ * (`Math.round(cny / cnyPerUsd)`) so a trim's price and its model's price
+ * are never converted by two different formulas. An already-USD price is
+ * copied through unchanged (rate 1, no live fetch needed); any other
+ * currency is left unconverted (the _usd fields stay unset, so
+ * formatTrimPrice() correctly shows nothing rather than a wrong number) —
+ * this hasn't come up in practice since every research prompt only ever
+ * asks for CNY, but the fallback is deliberate rather than an oversight.
+ */
+async function computeTrimPriceUsd(
+  min: number | undefined,
+  max: number | undefined,
+  currency: string | undefined
+): Promise<Record<string, unknown>> {
+  const normalizedCurrency = (currency ?? "CNY").toUpperCase();
+  if (normalizedCurrency === "USD") {
+    return {
+      ...(min != null ? { trim_price_min_usd: Math.round(min) } : {}),
+      ...(max != null ? { trim_price_max_usd: Math.round(max) } : {}),
+    };
+  }
+  if (normalizedCurrency !== "CNY") return {};
+
+  const { rate, date } = await getCnyPerUsdRate();
+  return {
+    ...(min != null ? { trim_price_min_usd: Math.round(min / rate) } : {}),
+    ...(max != null ? { trim_price_max_usd: Math.round(max / rate) } : {}),
+    trim_price_exchange_rate_used: rate,
+    trim_price_exchange_rate_date: date,
+  };
 }
 
 function stripUndefined<T extends Record<string, unknown>>(obj: T): T {
@@ -111,10 +149,22 @@ async function recomputeModelPriceRange(modelId: Types.ObjectId | string): Promi
   if (mins.length === 0 || maxes.length === 0) return;
 
   const currency = trims.find((t) => t.trim_price_currency)?.trim_price_currency ?? "CNY";
+  const min = Math.min(...mins);
+  const max = Math.max(...maxes);
+  // Same computeTrimPriceUsd helper the trim-level write uses — a derived
+  // price_range with min/max but no min_usd/max_usd would render nothing
+  // (formatChinaPriceUsd only reads the _usd fields), silently leaving the
+  // model's price blank instead of showing the range it was just derived
+  // from.
+  const usd = await computeTrimPriceUsd(min, max, currency);
   const expected = {
-    "price_range.min": Math.min(...mins),
-    "price_range.max": Math.max(...maxes),
+    "price_range.min": min,
+    "price_range.max": max,
     "price_range.currency_local": currency,
+    ...(usd.trim_price_min_usd != null ? { "price_range.min_usd": usd.trim_price_min_usd } : {}),
+    ...(usd.trim_price_max_usd != null ? { "price_range.max_usd": usd.trim_price_max_usd } : {}),
+    ...(usd.trim_price_exchange_rate_used != null ? { "price_range.exchange_rate_used": usd.trim_price_exchange_rate_used } : {}),
+    ...(usd.trim_price_exchange_rate_date != null ? { "price_range.exchange_rate_date": usd.trim_price_exchange_rate_date } : {}),
   };
   assertSchemaKnowsFields(ModelSchema, ["price_range"], "Model");
   await ModelSchema.findByIdAndUpdate(modelId, { $set: expected });
@@ -207,6 +257,22 @@ export async function applySpecUpdates(opts: {
       // rather than overwriting it with whatever wording the AI used this
       // time — trim_name is this doc's identity, not a researched field.
       const trim_name = matchedTrimName ?? researchedTrimName;
+
+      // Compute the USD figures alongside a written trim_price — never
+      // trusted from the AI itself (same exclusion-from-the-canonical-schema
+      // convention as Model.price_range.min_usd/max_usd), and never left for
+      // display-time conversion, because raw CNY must never reach the UI at
+      // all (see the comment on IPowertrain.trim_price_min_usd). A trim_price
+      // write with no matching _usd figures would otherwise render nothing
+      // useful client-side — formatTrimPrice() only reads the _usd fields.
+      if (rest.trim_price_min != null || rest.trim_price_max != null) {
+        const usd = await computeTrimPriceUsd(
+          rest.trim_price_min as number | undefined,
+          rest.trim_price_max as number | undefined,
+          rest.trim_price_currency as string | undefined
+        );
+        Object.assign(rest, usd);
+      }
 
       // Stamped in the same write as the researched fields (not a separate
       // call) so verification below covers it too — a doc whose spec fields

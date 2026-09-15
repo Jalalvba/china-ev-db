@@ -15,7 +15,7 @@
 // for the same reasons (see the comments there).
 
 import { SEGMENTS, PRODUCTION_STATUSES } from "@/models/Model";
-import { ModelNotFoundError, sleep } from "@/lib/techSpecResearch";
+import { ModelNotFoundError, SearchProviderError, sleep } from "@/lib/techSpecResearch";
 import { buildBrandContextBlock, type BrandContext } from "@/lib/brandContext";
 import { runGroundedResearch } from "@/lib/groundedResearch";
 
@@ -207,6 +207,9 @@ async function queryDiscovery(
       return { parsed: extractJson(formattedText), sourceUrls, rawText: formattedText };
     } catch (err) {
       if (err instanceof ModelNotFoundError) throw err;
+      // Same fail-fast reasoning as lib/techSpecResearch.ts's queryModel —
+      // a search-provider failure won't clear within this retry loop.
+      if (err instanceof SearchProviderError) throw err;
       lastErr = err;
       const backoffMs = 2000 * attempt;
       console.error(`  [retry ${attempt}/${maxAttempts}] discover-models ${input.brandName}: ${(err as Error).message} — waiting ${backoffMs}ms`);
@@ -265,7 +268,7 @@ export async function discoverModels(model: string, input: ModelDiscoveryInput):
       discovered,
     };
   } catch (err) {
-    if (err instanceof ModelNotFoundError) throw err;
+    if (err instanceof ModelNotFoundError || err instanceof SearchProviderError) throw err;
     return { status: "error", errorMessage: (err as Error).message, sourceUrls: [], hasGrounding: false, discovered: [] };
   }
 }

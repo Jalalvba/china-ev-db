@@ -50,7 +50,7 @@ import "../models/Brand";
 import ModelSchema from "../models/Model";
 import Powertrain from "../models/Powertrain";
 import type { IBrand } from "../types";
-import { getDefaultModel, DEFAULT_DELAY_MS, ModelNotFoundError, sleep, researchModel, type PowertrainLean } from "../lib/techSpecResearch";
+import { getDefaultModel, DEFAULT_DELAY_MS, ModelNotFoundError, SearchProviderError, sleep, researchModel, type PowertrainLean } from "../lib/techSpecResearch";
 import { applySpecUpdates } from "../lib/applySpecUpdates";
 import { lookupMoteurMa, renderMoteurMaContext } from "../lib/moteurMaScraper";
 
@@ -255,10 +255,18 @@ async function run() {
         modelsWriteFailed++;
       }
     } catch (err) {
-      if (err instanceof ModelNotFoundError) {
-        // Same model name would 404 for every remaining model — fatal for
-        // the whole run, not a per-model issue.
-        console.error(`\n${progress} ${brandName} ${modelName}: FATAL — ${err.message}`);
+      if (err instanceof ModelNotFoundError || err instanceof SearchProviderError) {
+        // Same model name would 404 for every remaining model, and a search-
+        // provider failure (rate limit, exhausted credit) won't clear itself
+        // mid-run either — both are fatal for the whole run, not a per-model
+        // issue, so abort loudly here instead of grinding through the rest
+        // of the batch producing zero-grounding "forced unconfirmed" results.
+        const remaining = targets.length - i;
+        const reason =
+          err instanceof SearchProviderError
+            ? `Brave Search credit exhausted (HTTP ${err.status}) — ${i} model(s) processed successfully before failure, ${remaining} model(s) remain unprocessed.`
+            : err.message;
+        console.error(`\n${progress} ${brandName} ${modelName}: FATAL — ${reason}`);
         console.error(
           `\n=== PARTIAL SUMMARY (aborted early) ===\n` +
             `Models processed before abort: ${i} / ${targets.length}\n` +

@@ -31,7 +31,7 @@ import "../models/Brand";
 import ModelSchema from "../models/Model";
 import Powertrain from "../models/Powertrain";
 import type { IBrand } from "../types";
-import { getDefaultModel, DEFAULT_DELAY_MS, ModelNotFoundError, sleep, researchModel, type PowertrainLean } from "../lib/techSpecResearch";
+import { getDefaultModel, DEFAULT_DELAY_MS, ModelNotFoundError, SearchProviderError, sleep, researchModel, type PowertrainLean } from "../lib/techSpecResearch";
 import { applySpecUpdates } from "../lib/applySpecUpdates";
 import { lookupMoteurMa, renderMoteurMaContext } from "../lib/moteurMaScraper";
 
@@ -216,8 +216,13 @@ async function run() {
         modelsWriteFailed++;
       }
     } catch (err) {
-      if (err instanceof ModelNotFoundError) {
-        console.error(`\n${progress} ${brandName} ${modelName}: FATAL — ${err.message}`);
+      if (err instanceof ModelNotFoundError || err instanceof SearchProviderError) {
+        const remaining = targets.length - i;
+        const reason =
+          err instanceof SearchProviderError
+            ? `Brave Search credit exhausted (HTTP ${err.status}) — ${i} model(s) processed successfully before failure, ${remaining} model(s) remain unprocessed.`
+            : err.message;
+        console.error(`\n${progress} ${brandName} ${modelName}: FATAL — ${reason}`);
         console.error(
           `\n=== PARTIAL SUMMARY (aborted early) ===\n` +
             `Models processed before abort: ${i} / ${targets.length}\n` +

@@ -130,6 +130,11 @@ const PowertrainSchema = new Schema<PowertrainDoc>(
     trim_price_max: { type: Number },
     trim_price_currency: { type: String },
     trim_price_confidence: { type: String, enum: CONFIDENCE_VALUES },
+    /** Computed server-side at write time from trim_price_min/max — never set by the AI. See the matching comment on IPowertrain in types/index.ts. */
+    trim_price_min_usd: { type: Number },
+    trim_price_max_usd: { type: Number },
+    trim_price_exchange_rate_used: { type: Number },
+    trim_price_exchange_rate_date: { type: String },
     source: { type: String },
     confidence: { type: String, enum: CONFIDENCE_VALUES },
     unverified: { type: Boolean, default: false },

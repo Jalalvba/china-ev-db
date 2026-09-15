@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connectToDatabase } from "@/lib/db";
 import Brand from "@/models/Brand";
-import { getDefaultModel, ModelNotFoundError } from "@/lib/techSpecResearch";
+import { getDefaultModel, ModelNotFoundError, SearchProviderError } from "@/lib/techSpecResearch";
 import { researchBrand } from "@/lib/brandResearch";
 import { lookupMoteurMa, renderMoteurMaContext } from "@/lib/moteurMaScraper";
 import { getMissingConfigError } from "@/lib/aiProvider";
@@ -61,6 +61,9 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
   } catch (err) {
     if (err instanceof ModelNotFoundError) {
       return NextResponse.json({ error: err.message }, { status: 502 });
+    }
+    if (err instanceof SearchProviderError) {
+      return NextResponse.json({ error: `Search provider error: ${err.message}` }, { status: 503 });
     }
     // Defensive top-level catch: same reasoning as discover-models/route.ts —
     // always return JSON so the client's res.json() never chokes on Next's

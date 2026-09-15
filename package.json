@@ -16,6 +16,7 @@
     "fill-missing-mandatory-fields": "tsx scripts/fill-missing-mandatory-fields.ts",
     "backfill-segment": "tsx scripts/backfill-segment.ts",
     "backfill-trim-price": "tsx scripts/backfill-trim-price.ts",
+    "backfill-trim-price-usd": "tsx scripts/backfill-trim-price-usd.ts",
     "import-tech-spec-batch": "tsx scripts/import-tech-spec-batch.ts",
     "update-morocco-dealers": "tsx scripts/update-morocco-dealers.ts",
     "sync-prices": "tsx scripts/sync-morocco-prices.ts",
