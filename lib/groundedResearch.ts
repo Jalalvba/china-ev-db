@@ -60,3 +60,23 @@ export function buildVehicleSearchQueries(brandName: string, modelName: string, 
   if (cnName) queries.push(`${cnName} 参数配置`, `${cnName} 价格`);
   return queries;
 }
+
+/**
+ * Per-trim, price-specific queries — a generic "<model> 价格" search (already
+ * in buildVehicleSearchQueries) tends to surface the model's OWN starting-
+ * price/overview page, not an itemized trim-by-trim price table; adding the
+ * trim name itself plus "价格" biases results toward a source that actually
+ * lists this specific trim's own figure (a config/comparison page —
+ * 配置对比 / 配置价格表 — rather than a headline "starting from" article).
+ * Used by scripts/backfill-trim-price.ts on top of the base query set, not a
+ * replacement for it — the base set still finds the general spec/config
+ * sources trim_price_currency and everything else in the response draws on.
+ */
+export function buildTrimPriceSearchQueries(brandName: string, modelName: string, trimNames: string[], modelNameCn?: string): string[] {
+  const nameForQuery = modelNameCn ?? modelName;
+  const queries: string[] = [`${brandName} ${modelName} 配置价格表`, `${brandName} ${modelName} 指导价`];
+  for (const trim of trimNames) {
+    queries.push(`${nameForQuery} ${trim} 价格`);
+  }
+  return queries;
+}

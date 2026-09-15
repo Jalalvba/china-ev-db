@@ -8,7 +8,7 @@
 // (app/api/models/[id]/update-specs/route.ts) so there is exactly one
 // implementation of this logic, not two copies that can drift apart.
 
-import { runGroundedResearch, buildVehicleSearchQueries, ModelNotFoundError } from "./groundedResearch";
+import { runGroundedResearch, buildVehicleSearchQueries, buildTrimPriceSearchQueries, ModelNotFoundError } from "./groundedResearch";
 import { getDefaultModel as getAiDefaultModel } from "./aiProvider";
 import {
   CANONICAL_POWERTRAIN_FIELD_TEMPLATE,
@@ -76,6 +76,19 @@ export interface TechSpecPromptInput {
   moteurMaContext?: string;
   /** Per-trim list of currently-missing/unconfirmed field labels (see describeTrimGaps) — lets the prompt name exactly what to look for instead of a generic "research this car" ask. Omit if there's nothing on file yet to diff against. */
   knownGaps?: { trimName: string; fields: string[] }[];
+  /**
+   * When true, injects extra emphasis into both prompt turns specifically
+   * about finding EACH trim's own itemized price (trim_price_min/max) —
+   * used by scripts/backfill-trim-price.ts, a dedicated pass for exactly
+   * this field. Off by default: the general per-trim-price instruction
+   * already in the prompt is enough for normal research passes; this exists
+   * because that alone was empirically insufficient — DeepSeek returned
+   * trim_price for only ~17% of trims across a real batch run even with a
+   * clear instruction present, so a pass dedicated to backfilling only this
+   * field needs it to compete for the model's attention against everything
+   * else in the checklist, not just be present in it.
+   */
+  priceFocus?: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -286,7 +299,7 @@ function renderFieldChecklist(specs: FieldSpec[]): string {
  * findings into the canonical JSON shape, not to trigger new search.
  */
 export function buildResearchKickoffPrompt(input: TechSpecPromptInput): string {
-  const { brandName, brandNameCn, modelName, modelNameCn, generation, segment, bodyType, existingTrimNames, brandContext, moteurMaContext, knownGaps } = input;
+  const { brandName, brandNameCn, modelName, modelNameCn, generation, segment, bodyType, existingTrimNames, brandContext, moteurMaContext, knownGaps, priceFocus } = input;
 
   return `You are a technical researcher building a spec database of Chinese-market EVs/ICE/hybrids. Real web search results for this vehicle are provided below — base your research ONLY on those, do not answer from memory alone.
 
@@ -316,7 +329,11 @@ Search Chinese-language automotive sources, especially: ${SOURCE_SITES.join(", "
 For EACH trim/variant, you must individually attempt to find every one of the following fields — this is a named checklist, not a general "get a feel for the car" request. If the field turns out not to apply once you know the actual energy type (e.g. this is a pure EV with no engine, or a pure ICE with no motor/battery), just say so and skip that block; otherwise treat every field below as something to actively go find, not something to skip because you already have a general sense of the trim:
 ${renderFieldChecklist(getApplicableFieldSpecs())}
 
-MANDATORY for every non-ICE trim (BEV/HEV/PHEV/REEV/EREV/MHEV): the thermal_management block. Cooling tiers: 0=passive air cooling (not suitable), 1=active air cooling (poor), 2=active liquid cooling (minimum acceptable for Morocco), 3=refrigerant-coupled/heat pump (recommended), 4=hybrid intelligent/PCM (best). Morocco's climate (especially southern/inland regions) means Tier 2 is the floor and Tier 3-4 is preferred — battery thermal management is safety-relevant there, not a nice-to-have. Actively search for the battery cooling method — Chinese sources commonly use terms like "液冷" (liquid cooling), "热泵" (heat pump), "风冷" (air cooling), "冷却液" (coolant); translate whichever term you find into English before writing it into thermal_evidence — the same Chinese-source-first way as every other field. If, after a genuine targeted search, the cooling method truly cannot be found, still fill in the block: set thermal_evidence to the literal string "UNKNOWN" and morocco_suitable to false — never omit the thermal_management block entirely.
+${
+  priceFocus
+    ? `THIS RESEARCH PASS'S SPECIFIC FOCUS IS PRICE — every trim's own itemized price (trim_price_min/trim_price_max) is what this pass exists to find, more than any other field below. Do NOT settle for the model's overall "starting from" price applied to every trim — that is exactly the wrong answer here. Search specifically for the itemized price list (配置价格表 / 指导价) for this model: Chinese auto sites like Autohome/Dongchedi typically publish a full trim-by-trim price table on the model's configuration/comparison page (配置对比 or 参数配置), showing ALL trims side-by-side with their own individual prices — that page, not a headline article quoting only the cheapest trim, is the real source you need. Run a distinct search per trim using the trim's own name plus "价格" (e.g. "<model> <trim name> 价格"), not just the model name alone — a model-name-only price search reliably surfaces the entry-level price and nothing else, which is the failure mode this pass exists to fix. If, after that specifically-targeted search, a trim's own price genuinely isn't separately published anywhere (some trims really do share one listed price), say so explicitly rather than defaulting to the model's overall price range.\n\n`
+    : ""
+}MANDATORY for every non-ICE trim (BEV/HEV/PHEV/REEV/EREV/MHEV): the thermal_management block. Cooling tiers: 0=passive air cooling (not suitable), 1=active air cooling (poor), 2=active liquid cooling (minimum acceptable for Morocco), 3=refrigerant-coupled/heat pump (recommended), 4=hybrid intelligent/PCM (best). Morocco's climate (especially southern/inland regions) means Tier 2 is the floor and Tier 3-4 is preferred — battery thermal management is safety-relevant there, not a nice-to-have. Actively search for the battery cooling method — Chinese sources commonly use terms like "液冷" (liquid cooling), "热泵" (heat pump), "风冷" (air cooling), "冷却液" (coolant); translate whichever term you find into English before writing it into thermal_evidence — the same Chinese-source-first way as every other field. If, after a genuine targeted search, the cooling method truly cannot be found, still fill in the block: set thermal_evidence to the literal string "UNKNOWN" and morocco_suitable to false — never omit the thermal_management block entirely.
 
 Do not rely on a single general search to cover all of the above. For each field (or small cluster of closely related fields, e.g. motor power + torque from the same spec-sheet table), run a distinct, targeted search — vary your query wording (Chinese model name + "参数配置", + "配置表", + the specific spec you're missing, etc.) — and only give up on a field after a real, targeted search attempt for it specifically has failed to turn up a source. One search that "covers the car in general" and then filling in whatever it happened to surface is not sufficient effort.
 
@@ -335,7 +352,7 @@ Report your findings in plain prose with citations — do not format as JSON yet
 }
 
 export function buildTechSpecPrompt(input: TechSpecPromptInput): string {
-  const { brandName, brandNameCn, modelName, modelNameCn, generation, segment, bodyType, existingTrimNames, brandContext } = input;
+  const { brandName, brandNameCn, modelName, modelNameCn, generation, segment, bodyType, existingTrimNames, brandContext, priceFocus } = input;
 
   const templateJson = JSON.stringify(
     {
@@ -368,7 +385,11 @@ ${
 Search Chinese-language automotive sources, especially: ${SOURCE_SITES.join(", ")}.
 
 For EACH trim/variant, report the full technical specification: engine (if any), electric motor (if any), battery (if any), transmission, and performance figures, plus a top-level energy type classification (${ENERGY_TYPE_VALUES.join(", ")}). Also report THIS TRIM'S OWN PRICE (trim_price_min/trim_price_max/trim_price_currency) — different trims of the same model genuinely cost different amounts (e.g. a base ICE trim vs. a loaded AWD trim), so find the price actually published for each individual trim, not one model-wide figure copied across every trim.
-
+${
+  priceFocus
+    ? `\nDo not carry the same trim_price_min/trim_price_max across multiple trims unless your research above genuinely found that exact figure separately published for EACH of those specific trims — copying one trim's price onto another because you couldn't find the second one's own figure is exactly the mistake this pass exists to catch. A trim whose own price truly wasn't found (even after the targeted per-trim search from the instructions above) must have trim_price_min/max as null, not a guessed or borrowed number.\n`
+    : ""
+}
 CRITICAL RULES:
 - ${buildOutputLanguageRule()}
 - Every numeric or categorical fact must come from a search result you actually found (grounding is enabled on this request) — do not estimate or infer from similar vehicles.
@@ -723,6 +744,15 @@ async function queryModel(
   const kickoffPrompt = buildResearchKickoffPrompt(promptInput);
   const formatPrompt = buildTechSpecPrompt(promptInput);
   const searchQueries = buildVehicleSearchQueries(promptInput.brandName, promptInput.modelName, promptInput.brandNameCn, promptInput.modelNameCn);
+  // priceFocus passes: also search per-trim "<trim> 价格" queries, which
+  // empirically surface an itemized trim-by-trim price table that a
+  // model-name-only price query does not — see buildTrimPriceSearchQueries's
+  // own comment for why.
+  if (promptInput.priceFocus && promptInput.existingTrimNames?.length) {
+    searchQueries.push(
+      ...buildTrimPriceSearchQueries(promptInput.brandName, promptInput.modelName, promptInput.existingTrimNames, promptInput.modelNameCn)
+    );
+  }
 
   const maxAttempts = 3;
   let lastErr: unknown;
