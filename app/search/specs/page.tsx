@@ -5,7 +5,7 @@ import Link from "next/link";
 import type { IBrand, IModel, IPowertrain } from "@/types";
 import { hpToKw, kwToHp } from "@/lib/units";
 import { bestMatchScores } from "@/lib/bestMatchScore";
-import { formatChinaPriceUsd } from "@/lib/priceDisplay";
+import { formatChinaPriceUsd, formatTrimPrice } from "@/lib/priceDisplay";
 import { compactSpecLabel } from "@/lib/specGrouping";
 import { SegmentLabel } from "@/lib/segmentDisplay";
 import type { Segment } from "@/types";
@@ -605,6 +605,7 @@ export default function SpecSearchPage() {
             {sortedResults.map((pt) => {
               const priceRange = pt.model_id?.price_range;
               const chinaPriceUsdLabel = formatChinaPriceUsd(priceRange);
+              const trimPriceLabel = formatTrimPrice(pt);
 
               return (
                 <Link
@@ -638,6 +639,11 @@ export default function SpecSearchPage() {
                       </p>
                     ) : (
                       <p className="italic">Price not available</p>
+                    )}
+                    {trimPriceLabel && (
+                      <p>
+                        This trim: <span className="font-medium text-zinc-800 dark:text-zinc-200">{trimPriceLabel}</span>
+                      </p>
                     )}
                     {pt.model_id?.morocco_price_dh != null && (
                       <p>

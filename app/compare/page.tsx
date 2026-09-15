@@ -6,7 +6,7 @@ import type { IBrand, IModel, IPowertrain, Segment, SegmentConfidence } from "@/
 import { segmentText } from "@/lib/segmentDisplay";
 import { kwToHp } from "@/lib/units";
 import { groupBrands } from "@/lib/brandGrouping";
-import { formatChinaPriceUsd } from "@/lib/priceDisplay";
+import { formatChinaPriceUsd, formatTrimPrice } from "@/lib/priceDisplay";
 import { groupBySpec, compactSpecLabel } from "@/lib/specGrouping";
 
 const SEGMENTS: Segment[] = [
@@ -79,6 +79,11 @@ const ROWS: Row[] = [
     hideIfBothEmpty: true,
   },
   { label: "Trim", get: (_m, p) => p?.trim_name ?? "N/A" },
+  {
+    label: "Trim Price",
+    get: (_m, p) => formatTrimPrice(p) ?? "N/A",
+    hideIfBothEmpty: true,
+  },
   {
     label: "Energy Type",
     get: (_m, p) => p?.energy_type ?? "N/A",
@@ -500,8 +505,10 @@ function TrimPicker({
           // Segment comes from the parent Model (not the Powertrain), so it's
           // passed in and prepended here rather than inside compactSpecLabel.
           const spec = compactSpecLabel(g.trims[0]);
+          const trimPrice = formatTrimPrice(g.trims[0]);
+          const specWithPrice = trimPrice ? `${spec} · ${trimPrice}` : spec;
           const segmentLabel = segment ? (segmentConfidence === "inferred" ? `~${segment}` : segment) : undefined;
-          const optionLabel = segmentLabel ? `${segmentLabel} · ${spec}` : spec;
+          const optionLabel = segmentLabel ? `${segmentLabel} · ${specWithPrice}` : specWithPrice;
           return (
             <option key={repId} value={repId} title={optionLabel}>
               {optionLabel}

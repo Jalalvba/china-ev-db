@@ -143,6 +143,13 @@ export interface ICanonicalPowertrain {
   /** True when this is a hybrid/PHEV/EREV trim whose hybrid_architecture could not be determined from hybrid_system_name (unmapped or missing) — flags it for manual verification against manufacturer spec sheets rather than a guessed value. */
   architecture_unverified?: boolean;
   emissions_standard?: EmissionsStandard;
+  /** This trim's own price, distinct from Model.price_range (a model-wide min-to-max summary derived FROM these trim prices once they exist — see lib/applySpecUpdates.ts's recomputeModelPriceRange). A base ICE trim and a loaded AWD trim of the same model genuinely cost different amounts, so price belongs here at the trim level, not only as one model-wide range. */
+  trim_price_min?: number;
+  trim_price_max?: number;
+  /** e.g. "CNY" — same currency-code convention as IPriceRange.currency_local. */
+  trim_price_currency?: string;
+  /** Same confirmed/unconfirmed gating as every other researched field — "confirmed" only when backed by an actual citation. */
+  trim_price_confidence?: Confidence;
   /** Attribution, e.g. "Autohome / Dongchedi". */
   source?: string;
   /** Top-level confidence for the powertrain record as a whole, distinct from each sub-block's own confidence. */
@@ -224,6 +231,10 @@ export const CANONICAL_POWERTRAIN_FIELD_TEMPLATE = {
   hybrid_system_name: "string | null (e.g. \"DM-i\", \"DHT\", \"EM-i\", \"C-DM\", \"Hi4\")",
   architecture_unverified: "boolean | null (true when hybrid_architecture could not be determined)",
   emissions_standard: EMISSIONS_STANDARD_VALUES.join(" | ") + " | null (China-market trims: use the China 5/China 6 values; export/GCC-market trims: Euro 5/6/6d)",
+  trim_price_min: "number | null (this specific trim's own price — MSRP low end if a range is published for this trim, or the single published price)",
+  trim_price_max: "number | null (this specific trim's own price high end; same as trim_price_min if only a single price is published for this trim)",
+  trim_price_currency: "string | null (e.g. \"CNY\" — the currency this trim's published price is actually denominated in)",
+  trim_price_confidence: CONFIDENCE_VALUES.join(" | ") + " | null",
   source: "string | null (e.g. \"Autohome\", \"official manufacturer site\")",
   confidence: CONFIDENCE_VALUES.join(" | ") + " | null",
 } as const;

@@ -63,9 +63,22 @@ export default function TechSpecUpdater({ scope, id, label }: Props) {
       setPreviousDataByModel(data.previousDataByModel ?? {});
 
       const initialSelections: Record<string, boolean> = {};
+      const previousDataByModel: Record<string, PreviousModelData> = data.previousDataByModel ?? {};
       fetchedResults.forEach((r) => {
+        const existingTrimNames = Object.keys(previousDataByModel[r.modelDbId]?.variantsByTrim ?? {});
         r.variants.forEach((v, idx) => {
-          if (v.valid) initialSelections[variantSelectionKey(r.modelDbId, idx)] = true;
+          if (!v.valid) return;
+          const trimName = typeof v.variant.trim_name === "string" ? v.variant.trim_name : undefined;
+          // Never pre-check a variant whose trim_name looks like a
+          // translated/reworded version of an existing trim rather than a
+          // confident match or a genuinely new one — this exact case
+          // silently created duplicate Powertrain docs before the
+          // isLikelyTranslation() heuristic existed (see lib/trimMatching.ts).
+          // Leaving it unchecked forces a human glance instead of an
+          // automatic apply either way.
+          const { likelyTranslationOf } = trimName ? matchTrimName(trimName, existingTrimNames) : { likelyTranslationOf: null };
+          if (likelyTranslationOf) return;
+          initialSelections[variantSelectionKey(r.modelDbId, idx)] = true;
         });
         if (r.notableFacts?.valid && r.notableFacts.notableFacts) {
           initialSelections[notableFactsSelectionKey(r.modelDbId)] = true;
@@ -321,12 +334,14 @@ function ModelResultCard({
           // SAME way the write path (lib/applySpecUpdates.ts) will, so what's
           // shown here is exactly what applying it will do: update an
           // existing trim, or (if genuinely no match) create a new one.
-          const match = trimName ? matchTrimName(trimName, existingTrimNames) : { matchedTrimName: null, exact: true };
+          const match = trimName
+            ? matchTrimName(trimName, existingTrimNames)
+            : { matchedTrimName: null, exact: true, likelyTranslationOf: null };
           const previousVariant = match.matchedTrimName ? previousData?.variantsByTrim[match.matchedTrimName] : undefined;
           // Only a real concern when this model already has existing trims
           // to potentially match against — a brand-new model's first trim
           // has nothing to match, and that's not a failure.
-          const noMatchFound = !match.matchedTrimName && existingTrimNames.length > 0;
+          const noMatchFound = !match.matchedTrimName && existingTrimNames.length > 0 && !match.likelyTranslationOf;
           return (
             <VariantRow
               key={variantSelectionKey(result.modelDbId, idx)}
@@ -336,6 +351,7 @@ function ModelResultCard({
               matchedTrimName={match.matchedTrimName}
               fuzzyMatch={!match.exact && !!match.matchedTrimName}
               noMatchFound={noMatchFound}
+              likelyTranslationOf={match.likelyTranslationOf}
               checked={!!selections[variantSelectionKey(result.modelDbId, idx)]}
               onToggle={onToggle}
             />
@@ -422,6 +438,7 @@ function VariantRow({
   matchedTrimName,
   fuzzyMatch,
   noMatchFound,
+  likelyTranslationOf,
   checked,
   onToggle,
 }: {
@@ -431,6 +448,7 @@ function VariantRow({
   matchedTrimName: string | null;
   fuzzyMatch: boolean;
   noMatchFound: boolean;
+  likelyTranslationOf: string | null;
   checked: boolean;
   onToggle: (key: string) => void;
 }) {
@@ -463,6 +481,11 @@ function VariantRow({
             {noMatchFound && (
               <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400">
                 no match — will create a new trim
+              </span>
+            )}
+            {likelyTranslationOf && (
+              <span className="text-[10px] px-1.5 py-0.5 rounded bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400">
+                possible translation of existing trim &quot;{likelyTranslationOf}&quot; — review before applying (unchecked by default)
               </span>
             )}
           </div>

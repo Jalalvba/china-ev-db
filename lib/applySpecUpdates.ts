@@ -91,6 +91,45 @@ export function findMismatchedKeys(expected: Record<string, unknown>, actual: Re
 }
 
 /**
+ * Recomputes a Model's price_range as the min/max across all of its
+ * Powertrain trims' own trim_price_min/trim_price_max — a "starting from X"
+ * summary DERIVED from trim-level prices, rather than a separately-researched
+ * figure that can drift out of sync with what the trims themselves say. Only
+ * trims with a confirmed trim_price (trim_price_confidence === "confirmed")
+ * count, same confidence-gating convention as everywhere else. No-ops if no
+ * trim has a confirmed price yet — leaves the existing price_range (if any)
+ * alone rather than clobbering it with an empty range.
+ */
+async function recomputeModelPriceRange(modelId: Types.ObjectId | string): Promise<void> {
+  const trims = (await Powertrain.find(
+    { model_id: modelId, trim_price_confidence: "confirmed" },
+    { trim_price_min: 1, trim_price_max: 1, trim_price_currency: 1 }
+  ).lean()) as unknown as { trim_price_min?: number; trim_price_max?: number; trim_price_currency?: string }[];
+
+  const mins = trims.map((t) => t.trim_price_min).filter((v): v is number => typeof v === "number");
+  const maxes = trims.map((t) => t.trim_price_max ?? t.trim_price_min).filter((v): v is number => typeof v === "number");
+  if (mins.length === 0 || maxes.length === 0) return;
+
+  const currency = trims.find((t) => t.trim_price_currency)?.trim_price_currency ?? "CNY";
+  const expected = {
+    "price_range.min": Math.min(...mins),
+    "price_range.max": Math.max(...maxes),
+    "price_range.currency_local": currency,
+  };
+  assertSchemaKnowsFields(ModelSchema, ["price_range"], "Model");
+  await ModelSchema.findByIdAndUpdate(modelId, { $set: expected });
+
+  // Same re-fetch verification convention as every other write in this file
+  // (see file header) — thrown on mismatch so the caller's per-model catch
+  // block reports it as an error rather than silently leaving a stale range.
+  const persisted = (await ModelSchema.findById(modelId).lean()) as Record<string, unknown> | null;
+  const badFields = findMismatchedKeys(expected, persisted);
+  if (badFields.length > 0) {
+    throw new Error(`price_range write did not throw, but failed verification: field(s) [${badFields.join(", ")}] did not persist as expected.`);
+  }
+}
+
+/**
  * Applies approved variant + notable-facts updates. `modelFilter` scopes which
  * Model documents are eligible — e.g. `{ brand_id }` from the brand-level
  * route so it can't be used to write to a model under a different brand, or
@@ -111,6 +150,7 @@ export async function applySpecUpdates(opts: {
   // every update in a multi-trim batch, and gets updated as new trims are
   // inserted so a later update in the same batch matches against them too.
   const existingTrimNamesByModel = new Map<string, string[]>();
+  const touchedModelIds = new Set<string>();
   async function getExistingTrimNames(modelId: string): Promise<string[]> {
     const cached = existingTrimNamesByModel.get(modelId);
     if (cached) return cached;
@@ -144,7 +184,25 @@ export async function applySpecUpdates(opts: {
       // reworded trim name updates the existing doc instead of duplicating it.
       const modelIdStr = String(modelDoc._id);
       const existingNames = await getExistingTrimNames(modelIdStr);
-      const { matchedTrimName } = matchTrimName(researchedTrimName, existingNames);
+      const { matchedTrimName, likelyTranslationOf } = matchTrimName(researchedTrimName, existingNames);
+
+      // Caught live: DeepSeek translated an existing Chinese trim_name
+      // ("DM-i 128KM 进取型") into English ("DM-i 128KM Progressive") despite
+      // an explicit "reuse verbatim" prompt instruction, which — before this
+      // check existed — silently created a duplicate Powertrain doc instead
+      // of updating the real one. Prompt wording alone isn't trustworthy
+      // here, so this is a hard refusal, not a warning: never auto-create OR
+      // auto-match in this case, for either the reviewed UI path or an
+      // unattended batch script (e.g. scripts/fill-missing-mandatory-fields.ts)
+      // that calls applySpecUpdates directly with no human review step.
+      if (!matchedTrimName && likelyTranslationOf) {
+        errors.push({
+          modelDbId: update.modelDbId,
+          message: `Variant trim_name "${researchedTrimName}" looks like a translated/reworded version of the existing trim "${likelyTranslationOf}" rather than a genuinely new trim — refusing to either auto-match or create a duplicate. Skipped; needs a human to confirm which one this is.`,
+        });
+        continue;
+      }
+
       // Keep the ORIGINAL stored trim name stable across research passes
       // rather than overwriting it with whatever wording the AI used this
       // time — trim_name is this doc's identity, not a researched field.
@@ -181,8 +239,17 @@ export async function applySpecUpdates(opts: {
       }
 
       applied++;
+      touchedModelIds.add(modelIdStr);
     } catch (err) {
       errors.push({ modelDbId: update.modelDbId, message: (err as Error).message });
+    }
+  }
+
+  for (const modelIdStr of touchedModelIds) {
+    try {
+      await recomputeModelPriceRange(modelIdStr);
+    } catch (err) {
+      errors.push({ modelDbId: modelIdStr, message: `price_range recompute failed: ${(err as Error).message}` });
     }
   }
 

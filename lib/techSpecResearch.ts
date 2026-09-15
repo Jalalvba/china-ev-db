@@ -28,6 +28,7 @@ import {
 } from "../types/canonicalPowertrain";
 import { buildBrandContextBlock, type BrandContext } from "./brandContext";
 import { correctRangeStandard } from "./deepseekNormalize";
+import { buildOutputLanguageRule, THERMAL_MANAGEMENT_MANDATORY_RULE, TRIM_NAME_FIDELITY_RULE } from "./researchPromptRules";
 
 /** The active provider's default chat model (DeepSeek by default) — see lib/aiProvider.ts. Override via that provider's own <PROVIDER>_MODEL env var. A FUNCTION, not a constant — call it at the point of use, never capture its result into a module-level const anywhere in this file's own import chain. See the comment on getActiveProvider() in lib/aiProvider.ts: ES `import` hoisting means a module-level `const X = getDefaultModel()` here would resolve before a script's own dotenv.config() call runs, silently ignoring .env.local/.env — this bit a live Qwen smoke test for real. */
 export const getDefaultModel = getAiDefaultModel;
@@ -246,6 +247,9 @@ const PERFORMANCE_FIELDS: FieldSpec[] = [
 ];
 const TRIM_LEVEL_FIELDS: FieldSpec[] = [
   { path: "combined_range_km", label: "combined/total range (km) — fuel+EV combined for PHEV/REEV, or fuel range for ICE, or same as EV range for BEV; if no figure is published outright, it may be computed from tank capacity ÷ fuel consumption × 100 (both individually sourced) — see the JSON-formatting rules for the required \"Computed:\" note format" },
+  { path: "trim_price_min", label: "this trim's own price, low end (e.g. MSRP) — per-trim, not a model-wide range" },
+  { path: "trim_price_max", label: "this trim's own price, high end — same as trim_price_min if only a single price is published for this trim" },
+  { path: "trim_price_currency", label: "currency this trim's price is denominated in (e.g. CNY)" },
   { path: "source", label: "source attribution (which site/press release the figures came from)" },
 ];
 
@@ -299,7 +303,9 @@ ${
 }
 ${
   existingTrimNames?.length
-    ? `\nKnown trims to research specs for (reuse these exact names character-for-character in your findings below — do not rephrase, translate, reorder their words, or append clarifying detail like an engine code or spec summary in parentheses, even if accurate): ${existingTrimNames.join(", ")}`
+    ? `\nThis model already has these exact trims on file — you MUST select trim_name for each researched trim from EXACTLY this list, byte-for-byte, INCLUDING any Chinese characters if that's how it's stored (never translate, transliterate, reword, reorder words, or append clarifying detail like an engine code or spec summary in parentheses, even if accurate): ${existingTrimNames
+        .map((t) => `"${t}"`)
+        .join(", ")}. If a trim you researched genuinely does not correspond to any name in this list (a real new trim this list is missing — not a translated/reworded version of one that's already there), say so explicitly and give it a new, clearly-marked name rather than silently picking the closest existing one.`
     : `\nEnumerate the current production trim/variant lineup for this model.`
 }
 
@@ -353,24 +359,26 @@ Vehicle to research: "${brandName}"${brandNameCn ? ` (${brandNameCn})` : ""} —
   }${buildBrandContextBlock(brandContext)}
 ${
   existingTrimNames?.length
-    ? `\nKnown trims to fill in specs for: ${existingTrimNames.join(", ")}\nUse "trim_name" values that match these EXACTLY, character-for-character — copy them verbatim rather than rephrasing, translating, or appending extra detail (e.g. an engine code) even if it's accurate. Only write a trim_name NOT in this list if you're confident it's a genuinely different trim this list is missing, not a reworded version of one that's already there.`
+    ? `\nExisting trim_name values on file for this model — pick from EXACTLY this list for every trim you report, copied byte-for-byte including any Chinese characters (never rephrase, translate/transliterate into English, reorder words, or append extra detail like an engine code, even if accurate): ${existingTrimNames
+        .map((t) => `"${t}"`)
+        .join(", ")}\nA "trim_name" that isn't a copy-pasted match from this list is only correct when it's a genuinely different trim this list is missing — never a translated or reworded version of one that's already there. When in doubt, reuse the existing exact string rather than improving/translating it.`
     : `\nEnumerate the current production trim/variant lineup for this model.`
 }
 
 Search Chinese-language automotive sources, especially: ${SOURCE_SITES.join(", ")}.
 
-For EACH trim/variant, report the full technical specification: engine (if any), electric motor (if any), battery (if any), transmission, and performance figures, plus a top-level energy type classification (${ENERGY_TYPE_VALUES.join(", ")}).
+For EACH trim/variant, report the full technical specification: engine (if any), electric motor (if any), battery (if any), transmission, and performance figures, plus a top-level energy type classification (${ENERGY_TYPE_VALUES.join(", ")}). Also report THIS TRIM'S OWN PRICE (trim_price_min/trim_price_max/trim_price_currency) — different trims of the same model genuinely cost different amounts (e.g. a base ICE trim vs. a loaded AWD trim), so find the price actually published for each individual trim, not one model-wide figure copied across every trim.
 
 CRITICAL RULES:
-- OUTPUT LANGUAGE: every string value in your JSON response must be English — trim names, notes, source names, "note" fields, "thermal_evidence", everything. Never leave a single Chinese (or any other non-English) character in the output. If a source is in Chinese, translate the fact/term into English before writing it (e.g. a spec sheet says "液冷" -> write "liquid cooling", not "液冷"). This applies even to fields whose earlier guidance shows a Chinese example — those examples describe what to look FOR in the source, not what to write in the response.
+- ${buildOutputLanguageRule()}
 - Every numeric or categorical fact must come from a search result you actually found (grounding is enabled on this request) — do not estimate or infer from similar vehicles.
 - Use "null" for any field you cannot find a sourced value for. Do NOT guess a plausible-sounding number.
 - Set each block's "confidence" to "confirmed" only if a specific cited source backs the block's claim — including a claim reported only in "note" when the structured numeric fields are null (e.g. a concept vehicle's press release quoting horsepower and wheel-torque instead of the standard kW/motor-torque_nm shape: report it in "note" and mark "confirmed" if the source is real, rather than downgrading confidence just because it didn't fit the structured fields). Otherwise "unconfirmed".
 - motor.count must be one of: ${MOTOR_COUNT_VALUES.join(", ")}. motor.drive must be one of: ${DRIVE_TYPE_VALUES.join(", ")}. transmission.type must be one of: ${GEARBOX_TYPE_VALUES.join(", ")}. battery.ev_range_standard must be one of: ${RANGE_STANDARDS_LABEL}. engine.aspiration must be one of: ${ASPIRATION_VALUES.join(", ")}. engine.fuel_type must be one of: ${FUEL_TYPE_VALUES.join(", ")} (this is ICE fuel only — do not encode "range extender" here; use the separate engine.is_range_extender boolean for a REEV/EREV's generator engine). battery.chemistry must be one of: ${BATTERY_CHEMISTRY_VALUES.join(", ")} — put any proprietary product name or extra qualifier (e.g. "Blade", "800V", "2nd gen") in battery.battery_variant instead of inventing a new chemistry value. thermal_management.cooling_tier must be one of: ${COOLING_TIER_VALUES.join(", ")}. Every "confidence" field must be one of: ${CONFIDENCE_VALUES.join(", ")}.
-- thermal_management is MANDATORY for every trim with a battery (i.e. energy_type !== "ICE"): 0=passive air, 1=active air, 2=active liquid (Morocco minimum), 3=refrigerant-coupled/heat pump (recommended), 4=hybrid intelligent/PCM (best). If genuinely unknown after searching, set thermal_evidence to "UNKNOWN" and morocco_suitable to false — do NOT omit the thermal_management block.
+- ${THERMAL_MANAGEMENT_MANDATORY_RULE}
 - Do NOT add, rename, or omit any field from the JSON shape below. Use exactly these field names, nothing else.
 - "notable_facts" is separate from the structured spec fields above — only fill in "notable_facts.text" if you found something genuinely noteworthy with a citation; otherwise set both "notable_facts.text" and "notable_facts.confidence" to null. Same confirmed/unconfirmed rule applies: "confirmed" only if a specific source backs the claim.
-- If known trims were given above, "trim_name" must reuse their exact wording — a reworded, translated, or detail-appended trim_name for what is really the same trim (e.g. turning "1.6T" into "1.6T (290T / 1.6TGDI)") is treated as a data-loss bug downstream, not a helpful improvement.
+- If known trims were given above, "trim_name" must reuse their exact wording. ${TRIM_NAME_FIDELITY_RULE}
 - "combined_range_km" is usually a directly-published spec, but if you found no such published figure, you MAY instead compute it from two other individually-sourced inputs via a deterministic conversion — most commonly fuel tank capacity ÷ published fuel consumption × 100 (e.g. an ICE/HEV trim where only "51 L tank, 7.2 L/100km WLTC" was published, never a combined range in km outright). This is the ONLY case where you may derive a numeric field rather than reporting a value you found stated outright — do not extend this to any other field. If you do this: (1) both inputs must individually come from a citable source — never combine one sourced figure with an assumed/typical one; (2) "combined_range_note" MUST show the arithmetic AND name both source inputs, prefixed with the literal word "Computed:" so it can never be mistaken for a directly-published figure, e.g. "Computed: 51L tank ÷ 7.2L/100km × 100 = ~708 km (WLTC, Autohome spec sheet)". A combined_range_note that reports a directly-published figure (the normal case) must NOT start with "Computed:" — that prefix is reserved exclusively for this derived-value case, so it stays unambiguous which kind of value combined_range_km actually is.
 
 Respond with ONLY a single JSON object (no markdown fencing, no prose before or after) in exactly this shape (the inner object shown is a field-by-field description of the type each field must have, not a literal example value — array should contain one object per trim/variant):
@@ -399,6 +407,10 @@ const TOP_LEVEL_KEYS = new Set([
   "hybrid_system_name",
   "architecture_unverified",
   "emissions_standard",
+  "trim_price_min",
+  "trim_price_max",
+  "trim_price_currency",
+  "trim_price_confidence",
   "source",
   "confidence",
 ]);
@@ -473,6 +485,16 @@ export function validateCanonicalVariant(raw: unknown): { valid: boolean; errors
   }
   checkBoolean(v.architecture_unverified, "variant.architecture_unverified", errors);
   checkEnum(v.emissions_standard, EMISSIONS_STANDARD_SET, "variant.emissions_standard", errors);
+  if (v.trim_price_min !== undefined && v.trim_price_min !== null && typeof v.trim_price_min !== "number") {
+    errors.push("variant.trim_price_min: must be a number or null");
+  }
+  if (v.trim_price_max !== undefined && v.trim_price_max !== null && typeof v.trim_price_max !== "number") {
+    errors.push("variant.trim_price_max: must be a number or null");
+  }
+  if (v.trim_price_currency !== undefined && v.trim_price_currency !== null && typeof v.trim_price_currency !== "string") {
+    errors.push("variant.trim_price_currency: must be a string or null");
+  }
+  checkEnum(v.trim_price_confidence, CONFIDENCE_SET, "variant.trim_price_confidence", errors);
 
   if (v.engine !== undefined && v.engine !== null) {
     if (typeof v.engine !== "object" || Array.isArray(v.engine)) {
@@ -612,6 +634,9 @@ export function applyGroundingGate(variant: Record<string, unknown>, hasGroundin
   if (hasGrounding) return variant;
   variant.confidence = "unconfirmed";
   variant.unverified = true;
+  if (variant.trim_price_confidence !== undefined && variant.trim_price_confidence !== null) {
+    variant.trim_price_confidence = "unconfirmed";
+  }
   for (const key of ["engine", "motor", "battery", "thermal_management", "transmission", "performance"]) {
     const block = variant[key];
     if (block && typeof block === "object" && !Array.isArray(block)) {

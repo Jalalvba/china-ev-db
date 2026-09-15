@@ -5,16 +5,25 @@
 // Deliberately separate from lib/techSpecResearch.ts (the shared research pipeline) —
 // this never calls an LLM API itself, it only prepares/validates JSON for a
 // human to hand-carry through an external chat UI. It DOES reuse
-// validateCanonicalVariant/validateNotableFacts from techSpecResearch.ts for
-// the powertrain shape, and findMismatchedKeys from applySpecUpdates.ts for
-// diffing, so there is exactly one definition of "what does a valid
-// powertrain variant look like" / "did this field actually change" across
-// both pipelines.
+// validateCanonicalVariant from techSpecResearch.ts VERBATIM for the
+// powertrain shape (see validateManualPowertrain below — no separate,
+// possibly-drifting copy of "what does a valid powertrain variant look
+// like"), and findMismatchedKeys from applySpecUpdates.ts for diffing.
+// validateNotableFacts is NOT reused as-is: the Model schema stores
+// notable_facts/notable_facts_confidence as two flat top-level fields (see
+// models/Model.ts), not the nested {text, confidence} object shape that
+// function expects (that shape only exists transiently inside a
+// ResearchedNotableFacts result in the automated pipeline) — so
+// validateManualModelFields below re-implements the equivalent check for
+// that flat shape instead, reusing the same CONFIDENCE_VALUES enum so the
+// two paths can't disagree on what a valid confidence value is, even though
+// they can't share the literal validator function.
 
 import { validateCanonicalVariant, describeTrimGaps, type PowertrainLean } from "./techSpecResearch";
-import { CANONICAL_POWERTRAIN_FIELD_TEMPLATE } from "@/types/canonicalPowertrain";
+import { CANONICAL_POWERTRAIN_FIELD_TEMPLATE, CONFIDENCE_VALUES } from "@/types/canonicalPowertrain";
 import { findMismatchedKeys } from "./applySpecUpdates";
 import { correctRangeStandard } from "./deepseekNormalize";
+import { buildOutputLanguageRule, THERMAL_MANAGEMENT_MANDATORY_RULE, TRIM_NAME_FIDELITY_RULE } from "./researchPromptRules";
 import { SEGMENTS } from "@/models/Model";
 import type { IBrand } from "@/types";
 
@@ -218,7 +227,7 @@ Below is the current database record (as JSON) for "${model.brand_name}" — "${
 3. FIND MISSING TRIMS — the trim list below may be incomplete, not just the fields within it (see the trim-completeness note below). Actively search for variants of this model that exist in the real market but aren't in this record at all.
 4. RESEARCH PRICE — "model.price_range" (min/max CHINA MSRP, in CNY) is one of the fields to fill/cross-check exactly like any other, and it is MANDATORY: price_range must never be left null in your response. If it's null, first try to find the real China starting-price range for this model (the manufacturer's official listed price, or the lowest/highest trim MSRP from autohome.com.cn / dongchedi.com's price pages — not a used-market or export price). ONLY if no sourced China MSRP exists anywhere (a genuinely unlaunched or export-only model), this is the one explicit exception to rule 3 below: give a reasonable approximate price instead, estimated from comparable vehicles in the same segment/body_type/powertrain class (e.g. "similar C-segment PHEV SUVs in China retail for roughly 150,000-200,000 CNY, used as an estimate since no listed price exists for this specific model") — set "unverified": true and put the comparison reasoning in "price_range_source_note" so a reader can tell at a glance this is an estimate, not a quoted price. If it's already populated, cross-check it per job 2 above. Only "min", "max", "currency_local" (should be "CNY"), and "unverified" belong in price_range — do NOT add "min_usd"/"max_usd"/"exchange_rate_used": the USD conversion is always computed separately from a live exchange rate, never from your own math, so those fields are deliberately absent from the record below and must stay absent from your response.
 
-5. BATTERY THERMAL MANAGEMENT — "thermal_management" is one of the fields to fill/cross-check exactly like any other, and for every trim where "energy_type" is NOT "ICE" (i.e. HEV/PHEV/BEV/REEV/EREV/MHEV — anything with a battery) it is MANDATORY: the "thermal_management" object must never be left out of your response for such a trim, even if it isn't listed under "Known gaps" below (older trims in this record predate this field and won't be flagged as a gap for it, but the requirement still applies to them). Cooling tiers: 0=passive air cooling (not suitable), 1=active air cooling (poor), 2=active liquid cooling (minimum acceptable for Morocco), 3=refrigerant-coupled/heat pump (recommended), 4=hybrid intelligent/PCM (best) — Morocco's climate makes this safety-relevant, not cosmetic. Actively search for the battery cooling method (Chinese terms like "液冷"/liquid cooling, "热泵"/heat pump, "风冷"/air cooling, "冷却液"/coolant) the same way as every other field. If, after a genuine targeted search, the cooling method truly cannot be found, still return the full "thermal_management" object with "thermal_evidence" set to the literal string "UNKNOWN" and "morocco_suitable" set to false — an entirely missing "thermal_management" key on a non-ICE trim will fail validation and block this entire import, so never omit it, not even by oversight while focusing on other fields.
+5. BATTERY THERMAL MANAGEMENT — "thermal_management" is one of the fields to fill/cross-check exactly like any other, and it is MANDATORY, even if it isn't listed under "Known gaps" below (older trims in this record predate this field and won't be flagged as a gap for it, but the requirement still applies to them): ${THERMAL_MANAGEMENT_MANDATORY_RULE} Actively search for the battery cooling method (Chinese terms like "液冷"/liquid cooling, "热泵"/heat pump, "风冷"/air cooling, "冷却液"/coolant) the same way as every other field. An entirely missing "thermal_management" key on a non-ICE trim will fail validation and block this entire import, so never omit it, not even by oversight while focusing on other fields.
 
 6. VEHICLE SEGMENT — "model.segment" is MANDATORY and must NEVER be left null, same posture as price_range in job 4. If "model.segment_confidence" is currently "inferred" (or the field is missing), actively try to find a real source (autohome.com.cn / dongchedi.com's own segment classification, or a comparable-vehicle listing) that confirms which of ${SEGMENTS.join(", ")} this model belongs to, and set "segment_confidence" to "confirmed" if you find one. If no source is found even after a genuine search, keep (or set) "segment" to your own best-effort classification based on the vehicle's body type, size, and market positioning — never null, never omitted — and set "segment_confidence" to "inferred". A best-effort classification is always better than no classification.
 
@@ -233,9 +242,11 @@ This record may be INCOMPLETE at the trim/variant level, not just at the field l
 
 CRITICAL RULES — read carefully, this is a round-trip into a strict-schema database:
 1. Return the SAME JSON shape you were given below — same top-level keys ("model", "powertrains"), same nested field names. Do not add, rename, or omit any field.
-2. model._id and every powertrains[]._id MUST be returned byte-for-byte UNCHANGED from what you were given. These IDs are how the import step matches your response back to the exact existing database record — if you omit an _id, invent a new one, or alter it in any way, that entire record will be misread as a brand-new trim instead of an update to the existing one, which defeats the whole point of this workflow. If you are adding a genuinely NEW trim that wasn't in the input, give it no "_id" field at all (omit it, don't invent a placeholder) — that is the only case where a missing _id is correct.
+2. model._id and every powertrains[]._id MUST be returned byte-for-byte UNCHANGED from what you were given. These IDs are how the import step matches your response back to the exact existing database record — if you omit an _id, invent a new one, or alter it in any way, that entire record will be misread as a brand-new trim instead of an update to the existing one, which defeats the whole point of this workflow. If you are adding a genuinely NEW trim that wasn't in the input, give it no "_id" field at all (omit it, don't invent a placeholder) — that is the only case where a missing _id is correct. ${TRIM_NAME_FIDELITY_RULE}
 3. Every numeric or categorical fact must come from a source you can point to — do not estimate or infer from similar vehicles. Use null for anything you cannot find a sourced value for. The exceptions are price_range per job 4 above (never left null even when only an estimate is possible) and segment per job 6 above (never left null even when only your own best-effort classification is possible — tag it "inferred" via segment_confidence in that case).
-2b. OUTPUT LANGUAGE: every string value must be English — "source", every "note" field, every "<field>_source_note", "notes", everything — with exactly two exceptions: (a) "name_cn" is explicitly the ORIGINAL-LANGUAGE (Chinese) name and must stay in its original script, and (b) an EXISTING "trim_name" you were given below must be returned byte-for-byte unchanged per rule 2 above even if it contains Chinese characters (e.g. a parenthetical like "(轻骑士BSG)") — do NOT translate or alter an existing trim_name, that would break the exact-match round-trip this workflow depends on. A genuinely NEW trim_name you are adding should itself be in English/Latin script where the vehicle's real nameplate allows it. If a source fact is in Chinese, translate it into English before writing it into any field other than these two exceptions.
+2b. ${buildOutputLanguageRule([
+    '"name_cn" is explicitly the ORIGINAL-LANGUAGE (Chinese) name and must stay in its original script',
+  ])} A genuinely NEW trim_name you are adding should itself be in English/Latin script where the vehicle's real nameplate allows it.
 3b. "thermal_management" is REQUIRED on every powertrain entry whose "energy_type" is not "ICE" — per job 5 above, fill it with real values if you find them or with "thermal_evidence": "UNKNOWN" / "morocco_suitable": false if you genuinely can't. Omitting the "thermal_management" key entirely on a non-ICE trim is a validation failure that blocks the whole import, not a harmless gap — double-check every non-ICE trim in your response has this key before returning it.
 4. For every field you CHANGE from its current value — whether it was null (a gap you filled) or already populated (a value your independent research corrected) — add a sibling "<field>_source_note" string explaining the source and, if you're correcting an existing value, what was wrong with it (e.g. if you change "battery.chemistry" from an existing "NMC" to "LFP", include "battery.chemistry_source_note": "Corrected from NMC — official Soueast spec sheet and autohome.com.cn both list LFP"). Only changed fields need a source note — leave unchanged fields as-is with no note. A field you independently checked and confirmed matches the stored value needs no note either; notes exist only to flag a change, not to prove you checked something.
 5. Do not touch any field not listed in "model" or "powertrains[]" below — there is no other data to research.
@@ -285,7 +296,12 @@ export function validateManualModelFields(
   }
 
   if (v.notable_facts_confidence !== undefined && v.notable_facts_confidence !== null) {
-    if (v.notable_facts_confidence !== "confirmed" && v.notable_facts_confidence !== "unconfirmed") {
+    // Same CONFIDENCE_VALUES enum the automated pipeline's validateNotableFacts
+    // checks against — model.notable_facts_confidence can't share that
+    // function literally (this is a flat Model field, not the nested
+    // {text, confidence} object shape validateNotableFacts validates), but
+    // it must agree on what counts as a valid value.
+    if (!(CONFIDENCE_VALUES as string[]).includes(v.notable_facts_confidence as string)) {
       errors.push(`model.notable_facts_confidence: invalid value ${JSON.stringify(v.notable_facts_confidence)}`);
     }
   }

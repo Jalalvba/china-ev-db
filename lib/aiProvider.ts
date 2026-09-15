@@ -43,7 +43,11 @@ const PROVIDERS: Record<ProviderId, ProviderConfig> = {
     baseURL: "https://api.deepseek.com",
     apiKeyEnv: "DEEPSEEK_API_KEY",
     modelEnv: "DEEPSEEK_MODEL",
-    defaultModel: "deepseek-chat",
+    // "deepseek-chat" is a legacy alias that still works (routes to this same
+    // model server-side, confirmed live: requesting "deepseek-chat" returns
+    // "model": "deepseek-flash" in the response) but isn't the documented
+    // name — use the real one so a future alias removal doesn't break this.
+    defaultModel: "deepseek-flash",
     keysUrl: "https://platform.deepseek.com/api_keys",
   },
   kimi: {

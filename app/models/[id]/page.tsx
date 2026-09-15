@@ -15,7 +15,7 @@ import TechSpecUpdater from "@/app/TechSpecUpdater";
 import ManualResearchImporter from "@/app/ManualResearchImporter";
 import ExportForManualResearchButton from "@/app/ExportForManualResearchButton";
 import MoroccoPriceFetcher from "@/app/MoroccoPriceFetcher";
-import { formatChinaPriceUsd } from "@/lib/priceDisplay";
+import { formatChinaPriceUsd, formatTrimPrice } from "@/lib/priceDisplay";
 import { SegmentLabel } from "@/lib/segmentDisplay";
 import { hasFields, groupBySpec } from "@/lib/specGrouping";
 
@@ -62,10 +62,10 @@ export default async function ModelPage({ params }: { params: Promise<{ id: stri
   const { model, powertrains, moroccoListing } = data;
   const brand = model.brand_id;
 
-  // price_range lives on the Model, not per-Powertrain trim — there's only
-  // one blended China price range for the whole model, never a distinct
-  // price per trim. Repeat the same formatted value under every trim column
-  // rather than implying a per-trim breakdown the data doesn't support.
+  // Model.price_range is a "starting from" min-to-max summary DERIVED from
+  // the trims' own trim_price_min/trim_price_max (see
+  // lib/applySpecUpdates.ts's recomputeModelPriceRange) — shown once here as
+  // that summary, while each trim's own price is shown per-column below.
   const chinaPriceUsdLabel = formatChinaPriceUsd(model.price_range);
 
   return (
@@ -212,6 +212,7 @@ export default async function ModelPage({ params }: { params: Promise<{ id: stri
                 label="China Price (USD)"
                 values={powertrains.map(() => chinaPriceUsdLabel)}
               />
+              <Row label="Trim Price" values={powertrains.map((p) => formatTrimPrice(p))} />
               <Row
                 label="Engine"
                 values={powertrains.map((p) =>
