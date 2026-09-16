@@ -137,6 +137,19 @@ export function buildExportDocument(
       last_researched_at: _lastResearchedAt,
       unverified: _unverified,
       __v: _v,
+      // Computed server-side at write time (lib/applySpecUpdates.ts's
+      // computeTrimPriceUsd), never something the AI should see or touch —
+      // same reasoning as price_range.min_usd/max_usd already being
+      // excluded from model.price_range below. Missed when these fields
+      // were added this session: they leaked into the export, and a real
+      // Dongfeng Aeolus Haohan response echoed them back verbatim (rule 5:
+      // "do not touch any field not listed"), which the strict validator
+      // then correctly rejected as unexpected fields — the AI did nothing
+      // wrong, the export just handed it fields it should never have seen.
+      trim_price_min_usd: _trimPriceMinUsd,
+      trim_price_max_usd: _trimPriceMaxUsd,
+      trim_price_exchange_rate_used: _trimPriceExchangeRateUsed,
+      trim_price_exchange_rate_date: _trimPriceExchangeRateDate,
       ...rest
     } = pt as Record<string, unknown> & { _id: unknown };
     return {
@@ -388,6 +401,26 @@ export interface ValidatedPowertrainImport {
  * to its one valid spot before validation runs. Extend this table, don't
  * hand-roll a new one-off function, when the next misplaced-field case shows up.
  */
+/**
+ * Fields computed server-side at write time (lib/applySpecUpdates.ts's
+ * computeTrimPriceUsd) — never valid input from the AI, same category as
+ * price_range.min_usd/max_usd already being excluded from the model-level
+ * export. buildExportDocument now excludes these too, so a fresh export
+ * won't include them; this is the defense-in-depth backstop for a response
+ * built from an older cached export (or an AI echoing them anyway) —
+ * silently dropped before validation rather than hard-rejecting an
+ * otherwise-good import over fields the AI was never supposed to see.
+ */
+const SERVER_COMPUTED_TRIM_PRICE_KEYS = new Set(["trim_price_min_usd", "trim_price_max_usd", "trim_price_exchange_rate_used", "trim_price_exchange_rate_date"]);
+
+function stripServerComputedFields(rest: Record<string, unknown>): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(rest)) {
+    if (!SERVER_COMPUTED_TRIM_PRICE_KEYS.has(k)) out[k] = v;
+  }
+  return out;
+}
+
 const KNOWN_FIELD_RELOCATIONS: { from: string; to: string }[] = [
   // trim-level -> battery (the original ev_range_km flattening bug)
   { from: "ev_range_km", to: "battery.ev_range_km" },
@@ -527,7 +560,8 @@ export function validateManualPowertrain(raw: unknown, index: number): Validated
     return { _id: null, variant: {}, sourceNotes: {}, valid: false, errors: [`powertrains[${index}]._id: must be a string if present`] };
   }
   const { _id, ...rest } = withId;
-  const relocated = relocateKnownMisplacedFields(rest);
+  const withoutServerComputed = stripServerComputedFields(rest);
+  const relocated = relocateKnownMisplacedFields(withoutServerComputed);
   const normalized = normalizeKnownValueAliases(relocated);
   const { stripped, notes } = extractSourceNotes(normalized);
   const { valid, errors } = validateCanonicalVariant(stripped);
