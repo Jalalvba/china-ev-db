@@ -35,7 +35,10 @@ export async function GET(req: NextRequest) {
   const ids = searchParams.get("ids");
 
   if (model_id) filter.model_id = model_id;
-  if (energy_type) filter.energy_type = energy_type;
+  // Comma-separated accepts multiple exact values (e.g. Tech Search always sends
+  // "PHEV,REEV/EREV" now that energy_type isn't a user-facing filter there) while
+  // staying a single-value exact match for every other caller.
+  if (energy_type) filter.energy_type = energy_type.includes(",") ? { $in: energy_type.split(",") } : energy_type;
   if (gearbox) filter["transmission.type"] = gearbox;
   if (fuel_type) filter["engine.fuel_type"] = fuel_type;
   if (aspiration) filter["engine.aspiration"] = aspiration;
@@ -49,7 +52,12 @@ export async function GET(req: NextRequest) {
   applyRangeFilter(filter, "motor.power_kw", searchParams.get("min_motor_power_kw"), searchParams.get("max_motor_power_kw"));
   applyRangeFilter(filter, "engine.torque_nm", searchParams.get("min_engine_torque_nm"), searchParams.get("max_engine_torque_nm"));
   applyRangeFilter(filter, "motor.torque_nm", searchParams.get("min_motor_torque_nm"), searchParams.get("max_motor_torque_nm"));
-  applyRangeFilter(filter, "engine.displacement_l", searchParams.get("min_displacement_l"), searchParams.get("max_displacement_l"));
+  // Displacement is a small, closed catalog (2026-09-18 audit: only 4 real engine
+  // sizes exist across the PHEV-SUV-scoped DB) rather than the continuous spread
+  // power/torque/battery/price have — Tech Search sends an exact-value list here,
+  // not a min/max range, same $in pattern as energy_type above.
+  const displacementL = searchParams.get("displacement_l");
+  if (displacementL) filter["engine.displacement_l"] = { $in: displacementL.split(",").map(Number) };
   applyRangeFilter(filter, "battery.ev_range_km", searchParams.get("min_ev_range_km"), searchParams.get("max_ev_range_km"));
   applyRangeFilter(
     filter,
@@ -79,7 +87,9 @@ export async function GET(req: NextRequest) {
     applyRangeFilter(modelFilter, "price_range.min_usd", minPriceUsd, null);
     applyRangeFilter(modelFilter, "price_range.max_usd", null, maxPriceUsd);
     applyRangeFilter(modelFilter, "morocco_price_dh", minMoroccoPriceDh, maxMoroccoPriceDh);
-    if (segment) modelFilter.segment = segment;
+    // Comma-separated accepts multiple segments (Tech Search's segment filter is
+    // multi-select) via $in; a single value stays an exact match either way.
+    if (segment) modelFilter.segment = segment.includes(",") ? { $in: segment.split(",") } : segment;
     const matchingModels = (await ModelSchema.find(modelFilter, { _id: 1 }).lean()) as unknown as { _id: unknown }[];
     const matchingIds = matchingModels.map((m) => String(m._id));
     // Intersect with an already-set model_id filter rather than clobber it —

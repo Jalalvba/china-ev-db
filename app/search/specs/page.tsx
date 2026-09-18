@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import type { IBrand, IModel, IPowertrain } from "@/types";
 import { hpToKw, kwToHp } from "@/lib/units";
@@ -13,28 +14,42 @@ import type { Segment } from "@/types";
 type PopulatedModel = Omit<IModel, "brand_id"> & { brand_id: IBrand };
 type PopulatedPowertrain = Omit<IPowertrain, "model_id"> & { model_id: PopulatedModel };
 
-const ENERGY_TYPES = ["ICE", "HEV", "PHEV", "BEV", "REEV/EREV", "MHEV"];
-const FUEL_TYPES = ["gasoline", "diesel", "n/a"];
-const ASPIRATIONS = ["turbo", "naturally-aspirated", "supercharged", "twin-charged", "n/a"];
-const GEARBOX_TYPES = ["single-speed reducer", "CVT", "DCT", "AT", "MT", "AMT", "multi-speed EV transmission", "E-CVT"];
+// DB is scoped to PHEV SUVs only (2026-09-18) — options below are pruned to what's
+// actually present across the 252 remaining trims (verified live, not assumed):
+// diesel/n/a fuel, supercharged/twin-charged aspiration, MT gearbox, HEV/Mild
+// hybrid/Not applicable hybrid type, and "mild" hybrid architecture have zero
+// matches now (all were ICE/HEV/MHEV-only trims, deleted in the same cleanup).
+// Drive type (FWD/RWD/AWD/4WD) needed no pruning — all four are still live.
+const FUEL_TYPES = ["gasoline"];
+const ASPIRATIONS = ["turbo", "naturally-aspirated"];
+const GEARBOX_TYPES = ["single-speed reducer", "CVT", "DCT", "AT", "AMT", "multi-speed EV transmission", "E-CVT"];
 const DRIVE_TYPES = ["FWD", "RWD", "AWD", "4WD"];
-const HYBRID_TYPES = ["HEV", "PHEV", "EREV", "Mild hybrid", "Not applicable"];
-const HYBRID_ARCHITECTURES = ["parallel", "power_split", "series_erev", "mild"];
+// Hybrid type (PHEV vs EREV) dropdown removed 2026-09-18 — all 52 REEV/EREV
+// trims were deleted that day (along with the 32 models whose only PHEV-family
+// trim was REEV/EREV), leaving hybrid_type at a genuine 149/149 PHEV, zero
+// exceptions — a true no-op filter, same bar energy_type was held to earlier.
+const HYBRID_ARCHITECTURES = ["parallel", "power_split", "series_erev"];
+
+// Displacement is a small, closed catalog rather than a min/max range like every
+// other spec field here (2026-09-18 audit: at the time, only 4 real engine sizes
+// existed across the PHEV-SUV-scoped DB — 22 other range-filter fields checked
+// the same way all had 22-87 distinct values, genuinely continuous). The raw
+// stored values include float-precision noise (1.498/1.499 alongside 1.5) for
+// what's really one "1.5L" engine family — bucketed here so the UI shows a clean
+// option while the API still matches every raw variant.
+// 3.0L dropped 2026-09-18 (scope tightened to a 2.0L ceiling, Tank 700's 4
+// oversized trims deleted); then the ceiling tightened again same day to 1.5L
+// only — every >1.5L trim across the DB was deleted (confirmed 1.8L and 2.0L
+// trims alike; a handful of WEY 05/Tank 500 trims with never-researched
+// displacement were deliberately left alone rather than deleted for lack of
+// proof — see CLAUDE.md's known-gaps note). 1.8L and 2.0L are both dead now —
+// verified zero trims for either before removing their buttons, not assumed.
+const DISPLACEMENT_BUCKETS: { label: string; values: number[] }[] = [{ label: "1.5L", values: [1.498, 1.499, 1.5] }];
 // Same client-safe local copy pattern as app/search/page.tsx and
 // app/compare/page.tsx — models/Model.ts pulls in mongoose, which must
 // never end up in a client bundle.
-const SEGMENTS: Segment[] = [
-  "A-segment/City",
-  "B-segment/Compact",
-  "C-segment/Mid-size",
-  "D-segment/Large",
-  "SUV-compact",
-  "SUV-mid",
-  "SUV-full",
-  "MPV",
-  "Pickup",
-  "Sports",
-];
+// DB is scoped to PHEV SUVs only (2026-09-18) — only SUV segments have live data.
+const SEGMENTS: Segment[] = ["SUV-compact", "SUV-mid", "SUV-full"];
 const HYBRID_ARCHITECTURE_LABELS: Record<string, string> = {
   parallel: "Parallel",
   power_split: "Power-split",
@@ -43,6 +58,62 @@ const HYBRID_ARCHITECTURE_LABELS: Record<string, string> = {
 };
 
 type SortMode = "best_match" | "price" | "hp" | "range" | "battery";
+
+interface Bound {
+  min: number | null;
+  max: number | null;
+}
+interface RangeBounds {
+  enginePowerKw: Bound;
+  motorPowerKw: Bound;
+  combinedPowerKw: Bound;
+  engineTorque: Bound;
+  motorTorque: Bound;
+  batteryKwh: Bound;
+  evRangeKm: Bound;
+  priceMinUsd: Bound;
+  priceMaxUsd: Bound;
+  moroccoDh: Bound;
+}
+
+/**
+ * "<label> (94–194)" as an always-visible line above a Min/Max input pair —
+ * not placeholder text, which truncates in these narrow inputs and disappears
+ * the moment the field has a value typed into it. Falls back to the plain
+ * label with no range while bounds haven't loaded yet or a field genuinely
+ * has no data. kwToHpFn converts the bound to hp first, matching how these
+ * power fields are entered (see the hp/kW conversion comment on runSearch
+ * below).
+ */
+function rangeLabel(label: string, bound: Bound | undefined, kwToHpFn?: (kw: number | null | undefined) => number | undefined): string {
+  if (!bound || bound.min == null || bound.max == null) return label;
+  const min = kwToHpFn ? kwToHpFn(bound.min) : bound.min;
+  const max = kwToHpFn ? kwToHpFn(bound.max) : bound.max;
+  return `${label} (${min}–${max})`;
+}
+
+/**
+ * Display-only fallback — shows the live bound in the input when the URL has
+ * no value for this field, WITHOUT writing anything to the URL. `urlValue` (the
+ * actual filter state hasAnyFilter/activeFilters/runSearch all key off) stays
+ * whatever the URL says regardless of what's displayed here; typing overwrites
+ * both. This is what keeps a pre-filled bound from silently registering as an
+ * active filter the user never actually set — see the comment on
+ * hasAnyFilter below for the other half of that guarantee.
+ */
+function displayValue(
+  urlValue: string,
+  which: "min" | "max",
+  bound: Bound | undefined,
+  kwToHpFn?: (kw: number | null | undefined) => number | undefined
+): string {
+  if (urlValue) return urlValue;
+  if (!bound) return "";
+  const raw = which === "min" ? bound.min : bound.max;
+  if (raw == null) return "";
+  const value = kwToHpFn ? kwToHpFn(raw) : raw;
+  return value != null ? String(value) : "";
+}
 
 /** Manufacturer-published combined-system hp when available, else the ICE engine's or the motor's own hp — never a summed engine+motor figure (see combinedSystemHp's schema comment: that sum is mathematically wrong for parallel/power-split systems). Used for the "HP" sort and as the Best Match combinedHp input. */
 function effectiveHp(pt: PopulatedPowertrain): number | undefined {
@@ -59,6 +130,37 @@ function effectiveRangeKm(pt: PopulatedPowertrain): number | undefined {
 const selectClass =
   "border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 rounded px-3 py-2 text-sm w-full";
 
+// Every filter field's URL query-string key, in one place so the read side
+// (searchParams.get) and the write side (updateFilter) never drift apart.
+const FILTER_KEYS = [
+  "fuel_type",
+  "aspiration",
+  "gearbox",
+  "drive",
+  "hybrid_architecture",
+  "segment",
+  "min_engine_power",
+  "max_engine_power",
+  "min_motor_power",
+  "max_motor_power",
+  "min_engine_torque",
+  "max_engine_torque",
+  "min_motor_torque",
+  "max_motor_torque",
+  "displacement",
+  "min_ev_range",
+  "max_ev_range",
+  "min_combined_power",
+  "max_combined_power",
+  "min_battery",
+  "max_battery",
+  "min_price_usd",
+  "max_price_usd",
+  "min_morocco_price",
+  "max_morocco_price",
+] as const;
+type FilterKey = (typeof FILTER_KEYS)[number];
+
 /**
  * Search by the exact fields compactSpecLabel() builds a trim's picker
  * label from (see lib/specGrouping.ts) — energy type, engine power/fuel/
@@ -68,92 +170,183 @@ const selectClass =
  * trim), each labeled the same compact way as the Compare page's trim
  * picker, so the same spec summary means the same thing everywhere in the
  * app.
+ *
+ * Every filter lives in the URL query string (not local component state) —
+ * same "state lives in the URL" pattern as the Compare page — so browser
+ * back/forward restores the exact filtered view instead of resetting to
+ * empty, and the filtered view is bookmarkable/shareable as a side benefit.
  */
-export default function SpecSearchPage() {
-  const [energyType, setEnergyType] = useState("");
-  const [fuelType, setFuelType] = useState("");
-  const [aspiration, setAspiration] = useState("");
-  const [gearbox, setGearbox] = useState("");
-  const [driveType, setDriveType] = useState("");
-  const [hybridType, setHybridType] = useState("");
-  const [hybridArchitecture, setHybridArchitecture] = useState("");
-  const [segment, setSegment] = useState("");
+function SpecSearchInner() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  const get = (key: FilterKey) => searchParams.get(key) ?? "";
+
+  const fuelType = get("fuel_type");
+  const aspiration = get("aspiration");
+  const gearbox = get("gearbox");
+  const driveType = get("drive");
+  const hybridArchitecture = get("hybrid_architecture");
+  const segmentParam = get("segment");
+  const selectedSegments = segmentParam ? segmentParam.split(",") : [];
+
+  function toggleSegment(value: string) {
+    const next = selectedSegments.includes(value)
+      ? selectedSegments.filter((s) => s !== value)
+      : [...selectedSegments, value];
+    updateFilter("segment", next.join(","));
+  }
+  const minEnginePower = get("min_engine_power");
+  const maxEnginePower = get("max_engine_power");
+  const minMotorPower = get("min_motor_power");
+  const maxMotorPower = get("max_motor_power");
+  const minEngineTorque = get("min_engine_torque");
+  const maxEngineTorque = get("max_engine_torque");
+  const minMotorTorque = get("min_motor_torque");
+  const maxMotorTorque = get("max_motor_torque");
+  const displacementParam = get("displacement");
+  const validDisplacementLabels = new Set(DISPLACEMENT_BUCKETS.map((b) => b.label));
+  const rawSelectedDisplacements = displacementParam ? displacementParam.split(",") : [];
+  // Drops any value no longer offered as a button (e.g. "3.0L" after the ceiling
+  // tightened and that bucket was removed) — never trust the URL to only ever
+  // contain currently-valid values; a bookmarked/shared link or a leftover value
+  // from before an option list changed could carry a stale one.
+  const selectedDisplacements = rawSelectedDisplacements.filter((l) => validDisplacementLabels.has(l));
+  const hasStaleDisplacement = rawSelectedDisplacements.length !== selectedDisplacements.length;
+
+  // Rewrites the URL to drop the stale value(s) as soon as one is detected,
+  // rather than leaving the invalid selection sitting in the URL/active-filters
+  // summary indefinitely — same "don't leave a stale selected-but-invalid
+  // state" rule the segment/hybrid-type option prunes were held to.
+  useEffect(() => {
+    if (hasStaleDisplacement) {
+      const params = new URLSearchParams(searchParams.toString());
+      if (selectedDisplacements.length > 0) params.set("displacement", selectedDisplacements.join(","));
+      else params.delete("displacement");
+      router.replace(`/search/specs?${params.toString()}`);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasStaleDisplacement]);
+
+  function toggleDisplacement(label: string) {
+    const next = selectedDisplacements.includes(label)
+      ? selectedDisplacements.filter((l) => l !== label)
+      : [...selectedDisplacements, label];
+    updateFilter("displacement", next.join(","));
+  }
+  const minEvRange = get("min_ev_range");
+  const maxEvRange = get("max_ev_range");
+  const minCombinedPower = get("min_combined_power");
+  const maxCombinedPower = get("max_combined_power");
+  const minBattery = get("min_battery");
+  const maxBattery = get("max_battery");
+  const minPriceUsd = get("min_price_usd");
+  const maxPriceUsd = get("max_price_usd");
+  const minMoroccoPrice = get("min_morocco_price");
+  const maxMoroccoPrice = get("max_morocco_price");
+
   // Cheapest-first is the app-wide default sort convention (see the
   // Listing-conventions rule in CLAUDE.md for the same "cheapest first"
   // posture on the homepage/brand pages) — Best Match is still available,
-  // just not the default anymore.
-  const [sortBy, setSortBy] = useState<SortMode>("price");
-  const [advancedOpen, setAdvancedOpen] = useState(false);
-  const [minEnginePower, setMinEnginePower] = useState("");
-  const [maxEnginePower, setMaxEnginePower] = useState("");
-  const [minMotorPower, setMinMotorPower] = useState("");
-  const [maxMotorPower, setMaxMotorPower] = useState("");
-  const [minEngineTorque, setMinEngineTorque] = useState("");
-  const [maxEngineTorque, setMaxEngineTorque] = useState("");
-  const [minMotorTorque, setMinMotorTorque] = useState("");
-  const [maxMotorTorque, setMaxMotorTorque] = useState("");
-  const [minDisplacement, setMinDisplacement] = useState("");
-  const [maxDisplacement, setMaxDisplacement] = useState("");
-  const [minEvRange, setMinEvRange] = useState("");
-  const [maxEvRange, setMaxEvRange] = useState("");
-  const [minCombinedPower, setMinCombinedPower] = useState("");
-  const [maxCombinedPower, setMaxCombinedPower] = useState("");
-  const [minBattery, setMinBattery] = useState("");
-  const [maxBattery, setMaxBattery] = useState("");
-  const [minPriceUsd, setMinPriceUsd] = useState("");
-  const [maxPriceUsd, setMaxPriceUsd] = useState("");
-  const [minMoroccoPrice, setMinMoroccoPrice] = useState("");
-  const [maxMoroccoPrice, setMaxMoroccoPrice] = useState("");
+  // just not the default anymore. Sort mode and the Advanced-filters toggle
+  // are view state, not filters, so they stay out of the URL.
+  const sortByParam = searchParams.get("sort") as SortMode | null;
+  const sortBy: SortMode = sortByParam ?? "price";
+  const advancedOpen = searchParams.get("advanced") === "1";
 
-  const [results, setResults] = useState<PopulatedPowertrain[] | null>(null);
+  /** Single write path for every filter field — merges into whatever's already in the URL and replaces (not pushes) history, so typing across several filters doesn't pile up back-button stops. */
+  function updateFilter(key: FilterKey, value: string) {
+    const params = new URLSearchParams(searchParams.toString());
+    if (value) params.set(key, value);
+    else params.delete(key);
+    router.replace(`/search/specs?${params.toString()}`);
+  }
+
+  function setSortBy(value: SortMode) {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("sort", value);
+    router.replace(`/search/specs?${params.toString()}`);
+  }
+
+  function setAdvancedOpen(value: boolean) {
+    const params = new URLSearchParams(searchParams.toString());
+    if (value) params.set("advanced", "1");
+    else params.delete("advanced");
+    router.replace(`/search/specs?${params.toString()}`);
+  }
+
+  const [bounds, setBounds] = useState<RangeBounds | null>(null);
+
+  // Fetched once on mount, from live data (see app/api/powertrains/bounds/route.ts's
+  // comment on why this isn't computed at build time instead) — purely for
+  // the range labels/pre-fill values below; a failed/slow fetch just leaves
+  // the plain label in place; it never blocks or changes actual filtering.
+  // Re-fetches whenever the segment selection changes, same trigger as the
+  // results list itself — a SUV-compact-only bound is a different, smaller
+  // range than the all-segments one, and should reflect that immediately.
+  useEffect(() => {
+    let cancelled = false;
+    const params = new URLSearchParams();
+    if (selectedSegments.length > 0) params.set("segment", selectedSegments.join(","));
+    fetch(`/api/powertrains/bounds?${params.toString()}`)
+      .then((r) => r.json())
+      .then((data) => {
+        if (!cancelled) setBounds(data);
+      })
+      .catch(() => {
+        // Deliberately silent — see comment above.
+      });
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [segmentParam]);
+
+  const [rawResults, setRawResults] = useState<PopulatedPowertrain[] | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const hasAnyFilter =
-    energyType ||
+  const hasAnyFilter = Boolean(
     fuelType ||
-    aspiration ||
-    gearbox ||
-    driveType ||
-    hybridType ||
-    hybridArchitecture ||
-    segment ||
-    minEnginePower ||
-    maxEnginePower ||
-    minMotorPower ||
-    maxMotorPower ||
-    minEngineTorque ||
-    maxEngineTorque ||
-    minMotorTorque ||
-    maxMotorTorque ||
-    minDisplacement ||
-    maxDisplacement ||
-    minEvRange ||
-    maxEvRange ||
-    minCombinedPower ||
-    maxCombinedPower ||
-    minBattery ||
-    maxBattery ||
-    minPriceUsd ||
-    maxPriceUsd ||
-    minMoroccoPrice ||
-    maxMoroccoPrice;
+      aspiration ||
+      gearbox ||
+      driveType ||
+      hybridArchitecture ||
+      selectedSegments.length > 0 ||
+      minEnginePower ||
+      maxEnginePower ||
+      minMotorPower ||
+      maxMotorPower ||
+      minEngineTorque ||
+      maxEngineTorque ||
+      minMotorTorque ||
+      maxMotorTorque ||
+      selectedDisplacements.length > 0 ||
+      minEvRange ||
+      maxEvRange ||
+      minCombinedPower ||
+      maxCombinedPower ||
+      minBattery ||
+      maxBattery ||
+      minPriceUsd ||
+      maxPriceUsd ||
+      minMoroccoPrice ||
+      maxMoroccoPrice
+  );
 
   /** Explicit confirmation of exactly which fields are constraining the search — an empty field is never silently treated as a real value (a blank select/number input never gets sent to the API at all, see runSearch below), but that's invisible without this: no visual difference otherwise between "this field is unset" and "I forgot what I set it to." */
   const activeFilters: string[] = [];
-  if (energyType) activeFilters.push(`Energy type: ${energyType}`);
   if (fuelType) activeFilters.push(`Fuel type: ${fuelType}`);
   if (aspiration) activeFilters.push(`Aspiration: ${aspiration}`);
   if (gearbox) activeFilters.push(`Transmission: ${gearbox}`);
   if (driveType) activeFilters.push(`Drive type: ${driveType}`);
-  if (hybridType) activeFilters.push(`Hybrid type: ${hybridType}`);
   if (hybridArchitecture) activeFilters.push(`Hybrid architecture: ${HYBRID_ARCHITECTURE_LABELS[hybridArchitecture] ?? hybridArchitecture}`);
-  if (segment) activeFilters.push(`Segment: ${segment}`);
+  if (selectedSegments.length > 0) activeFilters.push(`Segment: ${selectedSegments.join(", ")}`);
   if (minEnginePower || maxEnginePower) activeFilters.push(`Engine power: ${minEnginePower || "0"}–${maxEnginePower || "∞"} hp`);
   if (minMotorPower || maxMotorPower) activeFilters.push(`Motor power: ${minMotorPower || "0"}–${maxMotorPower || "∞"} hp`);
   if (minEngineTorque || maxEngineTorque) activeFilters.push(`Engine torque: ${minEngineTorque || "0"}–${maxEngineTorque || "∞"} Nm`);
   if (minMotorTorque || maxMotorTorque) activeFilters.push(`Motor torque: ${minMotorTorque || "0"}–${maxMotorTorque || "∞"} Nm`);
-  if (minDisplacement || maxDisplacement) activeFilters.push(`Displacement: ${minDisplacement || "0"}–${maxDisplacement || "∞"} L`);
+  if (selectedDisplacements.length > 0) activeFilters.push(`Displacement: ${selectedDisplacements.join(", ")}`);
   if (minEvRange || maxEvRange) activeFilters.push(`Electric-only range: ${minEvRange || "0"}–${maxEvRange || "∞"} km`);
   if (minCombinedPower || maxCombinedPower)
     activeFilters.push(`Combined system power: ${minCombinedPower || "0"}–${maxCombinedPower || "∞"} hp (hybrid only)`);
@@ -167,14 +360,19 @@ export default function SpecSearchPage() {
     setLoading(true);
     setError(null);
     const params = new URLSearchParams();
-    if (energyType) params.set("energy_type", energyType);
+    // Every kept model is PHEV-SUV scoped (2026-09-18), but a model can still carry
+    // a non-PHEV trim doc alongside its PHEV one (e.g. Soueast S06's ICE trim next to
+    // its S06 DM/PHEV trim) — energy_type isn't a user-facing filter axis anymore, but
+    // it must still be sent, fixed, so those non-PHEV trims never surface here.
+    // "REEV/EREV" dropped from this fixed value 2026-09-18 — every REEV/EREV trim in
+    // the DB was deleted that same day, so it's dead weight, not a live case to match.
+    params.set("energy_type", "PHEV");
     if (fuelType) params.set("fuel_type", fuelType);
     if (aspiration) params.set("aspiration", aspiration);
     if (gearbox) params.set("gearbox", gearbox);
     if (driveType) params.set("drive", driveType);
-    if (hybridType) params.set("hybrid_type", hybridType);
     if (hybridArchitecture) params.set("hybrid_architecture", hybridArchitecture);
-    if (segment) params.set("segment", segment);
+    if (selectedSegments.length > 0) params.set("segment", selectedSegments.join(","));
     // Power (engine/motor/combined-system) is entered in hp (matching how
     // it's displayed everywhere else in the app — see lib/units.ts) but
     // stored/queried in kW, so it's converted here rather than asking the
@@ -190,8 +388,12 @@ export default function SpecSearchPage() {
     if (maxEngineTorque) params.set("max_engine_torque_nm", maxEngineTorque);
     if (minMotorTorque) params.set("min_motor_torque_nm", minMotorTorque);
     if (maxMotorTorque) params.set("max_motor_torque_nm", maxMotorTorque);
-    if (minDisplacement) params.set("min_displacement_l", minDisplacement);
-    if (maxDisplacement) params.set("max_displacement_l", maxDisplacement);
+    if (selectedDisplacements.length > 0) {
+      const rawValues = selectedDisplacements.flatMap(
+        (label) => DISPLACEMENT_BUCKETS.find((b) => b.label === label)?.values ?? []
+      );
+      params.set("displacement_l", rawValues.join(","));
+    }
     if (minEvRange) params.set("min_ev_range_km", minEvRange);
     if (maxEvRange) params.set("max_ev_range_km", maxEvRange);
     if (minBattery) params.set("min_battery_kwh", minBattery);
@@ -205,10 +407,10 @@ export default function SpecSearchPage() {
       const res = await fetch(`/api/powertrains?${params.toString()}`);
       if (!res.ok) throw new Error(`Request failed with status ${res.status}`);
       const data = await res.json();
-      setResults(data);
+      setRawResults(data);
     } catch (err) {
       setError((err as Error).message);
-      setResults(null);
+      setRawResults(null);
     } finally {
       setLoading(false);
     }
@@ -220,15 +422,14 @@ export default function SpecSearchPage() {
    * change, so there's no explicit "Search" button to click for any filter
    * anymore. Clears results back to the empty state when every filter is
    * cleared, since nothing would otherwise re-trigger that now that there's
-   * no button click left to notice the stale results on.
+   * no button click left to notice the stale results on. Filter values now
+   * come from the URL (see FILTER_KEYS above) rather than local state, but
+   * the debounce/auto-apply behavior is otherwise unchanged.
    */
   useEffect(() => {
     if (!hasAnyFilter) {
-      // Resetting results/error when every filter is cleared genuinely
-      // belongs in this effect — it's reacting to filter state changing,
-      // same as the rest of the effect does for the non-empty case.
       // eslint-disable-next-line react-hooks/set-state-in-effect
-      setResults(null);
+      setRawResults(null);
       setError(null);
       return;
     }
@@ -238,14 +439,12 @@ export default function SpecSearchPage() {
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
-    energyType,
     fuelType,
     aspiration,
     gearbox,
     driveType,
-    hybridType,
     hybridArchitecture,
-    segment,
+    segmentParam,
     minEnginePower,
     maxEnginePower,
     minMotorPower,
@@ -254,8 +453,7 @@ export default function SpecSearchPage() {
     maxEngineTorque,
     minMotorTorque,
     maxMotorTorque,
-    minDisplacement,
-    maxDisplacement,
+    displacementParam,
     minEvRange,
     maxEvRange,
     minCombinedPower,
@@ -270,15 +468,15 @@ export default function SpecSearchPage() {
 
   /** Recomputed whenever `results` or `sortBy` changes — Best Match scores are always relative to the CURRENTLY FILTERED set (Part 5), never a fixed global range, so this can't be cached across a different search. */
   const sortedResults = useMemo(() => {
-    if (!results) return null;
+    if (!rawResults) return null;
     if (sortBy === "best_match") {
-      const scores = bestMatchScores(results);
-      return results
+      const scores = bestMatchScores(rawResults);
+      return rawResults
         .map((pt, i) => ({ pt, score: scores[i] }))
         .sort((a, b) => b.score - a.score)
         .map((x) => x.pt);
     }
-    const copy = [...results];
+    const copy = [...rawResults];
     if (sortBy === "price") {
       // USD, not raw CNY — CNY is never shown anywhere in the app (see
       // formatChinaPriceUsd), so sorting by it would rank trims by a
@@ -320,7 +518,7 @@ export default function SpecSearchPage() {
       });
     }
     return copy;
-  }, [results, sortBy]);
+  }, [rawResults, sortBy]);
 
   /**
    * Set of Powertrain _ids whose card needs a trim_name subtitle: two or
@@ -354,28 +552,31 @@ export default function SpecSearchPage() {
         Search by engine, motor, battery, and transmission specs — not by name, brand, or price.
       </p>
 
-      <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-4 mb-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <select className={selectClass} value={energyType} onChange={(e) => setEnergyType(e.target.value)}>
-          <option value="">Energy type…</option>
-          {ENERGY_TYPES.map((t) => (
-            <option key={t} value={t}>
+      <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-4 mb-3 flex flex-wrap items-center gap-2">
+        <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400 mr-1">Segment</span>
+        {SEGMENTS.map((t) => {
+          const active = selectedSegments.includes(t);
+          return (
+            <button
+              key={t}
+              type="button"
+              aria-pressed={active}
+              onClick={() => toggleSegment(t)}
+              className={
+                active
+                  ? "px-3 py-1.5 rounded-md bg-indigo-600 text-white text-sm font-medium transition"
+                  : "px-3 py-1.5 rounded-md border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 text-sm font-medium hover:border-zinc-400 dark:hover:border-zinc-600 transition"
+              }
+            >
               {t}
-            </option>
-          ))}
-        </select>
-        <select className={selectClass} value={segment} onChange={(e) => setSegment(e.target.value)}>
-          <option value="">Segment…</option>
-          {SEGMENTS.map((t) => (
-            <option key={t} value={t}>
-              {t}
-            </option>
-          ))}
-        </select>
+            </button>
+          );
+        })}
       </div>
 
       <button
         type="button"
-        onClick={() => setAdvancedOpen((v) => !v)}
+        onClick={() => setAdvancedOpen(!advancedOpen)}
         className="text-sm text-blue-600 dark:text-blue-400 hover:underline mb-3 flex items-center gap-1"
         aria-expanded={advancedOpen}
       >
@@ -384,7 +585,7 @@ export default function SpecSearchPage() {
 
       {advancedOpen && (
       <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-4 mb-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-        <select className={selectClass} value={fuelType} onChange={(e) => setFuelType(e.target.value)}>
+        <select className={selectClass} value={fuelType} onChange={(e) => updateFilter("fuel_type", e.target.value)}>
           <option value="">Fuel type…</option>
           {FUEL_TYPES.map((t) => (
             <option key={t} value={t}>
@@ -392,7 +593,7 @@ export default function SpecSearchPage() {
             </option>
           ))}
         </select>
-        <select className={selectClass} value={aspiration} onChange={(e) => setAspiration(e.target.value)}>
+        <select className={selectClass} value={aspiration} onChange={(e) => updateFilter("aspiration", e.target.value)}>
           <option value="">Aspiration…</option>
           {ASPIRATIONS.map((t) => (
             <option key={t} value={t}>
@@ -400,7 +601,7 @@ export default function SpecSearchPage() {
             </option>
           ))}
         </select>
-        <select className={selectClass} value={gearbox} onChange={(e) => setGearbox(e.target.value)}>
+        <select className={selectClass} value={gearbox} onChange={(e) => updateFilter("gearbox", e.target.value)}>
           <option value="">Transmission…</option>
           {GEARBOX_TYPES.map((t) => (
             <option key={t} value={t}>
@@ -408,7 +609,7 @@ export default function SpecSearchPage() {
             </option>
           ))}
         </select>
-        <select className={selectClass} value={driveType} onChange={(e) => setDriveType(e.target.value)}>
+        <select className={selectClass} value={driveType} onChange={(e) => updateFilter("drive", e.target.value)}>
           <option value="">Drive type…</option>
           {DRIVE_TYPES.map((t) => (
             <option key={t} value={t}>
@@ -416,15 +617,11 @@ export default function SpecSearchPage() {
             </option>
           ))}
         </select>
-        <select className={selectClass} value={hybridType} onChange={(e) => setHybridType(e.target.value)}>
-          <option value="">Hybrid type…</option>
-          {HYBRID_TYPES.map((t) => (
-            <option key={t} value={t}>
-              {t}
-            </option>
-          ))}
-        </select>
-        <select className={selectClass} value={hybridArchitecture} onChange={(e) => setHybridArchitecture(e.target.value)}>
+        <select
+          className={selectClass}
+          value={hybridArchitecture}
+          onChange={(e) => updateFilter("hybrid_architecture", e.target.value)}
+        >
           <option value="">Hybrid architecture…</option>
           {HYBRID_ARCHITECTURES.map((t) => (
             <option key={t} value={t}>
@@ -433,199 +630,226 @@ export default function SpecSearchPage() {
           ))}
         </select>
 
-        <div className="flex items-center gap-2">
-          <input
-            type="number"
-            inputMode="numeric"
-            placeholder="Min engine hp"
-            value={minEnginePower}
-            onChange={(e) => setMinEnginePower(e.target.value)}
-            className={selectClass}
-          />
-          <span className="text-zinc-400 dark:text-zinc-500">–</span>
-          <input
-            type="number"
-            inputMode="numeric"
-            placeholder="Max engine hp"
-            value={maxEnginePower}
-            onChange={(e) => setMaxEnginePower(e.target.value)}
-            className={selectClass}
-          />
+        <div className="flex flex-col gap-1">
+          <p className="text-xs text-zinc-500 dark:text-zinc-400 -mb-1">{rangeLabel("Engine hp", bounds?.enginePowerKw, kwToHp)}</p>
+          <div className="flex items-center gap-2">
+            <input
+              type="number"
+              inputMode="numeric"
+              placeholder="Min"
+              value={displayValue(minEnginePower, "min", bounds?.enginePowerKw, kwToHp)}
+              onChange={(e) => updateFilter("min_engine_power", e.target.value)}
+              className={selectClass}
+            />
+            <span className="text-zinc-400 dark:text-zinc-500">–</span>
+            <input
+              type="number"
+              inputMode="numeric"
+              placeholder="Max"
+              value={displayValue(maxEnginePower, "max", bounds?.enginePowerKw, kwToHp)}
+              onChange={(e) => updateFilter("max_engine_power", e.target.value)}
+              className={selectClass}
+            />
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <input
-            type="number"
-            inputMode="numeric"
-            placeholder="Min engine torque Nm"
-            value={minEngineTorque}
-            onChange={(e) => setMinEngineTorque(e.target.value)}
-            className={selectClass}
-          />
-          <span className="text-zinc-400 dark:text-zinc-500">–</span>
-          <input
-            type="number"
-            inputMode="numeric"
-            placeholder="Max engine torque Nm"
-            value={maxEngineTorque}
-            onChange={(e) => setMaxEngineTorque(e.target.value)}
-            className={selectClass}
-          />
+        <div className="flex flex-col gap-1">
+          <p className="text-xs text-zinc-500 dark:text-zinc-400 -mb-1">{rangeLabel("Engine torque Nm", bounds?.engineTorque)}</p>
+          <div className="flex items-center gap-2">
+            <input
+              type="number"
+              inputMode="numeric"
+              placeholder="Min"
+              value={displayValue(minEngineTorque, "min", bounds?.engineTorque)}
+              onChange={(e) => updateFilter("min_engine_torque", e.target.value)}
+              className={selectClass}
+            />
+            <span className="text-zinc-400 dark:text-zinc-500">–</span>
+            <input
+              type="number"
+              inputMode="numeric"
+              placeholder="Max"
+              value={displayValue(maxEngineTorque, "max", bounds?.engineTorque)}
+              onChange={(e) => updateFilter("max_engine_torque", e.target.value)}
+              className={selectClass}
+            />
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <input
-            type="number"
-            inputMode="numeric"
-            step="0.1"
-            placeholder="Min displacement L"
-            value={minDisplacement}
-            onChange={(e) => setMinDisplacement(e.target.value)}
-            className={selectClass}
-          />
-          <span className="text-zinc-400 dark:text-zinc-500">–</span>
-          <input
-            type="number"
-            inputMode="numeric"
-            step="0.1"
-            placeholder="Max displacement L"
-            value={maxDisplacement}
-            onChange={(e) => setMaxDisplacement(e.target.value)}
-            className={selectClass}
-          />
-        </div>
-
-        <div className="flex items-center gap-2">
-          <input
-            type="number"
-            inputMode="numeric"
-            placeholder="Min motor hp"
-            value={minMotorPower}
-            onChange={(e) => setMinMotorPower(e.target.value)}
-            className={selectClass}
-          />
-          <span className="text-zinc-400 dark:text-zinc-500">–</span>
-          <input
-            type="number"
-            inputMode="numeric"
-            placeholder="Max motor hp"
-            value={maxMotorPower}
-            onChange={(e) => setMaxMotorPower(e.target.value)}
-            className={selectClass}
-          />
-        </div>
-        <div className="flex items-center gap-2">
-          <input
-            type="number"
-            inputMode="numeric"
-            placeholder="Min motor torque Nm"
-            value={minMotorTorque}
-            onChange={(e) => setMinMotorTorque(e.target.value)}
-            className={selectClass}
-          />
-          <span className="text-zinc-400 dark:text-zinc-500">–</span>
-          <input
-            type="number"
-            inputMode="numeric"
-            placeholder="Max motor torque Nm"
-            value={maxMotorTorque}
-            onChange={(e) => setMaxMotorTorque(e.target.value)}
-            className={selectClass}
-          />
-        </div>
-        <div className="flex items-center gap-2">
-          <input
-            type="number"
-            inputMode="numeric"
-            placeholder="Min combined system hp"
-            value={minCombinedPower}
-            onChange={(e) => setMinCombinedPower(e.target.value)}
-            className={selectClass}
-          />
-          <span className="text-zinc-400 dark:text-zinc-500">–</span>
-          <input
-            type="number"
-            inputMode="numeric"
-            placeholder="Max combined system hp"
-            value={maxCombinedPower}
-            onChange={(e) => setMaxCombinedPower(e.target.value)}
-            className={selectClass}
-          />
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-xs text-zinc-500 dark:text-zinc-400 mr-1">Displacement</span>
+          {DISPLACEMENT_BUCKETS.map((b) => {
+            const active = selectedDisplacements.includes(b.label);
+            return (
+              <button
+                key={b.label}
+                type="button"
+                aria-pressed={active}
+                onClick={() => toggleDisplacement(b.label)}
+                className={
+                  active
+                    ? "px-2.5 py-1 rounded-md bg-indigo-600 text-white text-sm font-medium transition"
+                    : "px-2.5 py-1 rounded-md border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 text-sm font-medium hover:border-zinc-400 dark:hover:border-zinc-600 transition"
+                }
+              >
+                {b.label}
+              </button>
+            );
+          })}
         </div>
 
-        <div className="flex items-center gap-2">
-          <input
-            type="number"
-            inputMode="numeric"
-            placeholder="Min battery kWh"
-            value={minBattery}
-            onChange={(e) => setMinBattery(e.target.value)}
-            className={selectClass}
-          />
-          <span className="text-zinc-400 dark:text-zinc-500">–</span>
-          <input
-            type="number"
-            inputMode="numeric"
-            placeholder="Max battery kWh"
-            value={maxBattery}
-            onChange={(e) => setMaxBattery(e.target.value)}
-            className={selectClass}
-          />
+        <div className="flex flex-col gap-1">
+          <p className="text-xs text-zinc-500 dark:text-zinc-400 -mb-1">{rangeLabel("Motor hp", bounds?.motorPowerKw, kwToHp)}</p>
+          <div className="flex items-center gap-2">
+            <input
+              type="number"
+              inputMode="numeric"
+              placeholder="Min"
+              value={displayValue(minMotorPower, "min", bounds?.motorPowerKw, kwToHp)}
+              onChange={(e) => updateFilter("min_motor_power", e.target.value)}
+              className={selectClass}
+            />
+            <span className="text-zinc-400 dark:text-zinc-500">–</span>
+            <input
+              type="number"
+              inputMode="numeric"
+              placeholder="Max"
+              value={displayValue(maxMotorPower, "max", bounds?.motorPowerKw, kwToHp)}
+              onChange={(e) => updateFilter("max_motor_power", e.target.value)}
+              className={selectClass}
+            />
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <input
-            type="number"
-            inputMode="numeric"
-            placeholder="Min EV-only range km"
-            value={minEvRange}
-            onChange={(e) => setMinEvRange(e.target.value)}
-            className={selectClass}
-          />
-          <span className="text-zinc-400 dark:text-zinc-500">–</span>
-          <input
-            type="number"
-            inputMode="numeric"
-            placeholder="Max EV-only range km"
-            value={maxEvRange}
-            onChange={(e) => setMaxEvRange(e.target.value)}
-            className={selectClass}
-          />
+        <div className="flex flex-col gap-1">
+          <p className="text-xs text-zinc-500 dark:text-zinc-400 -mb-1">{rangeLabel("Motor torque Nm", bounds?.motorTorque)}</p>
+          <div className="flex items-center gap-2">
+            <input
+              type="number"
+              inputMode="numeric"
+              placeholder="Min"
+              value={displayValue(minMotorTorque, "min", bounds?.motorTorque)}
+              onChange={(e) => updateFilter("min_motor_torque", e.target.value)}
+              className={selectClass}
+            />
+            <span className="text-zinc-400 dark:text-zinc-500">–</span>
+            <input
+              type="number"
+              inputMode="numeric"
+              placeholder="Max"
+              value={displayValue(maxMotorTorque, "max", bounds?.motorTorque)}
+              onChange={(e) => updateFilter("max_motor_torque", e.target.value)}
+              className={selectClass}
+            />
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <input
-            type="number"
-            inputMode="numeric"
-            placeholder="Min China price $"
-            value={minPriceUsd}
-            onChange={(e) => setMinPriceUsd(e.target.value)}
-            className={selectClass}
-          />
-          <span className="text-zinc-400 dark:text-zinc-500">–</span>
-          <input
-            type="number"
-            inputMode="numeric"
-            placeholder="Max China price $"
-            value={maxPriceUsd}
-            onChange={(e) => setMaxPriceUsd(e.target.value)}
-            className={selectClass}
-          />
+        <div className="flex flex-col gap-1">
+          <p className="text-xs text-zinc-500 dark:text-zinc-400 -mb-1">{rangeLabel("Combined system hp", bounds?.combinedPowerKw, kwToHp)}</p>
+          <div className="flex items-center gap-2">
+            <input
+              type="number"
+              inputMode="numeric"
+              placeholder="Min"
+              value={displayValue(minCombinedPower, "min", bounds?.combinedPowerKw, kwToHp)}
+              onChange={(e) => updateFilter("min_combined_power", e.target.value)}
+              className={selectClass}
+            />
+            <span className="text-zinc-400 dark:text-zinc-500">–</span>
+            <input
+              type="number"
+              inputMode="numeric"
+              placeholder="Max"
+              value={displayValue(maxCombinedPower, "max", bounds?.combinedPowerKw, kwToHp)}
+              onChange={(e) => updateFilter("max_combined_power", e.target.value)}
+              className={selectClass}
+            />
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <input
-            type="number"
-            inputMode="numeric"
-            placeholder="Min Morocco price DH"
-            value={minMoroccoPrice}
-            onChange={(e) => setMinMoroccoPrice(e.target.value)}
-            className={selectClass}
-          />
-          <span className="text-zinc-400 dark:text-zinc-500">–</span>
-          <input
-            type="number"
-            inputMode="numeric"
-            placeholder="Max Morocco price DH"
-            value={maxMoroccoPrice}
-            onChange={(e) => setMaxMoroccoPrice(e.target.value)}
-            className={selectClass}
-          />
+
+        <div className="flex flex-col gap-1">
+          <p className="text-xs text-zinc-500 dark:text-zinc-400 -mb-1">{rangeLabel("Battery kWh", bounds?.batteryKwh)}</p>
+          <div className="flex items-center gap-2">
+            <input
+              type="number"
+              inputMode="numeric"
+              placeholder="Min"
+              value={displayValue(minBattery, "min", bounds?.batteryKwh)}
+              onChange={(e) => updateFilter("min_battery", e.target.value)}
+              className={selectClass}
+            />
+            <span className="text-zinc-400 dark:text-zinc-500">–</span>
+            <input
+              type="number"
+              inputMode="numeric"
+              placeholder="Max"
+              value={displayValue(maxBattery, "max", bounds?.batteryKwh)}
+              onChange={(e) => updateFilter("max_battery", e.target.value)}
+              className={selectClass}
+            />
+          </div>
+        </div>
+        <div className="flex flex-col gap-1">
+          <p className="text-xs text-zinc-500 dark:text-zinc-400 -mb-1">{rangeLabel("EV-only range km", bounds?.evRangeKm)}</p>
+          <div className="flex items-center gap-2">
+            <input
+              type="number"
+              inputMode="numeric"
+              placeholder="Min"
+              value={displayValue(minEvRange, "min", bounds?.evRangeKm)}
+              onChange={(e) => updateFilter("min_ev_range", e.target.value)}
+              className={selectClass}
+            />
+            <span className="text-zinc-400 dark:text-zinc-500">–</span>
+            <input
+              type="number"
+              inputMode="numeric"
+              placeholder="Max"
+              value={displayValue(maxEvRange, "max", bounds?.evRangeKm)}
+              onChange={(e) => updateFilter("max_ev_range", e.target.value)}
+              className={selectClass}
+            />
+          </div>
+        </div>
+        <div className="flex flex-col gap-1">
+          <p className="text-xs text-zinc-500 dark:text-zinc-400 -mb-1">{`China price $ (${bounds?.priceMinUsd?.min ?? "?"}–${bounds?.priceMaxUsd?.max ?? "?"})`}</p>
+          <div className="flex items-center gap-2">
+            <input
+              type="number"
+              inputMode="numeric"
+              placeholder="Min"
+              value={displayValue(minPriceUsd, "min", bounds?.priceMinUsd)}
+              onChange={(e) => updateFilter("min_price_usd", e.target.value)}
+              className={selectClass}
+            />
+            <span className="text-zinc-400 dark:text-zinc-500">–</span>
+            <input
+              type="number"
+              inputMode="numeric"
+              placeholder="Max"
+              value={displayValue(maxPriceUsd, "max", bounds?.priceMaxUsd)}
+              onChange={(e) => updateFilter("max_price_usd", e.target.value)}
+              className={selectClass}
+            />
+          </div>
+        </div>
+        <div className="flex flex-col gap-1">
+          <p className="text-xs text-zinc-500 dark:text-zinc-400 -mb-1">{rangeLabel("Morocco price DH", bounds?.moroccoDh)}</p>
+          <div className="flex items-center gap-2">
+            <input
+              type="number"
+              inputMode="numeric"
+              placeholder="Min"
+              value={displayValue(minMoroccoPrice, "min", bounds?.moroccoDh)}
+              onChange={(e) => updateFilter("min_morocco_price", e.target.value)}
+              className={selectClass}
+            />
+            <span className="text-zinc-400 dark:text-zinc-500">–</span>
+            <input
+              type="number"
+              inputMode="numeric"
+              placeholder="Max"
+              value={displayValue(maxMoroccoPrice, "max", bounds?.moroccoDh)}
+              onChange={(e) => updateFilter("max_morocco_price", e.target.value)}
+              className={selectClass}
+            />
+          </div>
         </div>
       </div>
       )}
@@ -641,9 +865,7 @@ export default function SpecSearchPage() {
           no Search button. loading only shows a brief inline indicator. */}
       {loading && <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-4">Searching…</p>}
       {!hasAnyFilter && !loading && (
-        <p className="text-xs text-zinc-500 dark:text-zinc-400 mb-6">
-          Set at least Energy type or Segment above to see results.
-        </p>
+        <p className="text-xs text-zinc-500 dark:text-zinc-400 mb-6">Set at least Segment or another filter above to see results.</p>
       )}
 
       {error && <p className="text-sm text-red-600 dark:text-red-400 mb-4">{error}</p>}
@@ -725,5 +947,13 @@ export default function SpecSearchPage() {
         </>
       )}
     </div>
+  );
+}
+
+export default function SpecSearchPage() {
+  return (
+    <Suspense fallback={null}>
+      <SpecSearchInner />
+    </Suspense>
   );
 }

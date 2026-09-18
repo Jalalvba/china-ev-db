@@ -105,8 +105,104 @@ sub-brand already exists — lower-stakes than a hard collision, left pending an
 explicit decision: `Deepal S7` (under "Changan", should probably be under "Deepal"),
 `Avatr 12` (under "Changan", should probably be under "Avatr"), `Aion V`/`Aion ES`/
 `Aion UT`/`Aion RT` (under generic "GAC", should be under "GAC Aion"), `Hyptec HT`/
-`Hyptec GT` (under generic "GAC", should be under "Hyptec"), `Landian E5` (under
-"DFSK", should probably be under "Landian").
+`Hyptec GT` (under generic "GAC", should be under "Hyptec"). `Landian E5` (was under
+"DFSK" as a duplicate of the correctly-placed "Landian"-brand doc) — resolved
+2026-09-18: merged into the richer doc, moved to the correct "Landian" brand, dupe
+deleted.
+
+### Database scoped to PHEV SUVs only, displacement capped at 1.5L, REEV/EREV excluded (2026-09-18)
+
+The entire DB was scoped down from all powertrains/body-types to **PHEV (strictly, not
+REEV/EREV) SUVs with a ≤1.5L engine displacement** (see git history around this date
+for the full session — it happened in three passes the same day: PHEV-SUV, then a
+displacement ceiling, then a full REEV/EREV exclusion).
+
+**Pass 1 — PHEV SUV scoping**: 427 non-matching Model docs, 648 Powertrain docs, 3
+dead-category `brand_workshop_overrides`, and 100 now-orphaned Brand docs were
+deleted, down to 122 kept models / 48 brands. "PHEV" here originally used
+has-a-PHEV-trim semantics, not highest-trim-wins — a model with a BEV or REEV/EREV
+trim alongside a PHEV one was kept (e.g. Leapmotor C10, Avatr 07) — **superseded by
+pass 3 below**, which removed REEV/EREV as a qualifying trim entirely; those two
+example models no longer exist in the DB. `workshop_standards` still carries its
+original ICE/HEV/BEV/REEV reference rows deliberately — flagged as dead weight, not
+deleted (still may be useful as generic reference data).
+
+**Pass 2 — displacement ceiling, tightened twice in the same session** (3.0L → 2.0L →
+1.5L as the actual hard line): every trim doc with a **confirmed** `engine.displacement_l`
+above 1.5L was deleted DB-wide, cascading to whole-model deletion wherever that left a
+model with zero trims left. 12 models were deleted whole this way (Yangwang U8,
+Fangchengbao Bao 8, Zeekr 9X, Zeekr 8X, GAC ES9, Zongheng G700, Fengon 580, WEY Coffee
+01, TANK Tank 400, TANK Tank 700, WEY VV7, WEY P8); a further 11 individual oversized
+trim docs were deleted from models that kept a surviving ≤1.5L trim (Geely Galaxy
+Warship 700, Lynk & Co 900, M-Hero M817, WEY V8X, plus WEY 05's and TANK 500's
+confirmed-2.0L trims specifically — see the caveat below for what stayed). Down to
+110 kept models after this pass.
+
+**Pass 3 — REEV/EREV excluded entirely**: all 52 remaining `energy_type: "REEV/EREV"`
+trim docs were deleted DB-wide. Every one of the 32 models carrying one had *only*
+REEV/EREV trims (no mixed PHEV survivors — pass 1's has-a-PHEV-trim inclusion was
+their sole reason for being kept in the first place), so all 32 were deleted whole:
+`Deepal S7`, `XPeng G6`, `Li Auto L9`, `Li Auto L7`, `Leapmotor C10`, `AITO M9`,
+`SkyNomad N70`, `SkyNomad N90`, `Avatr 07L` (both docs — a genuine duplicate-model pair,
+one named `07L` one named `Avatr 07L`, same brand, both REEV/EREV-only), `Seres 3`,
+`Dongfeng 008`, `BAIC BJ40`, `BAIC BJ60`, `Leapmotor B10`, `Leapmotor C11`,
+`Leapmotor C16`, `Leapmotor D19`, `SWM G03F EDi / Big Tiger`, `AIVA ME7`,
+`Polestones 01`, `Yijing X9`, `Voyah Free`, `M-Hero 917`, `Stelato G9`, `Luxeed R7`,
+`Changan Nevo E07`, `Avatr 07`, `Avatr 11`, `Shangjie H5`, `IM6`, `IM LS8`. Final:
+**78 kept models**.
+
+**Orphaned brands, current as of pass 3** (flagged, not deleted; supersedes the
+smaller pass-2 list — most of these are the single-model-REEV/EREV brands pass 3 just
+emptied out): `Yangwang`, `XPeng`, `Li Auto`, `Zeekr`, `Leapmotor`, `AITO`, `Luxeed`,
+`Stelato`, `Shangjie`, `Yijing`, `SkyNomad`, `AIVA`, `Zongheng`, `Fengguang`, `Avatr`,
+`IM Motors`, `Polestones`, `SWM`.
+
+Backup of the pre-scoping DB (before any of the three passes): `backups/backup_20260918_020737/`.
+
+**Known gap #1, not yet acted on**: 25 of the kept models have **zero Powertrain trim
+docs at all** — their PHEV status was confirmed via external web research (official
+brand pages/press), not from any trim doc in this database, because they had no trim
+data to run the has-a-PHEV-trim check against in the first place. They're correctly
+kept (real PHEV models), but currently render an empty trim/spec section on their own
+model page and won't appear in Tech Search (which only queries the Powertrain
+collection). Needs a real spec-research pass (`tech-spec-agent` or the manual
+DeepSeek/Kimi round-trip), not a data-integrity fix. Affected models: `S07`, `S08`,
+`S10 DM` (Soueast), `Tiggo 7`, `Tiggo 7 Pro`, `Tiggo 8`, `Tiggo 9`, `Tansuo 06`
+(Chery), `Dongfeng Aeolus L8`, `Starray`, `Tugella` (Geely), `Exeed LX`, `Exeed TXL`,
+`Exeed RX`, `Exeed VX`, `T1`, `X70`, `X90`, `X90 Plus` (Jetour), `UNI-K`, `UNI-T`,
+`UNI-Z` (Changan), `Seres SF5`, `WEY V9X`, `Tank 800`.
+
+**Known gap #2, not yet acted on**: `WEY 05` (1 remaining trim) and `TANK Tank 500` (4
+remaining trims) each have trim docs with **`engine.displacement_l` entirely unset**
+(not confirmed ≤1.5L, not confirmed over it either — genuinely never researched,
+`confidence: "unconfirmed"` on every one). Deliberately left alone rather than deleted
+for lack of proof, consistent with gap #1's same "unresearched ≠ disqualified"
+reasoning — their confirmed-over-1.5L trims (one 2.0L trim each was found and deleted)
+were removed same as everywhere else; only the never-researched ones survive. Needs
+the same real spec-research pass as gap #1 to actually confirm one way or the other.
+
+`app/search/specs/page.tsx`'s `DISPLACEMENT_BUCKETS` (Tech Search's Displacement
+filter) was pruned in lockstep with each tightening above, verified against live data
+each time (never assumed) — it now offers only `1.5L`, since 1.8L and 2.0L both
+confirmed zero backing trims after pass 2.
+
+Tech Search's **Hybrid type dropdown (PHEV vs EREV) was removed entirely** after pass
+3 — same "verify true no-op before removing" bar `energy_type`'s removal was held to
+earlier. One trim (Jetour Dashing's "i-DM") had `hybrid_type` unset even though its own
+`energy_type`/`hybrid_architecture` fields already confirmed PHEV — backfilled to
+`"PHEV"` explicitly (a one-line data-completeness fix, not a judgment call) before the
+recheck landed at a genuine 149/149 PHEV, zero exceptions. `HYBRID_ARCHITECTURES`
+(the separate parallel/power-split/EREV-architecture filter) was checked the same way
+and correctly left alone — `series_erev` still has 5 real, non-REEV-energy-type PHEV
+trims behind it, so it isn't degenerate the way `hybrid_type` became.
+
+Tech Search's Min/Max range-filter inputs (`/api/powertrains/bounds`) show and
+pre-fill with **live-computed bounds**, not hardcoded examples — queried fresh on
+every page load (and re-fetched whenever the Segment filter changes, scoping the
+bounds to just the selected segment(s)) specifically because this DB gets
+restructured this often. An untouched field's pre-filled value is display-only
+(never written to the URL), so it auto-updates when the segment selection changes
+without ever clobbering a value the user actually typed.
 
 ## Listing conventions
 

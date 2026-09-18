@@ -7,18 +7,8 @@ import { SegmentLabel } from "@/lib/segmentDisplay";
 
 type PopulatedModel = Omit<IModel, "brand_id"> & { brand_id: IBrand };
 
-const SEGMENTS: Segment[] = [
-  "A-segment/City",
-  "B-segment/Compact",
-  "C-segment/Mid-size",
-  "D-segment/Large",
-  "SUV-compact",
-  "SUV-mid",
-  "SUV-full",
-  "MPV",
-  "Pickup",
-  "Sports",
-];
+// DB is scoped to PHEV SUVs only (2026-09-18) — only SUV segments have live data.
+const SEGMENTS: Segment[] = ["SUV-compact", "SUV-mid", "SUV-full"];
 
 const STATUSES: ProductionStatus[] = ["in production", "discontinued", "upcoming"];
 
