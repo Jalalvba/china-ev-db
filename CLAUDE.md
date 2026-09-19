@@ -443,6 +443,9 @@ keys the same way `runSearch` in `app/search/specs/page.tsx` does — that page 
 in both); no filters = full database. The Mongo filter is shared with `/api/powertrains` via `lib/powertrainFilter.ts`. **Known-issues,
 warranty, market-trend, recalls and bulletins sheets are deliberately NOT exported** until that research has been reviewed and applied — the
 README sheet says so.
+Open items (2026-09-19): (1) the DB lists `tech_partner: "Huawei"` on BAIC, Dongfeng and Jetour (seen in the export's Brands sheet) — CLAUDE.md
+says tech partner must be individually sourced, so this needs a verification pass; not yet checked. (2) `/export` has no filter UI, URL params
+only, and Tech Search has no "Export these results" link yet — someone must build the query string by hand until that is added.
 
 ## Schema/prompt drift guard
 
