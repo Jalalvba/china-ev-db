@@ -57,6 +57,7 @@ export default function DeckViewer({ deck }: { deck: ResolvedDeck }) {
         </div>
       </div>
       <div style={{ display: "flex", gap: 12, alignItems: "center", justifyContent: "center", padding: 8, color: css(COLORS.gray300), fontSize: 14 }}>
+        <a href="/" style={{ marginRight: 16, textDecoration: "underline" }}>← Back to site</a>
         <button onClick={() => go(-1)} disabled={index === 0} style={{ padding: "2px 10px" }}>←</button>
         <span>{index + 1} / {deck.slides.length} · {deck.title}</span>
         <button onClick={() => go(1)} disabled={index === last} style={{ padding: "2px 10px" }}>→</button>

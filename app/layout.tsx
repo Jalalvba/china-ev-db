@@ -61,6 +61,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             <a href="/benchmarking" className="text-sm text-zinc-300 hover:text-white">
               Benchmarking
             </a>
+            {/* One deck exists, so this links to it directly. When a second deck is added, point this at a /presentations listing page instead. */}
+            <a href="/presentations/phev-market" className="text-sm text-zinc-300 hover:text-white">
+              PHEV Market Deck
+            </a>
             <div className="ml-auto">
               <ThemeToggle />
             </div>
