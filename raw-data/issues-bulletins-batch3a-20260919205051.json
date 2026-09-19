@@ -1,0 +1,94 @@
+{
+ "label": "batch3a",
+ "readOnly": true,
+ "results": [
+  {
+   "model": "Galaxy L7",
+   "brand": "Geely Galaxy",
+   "id": "6aa47e9b1ec445aa4df91d3c",
+   "passes": [
+    {
+     "pass": "china_issues",
+     "status": "found",
+     "sources": 11,
+     "grounded": true,
+     "kept": [
+      {
+       "issue_description": "Owner reported sudden deceleration on the highway about three months after purchase; after four days of inspection the workshop first blamed a condenser in front of the turbocharger, then reversed its conclusion and blamed poor-quality fuel, which the owner disputed.",
+       "affected_systems": [
+        "engine"
+       ],
+       "frequency_signal": "isolated report (one owner incident covered by two media outlets)",
+       "source": "新浪财经 / 凤凰网江西",
+       "source_url": "https://finance.sina.com.cn/roll/2024-08-08/doc-inchxzme3243258.shtml",
+       "confidence": "unconfirmed"
+      },
+      {
+       "issue_description": "Vehicle fault light illuminated; fault code read as transmission pump failure, and the owner was told the transmission needed replacement.",
+       "affected_systems": [
+        "transmission"
+       ],
+       "frequency_signal": "isolated report (single forum quality-feedback post)",
+       "source": "懂车帝",
+       "source_url": "https://www.dongchedi.com/community/8830/quality",
+       "confidence": "unconfirmed"
+      },
+      {
+       "issue_description": "While driving near Hebei Guanting service area, the vehicle suffered a sudden transmission failure and could not be put into gear or driven; a rescue followed.",
+       "affected_systems": [
+        "transmission"
+       ],
+       "frequency_signal": "isolated report (single service-rescue article)",
+       "source": "易车",
+       "source_url": "https://hao.yiche.com/wenzhang/96375412/",
+       "confidence": "unconfirmed"
+      },
+      {
+       "issue_description": "Owner reported unexplained noises from the centre console, doors, chassis and other areas while driving; repeated 4S shop inspections did not fully resolve the source of the noise.",
+       "affected_systems": [
+        "body",
+        "chassis"
+       ],
+       "frequency_signal": "isolated report (single complaint entry)",
+       "source": "新浪黑猫投诉",
+       "source_url": "https://tousu.sina.com.cn/complaint/view/17385251641?sld=8cd407f3f99eb17cf224d7ff507a7f1f",
+       "confidence": "unconfirmed"
+      },
+      {
+       "issue_description": "Complaint-volume data reported 231 complaints for the model in March 2024, ranking it 10th among models for that period; coverage attributed the complaints to matters including price changes.",
+       "affected_systems": [
+        "other"
+       ],
+       "frequency_signal": "231 complaints in March 2024; ranked 10th",
+       "source": "汽车之家",
+       "source_url": "https://chejiahao.autohome.com.cn/info/14995410",
+       "confidence": "unconfirmed"
+      }
+     ],
+     "rejected": [],
+     "warnings": [
+      "Source does not state the model year/generation — kept as unconfirmed, verify before relying on it: \"Owner reported sudden deceleration on the highway about three months after purchase; after four days of inspec\"",
+      "Source does not state the model year/generation — kept as unconfirmed, verify before relying on it: \"Vehicle fault light illuminated; fault code read as transmission pump failure, and the owner was told the tran\"",
+      "Powertrain component issue, but the source does not say which variant (PHEV vs ICE/other) — kept as unconfirmed, verify before relying on it: \"Vehicle fault light illuminated; fault code read as transmission pump failure, and the owner was told the tran\"",
+      "Source does not state the model year/generation — kept as unconfirmed, verify before relying on it: \"While driving near Hebei Guanting service area, the vehicle suffered a sudden transmission failure and could n\"",
+      "Powertrain component issue, but the source does not say which variant (PHEV vs ICE/other) — kept as unconfirmed, verify before relying on it: \"While driving near Hebei Guanting service area, the vehicle suffered a sudden transmission failure and could n\"",
+      "Source does not state the model year/generation — kept as unconfirmed, verify before relying on it: \"Owner reported unexplained noises from the centre console, doors, chassis and other areas while driving; repea\"",
+      "Source does not state the model year/generation — kept as unconfirmed, verify before relying on it: \"Complaint-volume data reported 231 complaints for the model in March 2024, ranking it 10th among models for th\""
+     ],
+     "flags": [
+      {
+       "level": "HARD",
+       "reason": "names other model(s) [08 EM-P] but never the target",
+       "item": "Owner reported sudden deceleration on the highway about three months after purchase; after four days of inspec"
+      }
+     ],
+     "verification": {
+      "verified": 3,
+      "unverifiable": 2
+     }
+    }
+   ]
+  }
+ ],
+ "stopped": "HARD off-model flag on Galaxy L7 / china_issues: \"Owner reported sudden deceleration on the highway about three months after purchase; after four days of inspec\" — names other model(s) [08 EM-P] but never the target"
+}

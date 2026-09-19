@@ -413,7 +413,12 @@ drift between them. Research modules: `lib/marketTrendResearch.ts`, `lib/globalI
   invented-looking 12365auto complaint URLs (real 404s) in 4 of 39 kept items on the 12-model re-run.
 - **Batch runner** `scripts/research-issues-bulletins-batch.ts`: read-only (never writes the DB; review files go to `raw-data/`),
   small attended batches, stops on a HARD off-model leak flag; `--retro` re-checks items already in earlier review files; `--passes`
-  re-runs a subset. Batch 3 is paused pending review of the retro write-up; nothing from these runs has been applied.
+  re-runs a subset. `--drop-hard` removes HARD-flagged items (kept under `auto_dropped_hard`) and continues instead of stopping.
+  Genericness filter (`lib/genericnessFilter.ts`, after the identity filter): rejects attested explainer/tag-list items, hearsay boilerplate,
+  explainer-style wording, a small evidence-based host denylist (qcds, taobao, alibaba, yearstoavoid, avtomir, cyargpt, baike) and same-URL
+  tag-splits. Batch 3a (7 of the 19 verified-P models: L7, M7, M9, Xiaolong MAX, Huajing S, S7, H10) is done and reviewed — clean, low yield
+  (only the 3 Xiaolong MAX half-shaft-leak items clearly worth keeping); batch 3b onward and the M-class redesign are paused. Nameplate
+  P/M classification: `raw-data/nameplate-split-20260919.md`. Nothing from these runs has been applied to the DB.
 
 Status as of 2026-09-19: built and build/parser-tested, but live research and the review modals have
 **not yet been exercised** — first real runs are still to do.

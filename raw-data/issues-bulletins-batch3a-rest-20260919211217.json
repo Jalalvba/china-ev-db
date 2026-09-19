@@ -1,0 +1,293 @@
+{
+ "label": "batch3a-rest",
+ "readOnly": true,
+ "results": [
+  {
+   "model": "Galaxy M7",
+   "brand": "Geely Galaxy",
+   "id": "6aa47e9b1ec445aa4df91d62",
+   "passes": [
+    {
+     "pass": "china_issues",
+     "status": "found",
+     "sources": 6,
+     "grounded": true,
+     "kept": [],
+     "rejected": [],
+     "warnings": [],
+     "flags": []
+    },
+    {
+     "pass": "global_issues",
+     "status": "not_found",
+     "sources": 16,
+     "grounded": true,
+     "kept": [],
+     "rejected": [],
+     "warnings": [],
+     "flags": []
+    }
+   ]
+  },
+  {
+   "model": "Galaxy M9",
+   "brand": "Geely Galaxy",
+   "id": "6aa47e9b1ec445aa4df91d67",
+   "passes": [
+    {
+     "pass": "china_issues",
+     "status": "found",
+     "sources": 12,
+     "grounded": true,
+     "kept": [
+      {
+       "issue_description": "New-vehicle production quality issue: an owner bought a Geely Galaxy M9 plug-in hybrid in Wuhan on 2025-12-02 and found the vehicle abnormal with unknown dirt or stains after taking delivery on 2025-12-03; Geely personnel reportedly confirmed a production quality problem, while the official side delayed the investigation result and refused compensation.",
+       "affected_systems": [
+        "body",
+        "other"
+       ],
+       "frequency_signal": "Single-owner complaint; no complaint count given.",
+       "source": "黑猫投诉",
+       "source_url": "https://tousu.sina.com.cn/complaint/view/17391646281?sld=0f35d92ba354c31d2cfdf64f90f109dc",
+       "confidence": "unconfirmed"
+      },
+      {
+       "issue_description": "At around 300+ km, while the car was being window-film installed, the large screen displayed an engine oil level fault warning; after-sales said it was a false alarm and advised a later service-center upgrade.",
+       "affected_systems": [
+        "engine",
+        "electronics"
+       ],
+       "frequency_signal": "Isolated forum report; no broader count given.",
+       "source": "汽车之家论坛",
+       "source_url": "https://club.m.autohome.com.cn/bbs/thread/f38a67607149533f/114217350-1.html?type=None",
+       "confidence": "unconfirmed"
+      },
+      {
+       "issue_description": "Within the first month of delivery, the vehicle showed a lane-keeping assist (LKA) and front collision mitigation assist (CMSF) fault for a second time; the first occurrence was at 200+ km and manual system restart did not clear the warning for several days. After-sales reset the related systems and the warning disappeared.",
+       "affected_systems": [
+        "electronics"
+       ],
+       "frequency_signal": "Repeated on the same vehicle; isolated forum report; no complaint count given.",
+       "source": "汽车之家论坛",
+       "source_url": "https://club.m.autohome.com.cn/bbs/thread/025ebea8d2b1f6c6/114315905-1.html",
+       "confidence": "unconfirmed"
+      }
+     ],
+     "rejected": [],
+     "warnings": [
+      "Source does not state the model year/generation — kept as unconfirmed, verify before relying on it: \"New-vehicle production quality issue: an owner bought a Geely Galaxy M9 plug-in hybrid in Wuhan on 2025-12-02 \"",
+      "Source does not state the model year/generation — kept as unconfirmed, verify before relying on it: \"At around 300+ km, while the car was being window-film installed, the large screen displayed an engine oil lev\"",
+      "Powertrain component issue, but the source does not say which variant (PHEV vs ICE/other) — kept as unconfirmed, verify before relying on it: \"At around 300+ km, while the car was being window-film installed, the large screen displayed an engine oil lev\"",
+      "Source does not state the model year/generation — kept as unconfirmed, verify before relying on it: \"Within the first month of delivery, the vehicle showed a lane-keeping assist (LKA) and front collision mitigat\""
+     ],
+     "flags": [],
+     "verification": {
+      "verified": 3
+     }
+    },
+    {
+     "pass": "global_issues",
+     "status": "not_found",
+     "sources": 13,
+     "grounded": true,
+     "kept": [],
+     "rejected": [],
+     "warnings": [],
+     "flags": []
+    }
+   ]
+  },
+  {
+   "model": "Haval Xiaolong MAX",
+   "brand": "Haval",
+   "id": "6aab0ba0a1ae850d4f986385",
+   "passes": [
+    {
+     "pass": "china_issues",
+     "status": "found",
+     "sources": 10,
+     "grounded": true,
+     "kept": [
+      {
+       "issue_description": "Half-shaft (drive axle) oil leak on a 2025 Haval Xiaolong MAX Hi4 110 Plus Smart Driving Edition; the owner reports the leak appeared less than half a year after purchase at just over 10,000 km.",
+       "affected_systems": [
+        "chassis"
+       ],
+       "frequency_signal": "Single 车质网 complaint record, ID 1575377 (2026-01-09); owner-stated onset under 6 months of ownership",
+       "source": "车质网",
+       "source_url": "https://m.12365auto.com/zlts/20260109/1575377.shtml",
+       "confidence": "confirmed"
+      },
+      {
+       "issue_description": "Right-rear half-shaft oil leak reported on a 2025 Haval Xiaolong MAX Hi4 110 Pro, with the owner requesting the fault be rectified.",
+       "affected_systems": [
+        "chassis"
+       ],
+       "frequency_signal": "Single 车质网 complaint record, ID 1576009 (2026-01-11)",
+       "source": "车质网",
+       "source_url": "https://m.12365auto.com/zlts/20260111/1576009.shtml",
+       "confidence": "confirmed"
+      },
+      {
+       "issue_description": "Right-rear half-shaft oil leak / oil-seal seepage on the Haval Xiaolong MAX, described as a recurring fault concentrated in 2025 model-year cars, with some new vehicles leaking at under 1,200 km and at least one owner finding the leak worse within a month of first service.",
+       "affected_systems": [
+        "chassis"
+       ],
+       "frequency_signal": "Multiple reports (多起投诉) concentrated on the 2025 model year; some cars under 1,200 km",
+       "source": "车质网",
+       "source_url": "https://m.12365auto.com/threadforum/262415.shtml",
+       "confidence": "confirmed"
+      }
+     ],
+     "rejected": [
+      "dead link: HTTP 404 — page does not exist [https://www.12365auto.com/zlts/20251216/1559845.shtml]"
+     ],
+     "warnings": [
+      "Source does not state the model year/generation — kept as unconfirmed, verify before relying on it: \"High-voltage battery pack fault on a Haval Xiaolong MAX: after-sales contacted the owner on 3 December saying \""
+     ],
+     "flags": [],
+     "verification": {
+      "verified": 3,
+      "broken": 1
+     }
+    },
+    {
+     "pass": "global_issues",
+     "status": "not_found",
+     "sources": 18,
+     "grounded": true,
+     "kept": [],
+     "rejected": [],
+     "warnings": [],
+     "flags": []
+    }
+   ]
+  },
+  {
+   "model": "Huajing S",
+   "brand": "Huajing",
+   "id": "6aab141b776a61fb360a20e3",
+   "passes": [
+    {
+     "pass": "china_issues",
+     "status": "found",
+     "sources": 4,
+     "grounded": true,
+     "kept": [],
+     "rejected": [],
+     "warnings": [],
+     "flags": []
+    },
+    {
+     "pass": "global_issues",
+     "status": "not_found",
+     "sources": 14,
+     "grounded": true,
+     "kept": [],
+     "rejected": [],
+     "warnings": [],
+     "flags": []
+    }
+   ]
+  },
+  {
+   "model": "S7",
+   "brand": "GAC",
+   "id": "6aa5c454f4edfe3ef0af6749",
+   "passes": [
+    {
+     "pass": "china_issues",
+     "status": "found",
+     "sources": 12,
+     "grounded": true,
+     "kept": [
+      {
+       "issue_description": "Right-side hidden door handles got stuck/jammed when locking after less than two months of use; force was needed to operate them.",
+       "affected_systems": [
+        "body"
+       ],
+       "frequency_signal": "isolated report (one owner report; no quantified complaint volume provided in the snippet)",
+       "source": "懂车帝",
+       "source_url": "https://www.dongchedi.com/community/25071/quality",
+       "confidence": "unconfirmed"
+      },
+      {
+       "issue_description": "Aggregate complaint-volume signal: 2025 GAC Trumpchi Xiangwang S7 had 4 cumulative complaints on 车质网 since launch as of the article date; no specific failure pattern was broken out.",
+       "affected_systems": [
+        "other"
+       ],
+       "frequency_signal": "4 cumulative complaints on 车质网 since launch (as of June 2025)",
+       "source": "腾讯新闻 (citing 车质网)",
+       "source_url": "https://news.qq.com/rain/a/20250621A0361C00",
+       "confidence": "unconfirmed"
+      }
+     ],
+     "rejected": [],
+     "warnings": [
+      "Source does not state the model year/generation — kept as unconfirmed, verify before relying on it: \"Right-side hidden door handles got stuck/jammed when locking after less than two months of use; force was need\"",
+      "Cited page couldn't be verified (fetch failed (ETIMEDOUT) (after retry)) — \"confirmed\" downgraded: \"Aggregate complaint-volume signal: 2025 GAC Trumpchi Xiangwang S7 had 4 cumulative complai\" [https://news.qq.com/rain/a/20250621A0361C00]"
+     ],
+     "flags": [],
+     "verification": {
+      "unverifiable": 2
+     }
+    },
+    {
+     "pass": "global_issues",
+     "status": "found",
+     "sources": 17,
+     "grounded": true,
+     "kept": [
+      {
+       "region": "global",
+       "issue_description": "Battery module failures and PHEV control module problems, which are difficult to diagnose and repair locally because Jamaican technicians lack PHEV-specific training and GAC has no established service network there.",
+       "affected_systems": [
+        "battery",
+        "electronics"
+       ],
+       "source": "CyarGPT",
+       "source_url": "https://cyargpt.com/articles/gac-s7-common-problems-jamaica",
+       "confidence": "unconfirmed"
+      }
+     ],
+     "rejected": [],
+     "warnings": [
+      "Source does not state the model year/generation — kept as unconfirmed, verify before relying on it: \"Battery module failures and PHEV control module problems, which are difficult to diagnose and repair locally b\""
+     ],
+     "flags": [],
+     "verification": {
+      "verified": 1
+     }
+    }
+   ]
+  },
+  {
+   "model": "H10",
+   "brand": "GWM (Great Wall Motor)",
+   "id": "6aa47ec01ec445aa4df91ece",
+   "passes": [
+    {
+     "pass": "china_issues",
+     "status": "found",
+     "sources": 6,
+     "grounded": true,
+     "kept": [],
+     "rejected": [],
+     "warnings": [],
+     "flags": []
+    },
+    {
+     "pass": "global_issues",
+     "status": "not_found",
+     "sources": 14,
+     "grounded": true,
+     "kept": [],
+     "rejected": [],
+     "warnings": [],
+     "flags": []
+    }
+   ]
+  }
+ ],
+ "stopped": null
+}

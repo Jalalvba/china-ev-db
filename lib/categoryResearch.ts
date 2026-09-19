@@ -64,6 +64,24 @@ export function powertrainRulePrompt(input: CategoryResearchInput): string {
 POWERTRAIN RULE — this database covers ONLY the plug-in hybrid version of a model. The target is: ${input.powertrain.description}. The same nameplate is often also sold as a petrol/ICE, diesel, pure-electric or other variant with a different engine and drivetrain. A report specific to such a variant (e.g. a different engine size such as "2.0T", an ICE-only timing-chain or gearbox complaint, a pure-electric version) does NOT apply and must not be included as an issue of the target. A report about a part shared by all variants (body, paint, infotainment, suspension, seats, cabin) is fine. For every item say in "powertrain_scope" which case it is.`;
 }
 
+/**
+ * SPECIFICITY RULE for the known-issues passes (China + Global) — enforced in code by lib/genericnessFilter.ts. Live batches
+ * kept keyword tags split out of one article, "possible causes" explainers and unattributed "some owners say" boilerplate.
+ */
+export function specificityRulePrompt(): string {
+  return `
+
+SPECIFICITY RULE — every item must be a CONCRETE report about this model: what happened plus its symptom, circumstance, mileage/age or the part involved. Do NOT return: generic advice or troubleshooting ("possible causes of an engine light", "why a car won't start"), buying guides or "years to avoid" lists, bare keywords/tags taken from a list of topics (e.g. "abnormal noise", "seatbelt failure", "poor sound insulation") — especially several of them from one page, or unattributed hearsay ("some owners say…", "reported as an issue from user feedback"). If a page only lists keywords or gives general advice, return nothing for it. Fewer, specific items are better than many vague ones.`;
+}
+
+/** Per-item attestation added to the known-issues FORMAT prompts (research-time only; consumed and stripped by filterGenericItems). */
+export const ISSUE_SPECIFICITY_TEMPLATE = {
+  report_type: "exactly one of: 'specific_report' (a concrete incident/complaint/defect episode about THIS model), 'aggregate_stats' (complaint counts/rankings for THIS model), 'generic_explainer' (advice, possible causes, buying guide, encyclopedia text not tied to this model's own reports), 'tag_list' (a bare keyword from a list of topics)",
+};
+
+export const SPECIFICITY_FORMAT_RULE =
+  'report_type: set it honestly. Items you would label "generic_explainer" or "tag_list" will be dropped by code — better to leave them out. Never split one article\'s keyword list into several items.';
+
 /** Format-prompt rule line for powertrain_scope, shared by the issue and recall format prompts. */
 export const POWERTRAIN_FORMAT_RULE =
   'powertrain_scope: "phev_specific" if the report is about the plug-in hybrid version/system; "all_variants" if it concerns a part shared by every variant; "other_powertrain_only" if the source restricts it to an ICE/diesel/BEV/other version (it will be dropped); "not_stated" if the source does not say which variant. For a powertrain component (engine, gearbox, battery, motor) with no stated variant use "not_stated" — do NOT omit the item for that reason.';
@@ -185,7 +203,7 @@ export async function runCategoryResearch<T extends { confidence?: string }>(opt
       const res = normalizeArray(pre ? pre.kept : payload, opts.normalize);
       items = res.items;
       // Indices of `dropped` from normalizeArray refer to the filtered array; the off-model rejections carry the ORIGINAL index.
-      dropped = [...(pre ? pre.rejected.map((r) => ({ index: r.index, errors: [`off-model: ${r.reason}${r.summary ? ` — "${r.summary}"` : ""}`] })) : []), ...res.dropped];
+      dropped = [...(pre ? pre.rejected.map((r) => ({ index: r.index, errors: [`${r.reason.startsWith("too generic:") ? "" : "off-model: "}${r.reason}${r.summary ? ` — "${r.summary}"` : ""}`] })) : []), ...res.dropped];
       warnings = [...(pre?.warnings ?? []), ...res.warnings];
     }
 

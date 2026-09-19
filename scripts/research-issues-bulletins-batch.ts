@@ -37,6 +37,7 @@ const arg = (k: string) => { const i = args.indexOf(k); return i >= 0 ? args[i +
 const label = arg("--label") ?? "batch";
 const names = (arg("--models") ?? "").split(",").map((s) => s.trim()).filter(Boolean);
 const dry = args.includes("--dry");
+const dropHard = args.includes("--drop-hard");
 // Optional: run only some passes (e.g. to re-run one that hit a transient error). Default: all three.
 const onlyPasses = (arg("--passes") ?? "").split(",").map((s) => s.trim()).filter(Boolean);
 if (names.length === 0 && !args.includes("--retro")) throw new Error('Pass --models "Name A,Name B" (exact Model.name values), or --retro file1,file2.');
@@ -54,6 +55,8 @@ interface PassResult {
   rejected: string[];
   warnings: string[];
   flags: Flag[];
+  /** Items removed from `kept` because a HARD leak flag fired (--drop-hard mode); kept here for review. */
+  auto_dropped_hard?: { reason: string; item: Kept }[];
   /** Distinct cited URLs by verification status (lib/sourceVerification.ts). */
   verification?: Record<string, number>;
 }
@@ -130,9 +133,19 @@ async function main() {
       }
       entry.passes.push(r);
       const hard = r.flags.filter((f) => f.level === "HARD");
+      if (dropHard && hard.length) {
+        const dropped: { reason: string; item: Kept }[] = [];
+        r.kept = r.kept.filter((it) => {
+          const f = hard.find((h) => h.item === String(it.issue_description ?? "").slice(0, 110));
+          if (f) dropped.push({ reason: f.reason, item: it });
+          return !f;
+        });
+        r.auto_dropped_hard = dropped;
+        console.log(`    (--drop-hard) removed ${dropped.length} HARD-flagged item(s), continuing`);
+      }
       console.log(`  ${pass.padEnd(14)} ${r.status.padEnd(9)} kept ${r.kept.length} | rejected ${r.rejected.length} | warnings ${r.warnings.length} | sources ${r.sources}${r.verification && Object.keys(r.verification).length ? ` | urls ${JSON.stringify(r.verification)}` : ""}${r.flags.length ? ` | FLAGS hard ${hard.length} soft ${r.flags.length - hard.length}` : ""}${r.error ? ` | ${r.error.slice(0, 100)}` : ""}`);
       save();
-      if (hard.length) { stopped = `HARD off-model flag on ${m.name} / ${pass}: ${hard.map((f) => `"${f.item}" — ${f.reason}`).join(" || ")}`; break outer; }
+      if (hard.length && !dropHard) { stopped = `HARD off-model flag on ${m.name} / ${pass}: ${hard.map((f) => `"${f.item}" — ${f.reason}`).join(" || ")}`; break outer; }
       await sleep(2000);
     }
   }
