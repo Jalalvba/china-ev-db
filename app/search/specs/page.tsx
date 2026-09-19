@@ -7,7 +7,9 @@ import type { IBrand, IModel, IPowertrain } from "@/types";
 import { hpToKw, kwToHp } from "@/lib/units";
 import { bestMatchScores } from "@/lib/bestMatchScore";
 import { formatChinaPriceUsd, formatTrimPrice } from "@/lib/priceDisplay";
-import { compactSpecLabel } from "@/lib/specGrouping";
+import { compactSpecLabel, hardwareSpecKey } from "@/lib/specGrouping";
+import { cardCountLabel, groupTrimsByModel, variantPriceSpan } from "@/lib/specSearchGrouping";
+import type { ModelGroup } from "@/lib/specSearchGrouping";
 import { SegmentLabel } from "@/lib/segmentDisplay";
 import type { Segment } from "@/types";
 
@@ -56,6 +58,15 @@ const HYBRID_ARCHITECTURE_LABELS: Record<string, string> = {
   series_erev: "EREV",
   mild: "Mild hybrid",
 };
+
+/**
+ * How a COLLAPSED row (2+ trims with an identical hardware fingerprint) is labeled:
+ *   "spec_only"  — the spec line alone, no count, no names;
+ *   "with_count" — the spec line plus a muted "N trims" chip; the trim names are still one
+ *                  hover away (title tooltip), so nothing is hidden, just not shouting.
+ * A row for a SINGLE trim always shows that trim's name — it is a real, distinct spec.
+ */
+const COLLAPSED_ROW_LABEL: "spec_only" | "with_count" = "with_count";
 
 type SortMode = "best_match" | "price" | "hp" | "range" | "battery";
 
@@ -165,11 +176,13 @@ type FilterKey = (typeof FILTER_KEYS)[number];
  * Search by the exact fields compactSpecLabel() builds a trim's picker
  * label from (see lib/specGrouping.ts) — energy type, engine power/fuel/
  * aspiration, motor power, battery capacity, transmission — rather than by
- * model name/segment/price like the main /search page. Results are
- * individual trims (a model can appear more than once, once per matching
- * trim), each labeled the same compact way as the Compare page's trim
- * picker, so the same spec summary means the same thing everywhere in the
- * app.
+ * model name/segment/price like the main /search page. The API still
+ * matches individual trims, but results are GROUPED into one card per model
+ * with each matching trim as a nested row (model name/segment/price shown
+ * once) — see lib/specSearchGrouping.ts for how models and trims are
+ * ordered. Each trim row is labeled the same compact way as the Compare
+ * page's trim picker, so the same spec summary means the same thing
+ * everywhere in the app.
  *
  * Every filter lives in the URL query string (not local component state) —
  * same "state lives in the URL" pattern as the Compare page — so browser
@@ -466,84 +479,33 @@ function SpecSearchInner() {
     maxMoroccoPrice,
   ]);
 
-  /** Recomputed whenever `results` or `sortBy` changes — Best Match scores are always relative to the CURRENTLY FILTERED set (Part 5), never a fixed global range, so this can't be cached across a different search. */
-  const sortedResults = useMemo(() => {
+  /**
+   * One card per MODEL, with its matching trims nested inside — see lib/specSearchGrouping.ts
+   * for the ordering rules (models by their lowest matching trim on the chosen metric, or by
+   * their best-scoring trim for Best Match). Recomputed whenever `rawResults` or `sortBy`
+   * changes — Best Match scores are always relative to the CURRENTLY FILTERED set (Part 5),
+   * never a fixed global range, so this can't be cached across a different search.
+   */
+  const groups = useMemo<ModelGroup<PopulatedPowertrain>[] | null>(() => {
     if (!rawResults) return null;
-    if (sortBy === "best_match") {
-      const scores = bestMatchScores(rawResults);
-      return rawResults
-        .map((pt, i) => ({ pt, score: scores[i] }))
-        .sort((a, b) => b.score - a.score)
-        .map((x) => x.pt);
-    }
-    const copy = [...rawResults];
+    if (sortBy === "best_match") return groupTrimsByModel(rawResults, { kind: "score", scores: bestMatchScores(rawResults) }, hardwareSpecKey);
+    // USD, not raw CNY — CNY is never shown anywhere in the app (see formatChinaPriceUsd), so
+    // sorting by it would rank trims by a currency the user never even sees. Per-trim price
+    // when the trim has one; a model whose matching trims have none falls back to its own
+    // price range so a priced model doesn't sink below every unpriced one.
     if (sortBy === "price") {
-      // USD, not raw CNY — CNY is never shown anywhere in the app (see
-      // formatChinaPriceUsd), so sorting by it would rank trims by a
-      // currency the user never even sees.
-      copy.sort((a, b) => {
-        const pa = a.model_id?.price_range?.min_usd;
-        const pb = b.model_id?.price_range?.min_usd;
-        if (pa == null && pb == null) return 0;
-        if (pa == null) return 1;
-        if (pb == null) return -1;
-        return pa - pb;
-      });
-    } else if (sortBy === "hp") {
-      copy.sort((a, b) => {
-        const ha = effectiveHp(a);
-        const hb = effectiveHp(b);
-        if (ha == null && hb == null) return 0;
-        if (ha == null) return 1;
-        if (hb == null) return -1;
-        return ha - hb;
-      });
-    } else if (sortBy === "range") {
-      copy.sort((a, b) => {
-        const ra = effectiveRangeKm(a);
-        const rb = effectiveRangeKm(b);
-        if (ra == null && rb == null) return 0;
-        if (ra == null) return 1;
-        if (rb == null) return -1;
-        return ra - rb;
-      });
-    } else if (sortBy === "battery") {
-      copy.sort((a, b) => {
-        const ba = a.battery?.capacity_total_kwh;
-        const bb = b.battery?.capacity_total_kwh;
-        if (ba == null && bb == null) return 0;
-        if (ba == null) return 1;
-        if (bb == null) return -1;
-        return ba - bb;
-      });
+      return groupTrimsByModel(rawResults, {
+        kind: "asc",
+        metric: (pt) => pt.trim_price_min_usd ?? pt.trim_price_max_usd ?? undefined,
+        modelFallback: (pt) => pt.model_id?.price_range?.min_usd ?? undefined,
+      }, hardwareSpecKey);
     }
-    return copy;
+    if (sortBy === "hp") return groupTrimsByModel(rawResults, { kind: "asc", metric: effectiveHp }, hardwareSpecKey);
+    if (sortBy === "range") return groupTrimsByModel(rawResults, { kind: "asc", metric: effectiveRangeKm }, hardwareSpecKey);
+    return groupTrimsByModel(rawResults, { kind: "asc", metric: (pt) => pt.battery?.capacity_total_kwh ?? undefined }, hardwareSpecKey);
   }, [rawResults, sortBy]);
 
-  /**
-   * Set of Powertrain _ids whose card needs a trim_name subtitle: two or
-   * more results for the SAME Model rendering the exact same
-   * compactSpecLabel() string. Without trim_name shown, those cards are
-   * pixel-identical and read as a duplicate/bug rather than as two real,
-   * different trims that happen to share identical canonical specs — this
-   * is deliberately keyed off the rendered label (not raw spec fields) so
-   * it stays in sync with whatever compactSpecLabel actually displays.
-   */
-  const ambiguousTrimIds = useMemo(() => {
-    if (!sortedResults) return new Set<string>();
-    const groups = new Map<string, string[]>();
-    for (const pt of sortedResults) {
-      const key = `${pt.model_id?._id}::${compactSpecLabel(pt)}`;
-      const ids = groups.get(key) ?? [];
-      ids.push(pt._id as string);
-      groups.set(key, ids);
-    }
-    const ambiguous = new Set<string>();
-    for (const ids of groups.values()) {
-      if (ids.length > 1) ids.forEach((id) => ambiguous.add(id));
-    }
-    return ambiguous;
-  }, [sortedResults]);
+  const trimCount = rawResults?.length ?? 0;
 
   return (
     <div>
@@ -870,10 +832,12 @@ function SpecSearchInner() {
 
       {error && <p className="text-sm text-red-600 dark:text-red-400 mb-4">{error}</p>}
 
-      {sortedResults !== null && (
+      {groups !== null && (
         <>
           <div className="flex items-center justify-between mb-3">
-            <p className="text-sm text-zinc-500 dark:text-zinc-400">{sortedResults.length} trim(s) match.</p>
+            <p className="text-sm text-zinc-500 dark:text-zinc-400">
+              {groups.length} model{groups.length === 1 ? "" : "s"}, {trimCount} trim{trimCount === 1 ? "" : "s"} match.
+            </p>
             <label className="flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-400">
               Sort by
               <select
@@ -882,65 +846,94 @@ function SpecSearchInner() {
                 onChange={(e) => setSortBy(e.target.value as SortMode)}
               >
                 <option value="best_match">Best match</option>
-                <option value="price">Price</option>
+                <option value="price">Price (lowest matching trim)</option>
                 <option value="hp">HP</option>
                 <option value="range">Range</option>
                 <option value="battery">Battery</option>
               </select>
             </label>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {sortedResults.map((pt) => {
-              const priceRange = pt.model_id?.price_range;
-              const chinaPriceUsdLabel = formatChinaPriceUsd(priceRange);
-              const trimPriceLabel = formatTrimPrice(pt);
-
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 items-start">
+            {groups.map((g) => {
+              const model = g.trims[0].model_id;
+              const chinaPriceUsdLabel = formatChinaPriceUsd(model?.price_range);
+              const modelHref = `/models/${g.modelId}`;
               return (
-                <Link
-                  key={pt._id}
-                  href={`/models/${pt.model_id?._id}`}
-                  className="block bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-4 hover:border-zinc-400 dark:hover:border-zinc-600 hover:shadow-sm transition"
-                >
-                  <h3 className="font-semibold">
-                    {pt.model_id?.brand_id?.name} {pt.model_id?.name}
-                  </h3>
-                  {pt.model_id?.segment && (
-                    <p className="text-xs font-medium text-zinc-400 dark:text-zinc-500 mb-0.5">
-                      <SegmentLabel model={pt.model_id} />
-                    </p>
-                  )}
-                  <p
-                    className={`text-sm text-zinc-500 dark:text-zinc-400 ${
-                      ambiguousTrimIds.has(pt._id as string) && pt.trim_name ? "mb-0.5" : "mb-2"
-                    }`}
-                  >
-                    {compactSpecLabel(pt)}
-                  </p>
-                  {ambiguousTrimIds.has(pt._id as string) && pt.trim_name && (
-                    <p className="text-xs text-zinc-400 dark:text-zinc-500 mb-2 italic">{pt.trim_name}</p>
-                  )}
+                <div key={g.modelId} className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg overflow-hidden">
+                  {/* Model-level facts, shown ONCE per card — never repeated per trim. */}
+                  <Link href={modelHref} className="block p-4 pb-3 hover:bg-zinc-50 dark:hover:bg-zinc-800/40 transition">
+                    <div className="flex items-baseline justify-between gap-2">
+                      <h3 className="font-semibold">
+                        {model?.brand_id?.name} {model?.name}
+                      </h3>
+                      <span className="text-xs text-zinc-400 dark:text-zinc-500 whitespace-nowrap">{cardCountLabel(g.variants.length, g.trims.length)}</span>
+                    </div>
+                    {model?.segment && (
+                      <p className="text-xs font-medium text-zinc-400 dark:text-zinc-500 mb-1">
+                        <SegmentLabel model={model} />
+                      </p>
+                    )}
+                    <div className="text-xs text-zinc-600 dark:text-zinc-400 space-y-0.5">
+                      {chinaPriceUsdLabel ? (
+                        <p>
+                          <span className="font-medium text-zinc-800 dark:text-zinc-200">{chinaPriceUsdLabel}</span>
+                        </p>
+                      ) : (
+                        <p className="italic">Price not available</p>
+                      )}
+                      {model?.morocco_price_dh != null && (
+                        <p>
+                          🇲🇦 {model.morocco_price_dh.toLocaleString()} DH
+                          {!model.morocco_price_confirmed && " (unconfirmed)"}
+                        </p>
+                      )}
+                    </div>
+                  </Link>
 
-                  <div className="space-y-1 text-xs text-zinc-600 dark:text-zinc-400">
-                    {chinaPriceUsdLabel ? (
-                      <p>
-                        <span className="font-medium text-zinc-800 dark:text-zinc-200">{chinaPriceUsdLabel}</span>
-                      </p>
-                    ) : (
-                      <p className="italic">Price not available</p>
-                    )}
-                    {trimPriceLabel && (
-                      <p>
-                        This trim: <span className="font-medium text-zinc-800 dark:text-zinc-200">{trimPriceLabel}</span>
-                      </p>
-                    )}
-                    {pt.model_id?.morocco_price_dh != null && (
-                      <p>
-                        🇲🇦 {pt.model_id.morocco_price_dh.toLocaleString()} DH
-                        {!pt.model_id.morocco_price_confirmed && " (unconfirmed)"}
-                      </p>
-                    )}
-                  </div>
-                </Link>
+                  {/* One compact row per matching trim. */}
+                  <ul className="border-t border-zinc-100 dark:border-zinc-800 divide-y divide-zinc-100 dark:divide-zinc-800">
+                    {g.variants.map((v, vi) => {
+                      const rep = v.trims[0];
+                      const collapsed = v.trims.length > 1;
+                      // One row per DISTINCT hardware spec. A single-trim row keeps its trim name (a
+                      // real spec difference worth naming); a collapsed row drops the marketing names.
+                      const span = variantPriceSpan(v.trims);
+                      const priceLabel =
+                        span.min == null
+                          ? undefined
+                          : formatTrimPrice({ trim_price_min_usd: span.min, trim_price_max_usd: span.max, trim_price_confidence: span.confirmed ? "confirmed" : "unconfirmed" });
+                      // Only worth a slot when it says something the model-level line above doesn't.
+                      const showPrice = !!priceLabel && priceLabel !== chinaPriceUsdLabel;
+                      const partialPrice = collapsed && span.priced > 0 && span.priced < span.total;
+                      return (
+                        <li key={rep._id ?? vi}>
+                          <Link href={modelHref} className="flex items-start justify-between gap-3 px-4 py-2 hover:bg-zinc-50 dark:hover:bg-zinc-800/40 transition">
+                            <div className="min-w-0">
+                              {!collapsed && rep.trim_name && <p className="text-xs font-medium text-zinc-800 dark:text-zinc-200 truncate">{rep.trim_name}</p>}
+                              <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                                {compactSpecLabel(rep)}
+                                {collapsed && COLLAPSED_ROW_LABEL === "with_count" && (
+                                  <span
+                                    className="ml-1.5 whitespace-nowrap rounded bg-zinc-100 dark:bg-zinc-800 px-1.5 py-0.5 text-[10px] font-medium text-zinc-500 dark:text-zinc-400"
+                                    title={v.trims.map((t) => t.trim_name ?? "(unnamed)").join("\n")}
+                                  >
+                                    {v.trims.length} trims
+                                  </span>
+                                )}
+                              </p>
+                            </div>
+                            {showPrice && (
+                              <span className="text-right text-xs font-medium text-zinc-800 dark:text-zinc-200 whitespace-nowrap">
+                                {priceLabel}
+                                {partialPrice && <span className="block font-normal text-[10px] text-zinc-400 dark:text-zinc-500">{span.priced} of {span.total} priced</span>}
+                              </span>
+                            )}
+                          </Link>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
               );
             })}
           </div>

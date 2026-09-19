@@ -277,9 +277,21 @@ the conversion factor again.
 **Two search surfaces, deliberately different axes**: `/search` filters `Model`
 documents (brand, segment, production status, price); `/search/specs` ("Tech Search")
 filters `Powertrain` documents (energy type, engine/motor power, battery, transmission
-— results are individual trims, so one model can appear more than once), reusing
+— the API matches individual trims, but the page groups them into ONE CARD PER MODEL with
+each matching trim as a nested row and the count reads "X models, Y trims match"), reusing
 `compactSpecLabel()` from `lib/specGrouping.ts` for the same trim-summary format the
-Compare page's trim picker uses. Both show an explicit "active filters" summary.
+Compare page's trim picker uses. Ordering lives in `lib/specSearchGrouping.ts`: models rank
+by their LOWEST matching trim on the chosen metric (price/HP/range/battery, ascending as
+before) or by their best-scoring trim for Best Match; trims inside a card use the same
+metric; a model whose matching trims include any without their own price also counts its own
+price-range minimum, so its rank agrees with the price printed on its card. Inside a card, trims
+with an identical HARDWARE fingerprint (`hardwareSpecKey()` in `lib/specGrouping.ts`: energy type +
+engine + motor + battery pack + gearbox — the same fields the row label shows) collapse into ONE
+row with a "N trims" chip (names on hover); a single-trim row keeps its trim name, and the card
+header reads "V spec variants · T trims" when anything collapsed. The fingerprint is deliberately
+narrower than `specGroupKey` (model detail/Compare): it ignores rating/charging fields
+(`ev_range_km`, dc/ac kW, supplier…) that vary by trim marketing or are null from research gaps,
+and it never collapses trims with no engine/motor/battery/gearbox data (unresearched ≠ identical). Both show an explicit "active filters" summary.
 `app/api/powertrains/route.ts`'s `GET` refuses an entirely unfiltered request (400) —
 every real caller always has at least one criterion.
 

@@ -161,3 +161,40 @@ export function groupBySpec<T extends SpecFields>(powertrains: T[]): SpecGroup<T
     return { label: specGroupLabel(trims[0]), trims };
   });
 }
+
+/**
+ * Fingerprint for COLLAPSING trims that are mechanically the same car, used by Tech Search's
+ * model cards: energy type + engine + motor + battery pack + gearbox — exactly the hardware the
+ * compact row label shows, so two trims with the same key always render the same label (checked
+ * against every live trim in scripts' verification, not assumed).
+ *
+ * Deliberately NARROWER than specGroupKey (model detail + Compare pages): it leaves out rating
+ * and charging fields — ev_range_km / ev_range_standard, dc/ac charge kW, usable capacity,
+ * supplier. Those either differ by trim marketing without any hardware change (Galaxy Starship
+ * 7 EM-i: the same 19.09 kWh LFP pack is rated 130 km on one trim and 135 km on the others) or
+ * are frequently null on one trim purely because research never filled them in — either would
+ * split identical hardware into fake "variants". Real distinctions stay distinct: a different
+ * pack size, motor output, gearbox, drive layout or chemistry produces a different key, and so
+ * does a value present on one trim but null on another (real difference vs data gap is
+ * unknowable, so it is kept visible rather than merged).
+ *
+ * Returns null when the trim has no spec the row label could show (no engine power/displacement,
+ * motor power, battery capacity or gearbox type): "identical" is unproven for a trim we know
+ * nothing about, so callers must NOT collapse those together.
+ */
+export function hardwareSpecKey(p: SpecFields): string | null {
+  const engine = p.engine
+    ? { displacement_l: p.engine.displacement_l, cylinders: p.engine.cylinders, aspiration: p.engine.aspiration, fuel_type: p.engine.fuel_type, is_range_extender: p.engine.is_range_extender, power_kw: p.engine.power_kw, torque_nm: p.engine.torque_nm }
+    : null;
+  const motor = p.motor ? { type: p.motor.type, power_kw: p.motor.power_kw, torque_nm: p.motor.torque_nm, count: p.motor.count, drive: p.motor.drive } : null;
+  const battery = p.battery ? { chemistry: p.battery.chemistry, capacity_total_kwh: p.battery.capacity_total_kwh } : null;
+  const transmission = p.transmission ? { type: p.transmission.type, speed_count: p.transmission.speed_count } : null;
+  // "Has data" = a field the row label actually needs in order to show a spec (same fields
+  // compactSpecLabel checks). Structural defaults like aspiration/fuel_type/is_range_extender
+  // are present on trims nobody has researched (Tank 500's four trims are just "PHEV" plus those
+  // defaults), so they must not count — otherwise unresearched trims would look identical.
+  const present = (v: unknown) => v !== undefined && v !== null && v !== "";
+  const hasSpec = present(p.engine?.power_kw) || present(p.engine?.displacement_l) || present(p.motor?.power_kw) || present(p.battery?.capacity_total_kwh) || present(p.transmission?.type);
+  if (!hasSpec) return null;
+  return JSON.stringify({ energy_type: p.energy_type, engine, motor, battery, transmission });
+}
