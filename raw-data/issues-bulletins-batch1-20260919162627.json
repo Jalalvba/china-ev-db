@@ -1,0 +1,269 @@
+{
+ "label": "batch1",
+ "readOnly": true,
+ "results": [
+  {
+   "model": "Song Ultra DM-i",
+   "brand": "BYD",
+   "id": "6aa47dd5ee15cebb2bbd5b65",
+   "passes": [
+    {
+     "pass": "china_issues",
+     "status": "found",
+     "sources": 3,
+     "grounded": true,
+     "kept": [],
+     "rejected": [],
+     "warnings": [],
+     "flags": []
+    },
+    {
+     "pass": "global_issues",
+     "status": "not_found",
+     "sources": 12,
+     "grounded": true,
+     "kept": [],
+     "rejected": [],
+     "warnings": [],
+     "flags": []
+    },
+    {
+     "pass": "bulletins",
+     "status": "not_found",
+     "sources": 6,
+     "grounded": true,
+     "kept": [],
+     "rejected": [],
+     "warnings": [],
+     "flags": []
+    }
+   ]
+  },
+  {
+   "model": "Starship 7 EM-i",
+   "brand": "Geely Galaxy",
+   "id": "6aa47e9b1ec445aa4df91d4a",
+   "passes": [
+    {
+     "pass": "china_issues",
+     "status": "found",
+     "sources": 10,
+     "grounded": true,
+     "kept": [
+      {
+       "issue_description": "Test-drive critique that the second row feels unsafe and the rear body uses too little high-strength steel.",
+       "affected_systems": [
+        "body",
+        "chassis"
+       ],
+       "frequency_signal": "isolated forum post/test-drive impression; no complaint count or ranking.",
+       "source": "汽车之家",
+       "source_url": "https://club.autohome.com.cn/bbs/thread/b0915741586ec8ca/110446928-1.html",
+       "confidence": "unconfirmed"
+      },
+      {
+       "issue_description": "Forum reply discussing possible surface rust on iron parts.",
+       "affected_systems": [
+        "body"
+       ],
+       "frequency_signal": "isolated forum reply; no complaint count or ranking.",
+       "source": "汽车之家",
+       "source_url": "https://club.m.autohome.com.cn/bbs/thread/b0915741586ec8ca/110446928-2.html",
+       "confidence": "unconfirmed"
+      }
+     ],
+     "rejected": [
+      "off-model: source is about \"星舰7 em-i\", not Geely Galaxy Starship 7 EM-i — \"Article claims battery range is criticized and electricity consumption can be too high, and that after-sales c\""
+     ],
+     "warnings": [
+      "Source does not state the model year/generation — kept as unconfirmed, verify before relying on it: \"Test-drive critique that the second row feels unsafe and the rear body uses too little high-strength steel.\"",
+      "Source does not state the model year/generation — kept as unconfirmed, verify before relying on it: \"Forum reply discussing possible surface rust on iron parts.\""
+     ],
+     "flags": []
+    },
+    {
+     "pass": "global_issues",
+     "status": "found",
+     "sources": 13,
+     "grounded": true,
+     "kept": [
+      {
+       "region": "global",
+       "issue_description": "Head-up display (HUD) language is set to Chinese; dealer says changing it at Geely service costs an extra few hundred dollars, and the owner asks how to install the language themselves.",
+       "affected_systems": [
+        "electronics"
+       ],
+       "frequency_signal": "single owner report; source gives no broader frequency",
+       "source": "Reddit r/electricvehicles",
+       "source_url": "https://www.reddit.com/r/electricvehicles/comments/1m90ski/geely_galaxy_starship_7_hud_language_change/",
+       "confidence": "unconfirmed"
+      }
+     ],
+     "rejected": [],
+     "warnings": [
+      "Source does not state the model year/generation — kept as unconfirmed, verify before relying on it: \"Head-up display (HUD) language is set to Chinese; dealer says changing it at Geely service costs an extra few \""
+     ],
+     "flags": []
+    },
+    {
+     "pass": "bulletins",
+     "status": "not_found",
+     "sources": 5,
+     "grounded": true,
+     "kept": [],
+     "rejected": [],
+     "warnings": [],
+     "flags": []
+    }
+   ]
+  },
+  {
+   "model": "Haval Raptor",
+   "brand": "Haval",
+   "id": "6aab0ba0a1ae850d4f986386",
+   "passes": [
+    {
+     "pass": "china_issues",
+     "status": "error",
+     "error": "Connection error.",
+     "sources": 0,
+     "grounded": false,
+     "kept": [],
+     "rejected": [],
+     "warnings": [],
+     "flags": []
+    },
+    {
+     "pass": "global_issues",
+     "status": "found",
+     "sources": 13,
+     "grounded": true,
+     "kept": [
+      {
+       "region": "global",
+       "issue_description": "Water accumulation beneath the trunk floor in specific units of the Haval Raptor PHEV (Raptor Hi4); Great Wall Motor issued an official statement and offered a free fix.",
+       "affected_systems": [
+        "body"
+       ],
+       "frequency_signal": "reports of water accumulation in specific units; no count or rate given",
+       "source": "CarNewsChina",
+       "source_url": "https://carnewschina.com/2025/10/15/haval-raptor-phev-adds-unexpected-aquatic-mode-great-wall-offers-free-fix/",
+       "confidence": "unconfirmed"
+      }
+     ],
+     "rejected": [],
+     "warnings": [
+      "Source does not state the model year/generation — kept as unconfirmed, verify before relying on it: \"Water accumulation beneath the trunk floor in specific units of the Haval Raptor PHEV (Raptor Hi4); Great Wall\""
+     ],
+     "flags": []
+    },
+    {
+     "pass": "bulletins",
+     "status": "not_found",
+     "sources": 6,
+     "grounded": true,
+     "kept": [],
+     "rejected": [],
+     "warnings": [],
+     "flags": []
+    }
+   ]
+  },
+  {
+   "model": "WEY Lanshan",
+   "brand": "WEY",
+   "id": "6aab0ba4a1ae850d4f98638d",
+   "passes": [
+    {
+     "pass": "china_issues",
+     "status": "found",
+     "sources": 10,
+     "grounded": true,
+     "kept": [
+      {
+       "issue_description": "Vehicle suddenly displayed multiple fault codes; after dealer inspection the manufacturer diagnosed a LiDAR failure requiring replacement. The complaint reports no spare parts were available, with a 7-10 working-day order period, and that safety-driving-related functions failed during the wait; the dealer allegedly refused assistance on the grounds the vehicle was still usable.",
+       "affected_systems": [
+        "electronics"
+       ],
+       "frequency_signal": "Single complaint page; no aggregate complaint count or ranking shown.",
+       "source": "车质网",
+       "source_url": "https://www.12365auto.com/zlts/20250715/1461521.shtml",
+       "confidence": "unconfirmed"
+      },
+      {
+       "issue_description": "Instrument panel / dashboard cracking, described as an instrument panel crack gate; the article claims three generations of the model are affected and questions quality control.",
+       "affected_systems": [
+        "body"
+       ],
+       "frequency_signal": "Article claims three generations are affected, implying a broader pattern; no numeric complaint count given.",
+       "source": "汽车之家车家号",
+       "source_url": "https://chejiahao.m.autohome.com.cn/info/24550830",
+       "confidence": "unconfirmed"
+      },
+      {
+       "issue_description": "Instrument panel cracking controversy; the manufacturer reportedly promised free replacement for cracked instrument decorative panels, within a 5-year/150,000-km warranty context.",
+       "affected_systems": [
+        "body"
+       ],
+       "frequency_signal": "Described as a controversy with free replacement promised; no numeric complaint count given.",
+       "source": "网通社",
+       "source_url": "https://www.news18a.com/news/storys_214265.html",
+       "confidence": "unconfirmed"
+      },
+      {
+       "issue_description": "Chassis damper noise over cement roads: owner reports the suspension makes gurgling and clanking noises, and criticizes the CDC suspension as producing annoying noise rather than comfort. The dealer technician reportedly acknowledged the noise during a test drive but told the owner to wait because no same-model vehicle was available for comparison.",
+       "affected_systems": [
+        "chassis"
+       ],
+       "frequency_signal": "Single owner post; no aggregate count or ranking shown.",
+       "source": "懂车帝",
+       "source_url": "https://www.dongchedi.com/community/6206/quality",
+       "confidence": "unconfirmed"
+      },
+      {
+       "issue_description": "Under adaptive cruise control mode, the vehicle cannot perform kinetic energy recovery.",
+       "affected_systems": [
+        "electronics",
+        "other"
+       ],
+       "frequency_signal": "Single owner report.",
+       "source": "汽车之家论坛",
+       "source_url": "https://club.m.autohome.com.cn/bbs/thread/74da69d504c70f47/105565041-1.html",
+       "confidence": "unconfirmed"
+      }
+     ],
+     "rejected": [],
+     "warnings": [
+      "Source does not state the model year/generation — kept as unconfirmed, verify before relying on it: \"Vehicle suddenly displayed multiple fault codes; after dealer inspection the manufacturer diagnosed a LiDAR fa\"",
+      "Source does not state the model year/generation — kept as unconfirmed, verify before relying on it: \"Instrument panel / dashboard cracking, described as an instrument panel crack gate; the article claims three g\"",
+      "Source does not state the model year/generation — kept as unconfirmed, verify before relying on it: \"Instrument panel cracking controversy; the manufacturer reportedly promised free replacement for cracked instr\"",
+      "Source does not state the model year/generation — kept as unconfirmed, verify before relying on it: \"Chassis damper noise over cement roads: owner reports the suspension makes gurgling and clanking noises, and c\"",
+      "Source does not state the model year/generation — kept as unconfirmed, verify before relying on it: \"Under adaptive cruise control mode, the vehicle cannot perform kinetic energy recovery.\""
+     ],
+     "flags": []
+    },
+    {
+     "pass": "global_issues",
+     "status": "not_found",
+     "sources": 11,
+     "grounded": true,
+     "kept": [],
+     "rejected": [],
+     "warnings": [],
+     "flags": []
+    },
+    {
+     "pass": "bulletins",
+     "status": "not_found",
+     "sources": 6,
+     "grounded": true,
+     "kept": [],
+     "rejected": [],
+     "warnings": [],
+     "flags": []
+    }
+   ]
+  }
+ ],
+ "stopped": null
+}

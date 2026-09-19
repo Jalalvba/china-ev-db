@@ -1,0 +1,378 @@
+{
+ "files": [
+  "raw-data/issues-bulletins-batch1-20260919162627.json",
+  "raw-data/issues-bulletins-batch2-20260919171451.json",
+  "raw-data/issues-bulletins-rerun-china-20260919170759.json"
+ ],
+ "tally": {
+  "kept_total": 56,
+  "was_confirmed": 4,
+  "powertrain_text_mismatch": 2,
+  "dead_link_removed": 3,
+  "hub_or_unrelated_page_downgraded": 1,
+  "unverifiable_page": 22,
+  "verified": 28,
+  "no_url": 0,
+  "confirmed_lost": 3
+ },
+ "rows": [
+  "Starship 7 EM-i / china_issues | verified | unconfirmed | Test-drive critique that the second row feels unsafe and the rear body | https://club.autohome.com.cn/bbs/thread/b0915741586ec8ca/110446928-1.h",
+  "Starship 7 EM-i / china_issues | page couldn't be verified | unconfirmed | Forum reply discussing possible surface rust on iron parts. | https://club.m.autohome.com.cn/bbs/thread/b0915741586ec8ca/110446928-2",
+  "Starship 7 EM-i / global_issues | page couldn't be verified | unconfirmed | Head-up display (HUD) language is set to Chinese; dealer says changing | https://www.reddit.com/r/electricvehicles/comments/1m90ski/geely_galax",
+  "Haval Raptor / global_issues | verified | unconfirmed | Water accumulation beneath the trunk floor in specific units of the Ha | https://carnewschina.com/2025/10/15/haval-raptor-phev-adds-unexpected-",
+  "WEY Lanshan / china_issues | verified | unconfirmed | Vehicle suddenly displayed multiple fault codes; after dealer inspecti | https://www.12365auto.com/zlts/20250715/1461521.shtml",
+  "WEY Lanshan / china_issues | verified | unconfirmed | Instrument panel / dashboard cracking, described as an instrument pane | https://chejiahao.m.autohome.com.cn/info/24550830",
+  "WEY Lanshan / china_issues | verified | unconfirmed | Instrument panel cracking controversy; the manufacturer reportedly pro | https://www.news18a.com/news/storys_214265.html",
+  "WEY Lanshan / china_issues | page couldn't be verified | unconfirmed | Chassis damper noise over cement roads: owner reports the suspension m | https://www.dongchedi.com/community/6206/quality",
+  "WEY Lanshan / china_issues | verified | unconfirmed | Under adaptive cruise control mode, the vehicle cannot perform kinetic | https://club.m.autohome.com.cn/bbs/thread/74da69d504c70f47/105565041-1",
+  "08 EM-P / china_issues | DEAD LINK (discard) | unconfirmed | Pirelli tire cracking: owner reports sidewall cracks on the left front | https://www.12365auto.com/zlts/20250816/1482019.shtml",
+  "08 EM-P / china_issues | verified | unconfirmed | Auxiliary battery not secured, causing whole-vehicle power loss; the s | https://m.12365auto.com/zlts/20250715/1461213.shtml",
+  "08 EM-P / china_issues | DEAD LINK (discard) | unconfirmed | Sudden loss of power and steering control while driving normally in th | https://www.12365auto.com/zlts/20250704/1455218.shtml",
+  "08 EM-P / china_issues | verified | unconfirmed | Ambient light LED beads turning white; the owner had the ambient light | https://club.m.autohome.com.cn/bbs/thread/32ec6477964e6a2f/111662920-1",
+  "08 EM-P / china_issues | verified | unconfirmed | Engine malfunction light illuminated, but the component replaced was t | https://m.12365auto.com/series/z3690_3_1.shtml",
+  "Landian E5 / china_issues | verified | unconfirmed | Brake master cylinder failure (刹车总泵故障) discussed for the 蓝电E5. | https://www.12365auto.com/zjdy/20250104/198859.shtml",
+  "Landian E5 / china_issues | verified | unconfirmed | After about one year of ownership, battery fault with battery warning  | https://club.autohome.com.cn/bbs/thread/ab436d291cad0af1/112240696-1.h",
+  "Landian E5 / china_issues | verified | unconfirmed | Motor controller fault (电机控制器故障), with software fault listed as a comm | https://q.qcds.com/content-detail/my0B9",
+  "Landian E5 / china_issues | page couldn't be verified | unconfirmed | Tire uneven wear (轮胎偏磨). | https://hao.yiche.com/wenzhang/99197562",
+  "Landian E5 / china_issues | page couldn't be verified | unconfirmed | Abnormal noise (异响). | https://hao.yiche.com/wenzhang/99197562",
+  "Landian E5 / china_issues | page couldn't be verified | unconfirmed | Seatbelt failure (安全带故障). | https://hao.yiche.com/wenzhang/99197562",
+  "Landian E5 / china_issues | page couldn't be verified | unconfirmed | Infotainment system lag (车机系统卡顿). | https://hao.yiche.com/wenzhang/99197562",
+  "Landian E5 / china_issues | page couldn't be verified | unconfirmed | Poor sound insulation (隔音效果). | https://hao.yiche.com/wenzhang/99197562",
+  "T2 / china_issues | POWERTRAIN-MISMATCH (discard) | unconfirmed | Engine oil leak reported on 2.0T four-wheel-drive 捷途旅行者 vehicles, incl | https://www.yiche.com/zhai/2070579",
+  "T2 / china_issues | page couldn't be verified | unconfirmed | Engine oil leak found at first maintenance on a four-wheel-drive 捷途旅行者 | https://aikahao.xcar.com.cn/item/2232858.html",
+  "T2 / china_issues | verified | unconfirmed | New car transmission fault: the instrument cluster lit a transmission  | https://m.12365auto.com/zlts/20250728/1469472.shtml",
+  "T2 / china_issues | verified | unconfirmed | Clear electrical/current noise when starting and applying throttle, re | https://news.qq.com/rain/a/20240607A09PD100",
+  "T2 / china_issues | page couldn't be verified | unconfirmed | Paint peeling/paint quality problems and differential-lock mode assemb | https://www.yiche.com/zhai/2070579",
+  "T2 / china_issues | verified | unconfirmed | Window lift system failure and warning lights are listed as common fau | https://www.autohome.com.cn/ask/21577642.html; https://www.autohome.co",
+  "T2 / china_issues | verified | unconfirmed | Owner reported vehicle noise, paint peeling, and fault codes over seve | https://tousu.sina.com.cn/complaint/view/17378601004?sld=4cb40cc11afcf",
+  "T2 / china_issues | page couldn't be verified | unconfirmed | Headline reports successive rollover accidents involving 捷途旅行者; the sn | https://share-m.kakamobi.com/m.toutiao.kakamobi.com/detail/?origin=1&i",
+  "T2 / global_issues | page couldn't be verified | confirmed -> unconfirmed | Vehicle pulls/steers to the left on its own; alignment issues remain a | https://www.reddit.com/r/chinesecarsuae/comments/1spbcjj/what_are_the_",
+  "T2 / global_issues | page couldn't be verified | unconfirmed | 4x4 system did not engage; only the front tires were rotating during a | https://www.tiktok.com/discover/jetour-t2-issues",
+  "T2 / global_issues | verified | unconfirmed | Owner-reported infotainment lag, electrical faults, and transmission b | https://carinterior.alibaba.com/buyingguides/jetour-t2-screen-common-p",
+  "Tiggo 8 Pro / global_issues | page couldn't be verified | unconfirmed | Start-stop system is not functioning; owner describes this as the most | https://www.sikayetvar.com/en/chery-us/im-experiencing-multiple-issues",
+  "Tiggo 8 Pro / global_issues | verified | confirmed | Seven-speed dual-clutch automatic transmission is not smooth in lower  | https://yearstoavoid.co/chery-tiggo-8-pro-years-to-avoid/",
+  "Tiggo 8 Pro / global_issues | page couldn't be verified | confirmed -> unconfirmed | Owner of a 2023 Chery Tiggo 8 Pro with 60,500 km reports a serious iss | https://www.sikayetvar.com/en/chery-us",
+  "Tiggo 8 Pro / global_issues | page couldn't be verified | unconfirmed | Engine failure reported, with warranty denied due to service misguidan | https://www.sikayetvar.com/en/chery-us/chery-tiggo-8-pro-engine-failur",
+  "Tiggo 8 Pro / global_issues | page couldn't be verified | unconfirmed | Dashboard, radio, and screen malfunctions: radio does not work, screen | https://www.sikayetvar.com/en/chery-us/chery-tiggo-8-pro-dashboard-rad",
+  "06 EM-P / china_issues | verified | unconfirmed | Dealer allegedly delivered a defective vehicle without proper PDI insp | https://www.12365auto.com/zlts/20250512/1428976.shtml",
+  "06 EM-P / china_issues | page couldn't be verified | unconfirmed | Owner reported that after about ten days of ownership, the vehicle sho | https://www.dongchedi.com/community/4340/maintenance",
+  "06 EM-P / china_issues | page couldn't be verified | unconfirmed | Owner asked about a 06 hybrid where the brake pedal felt hard and was  | https://www.dongchedi.com/community/4340/maintenance",
+  "06 EM-P / global_issues | page couldn't be verified | unconfirmed | Native Bluetooth connectivity problem reported with many Samsung Galax | https://www.reddit.com/r/LynkCo/comments/1qvp6s4/lynk_co_06_emp_latam/",
+  "Geely Coolray / Binyue / china_issues | verified | unconfirmed | Exhaust pipe abnormal noise. | https://www.12365auto.com/series/v-2407-1-0.shtml",
+  "Geely Coolray / Binyue / china_issues | verified | unconfirmed | Abnormal noise under 20,000 km and timing chain problems; high fuel co | https://m.12365auto.com/carseries/index.aspx?sid=2407",
+  "Geely Coolray / Binyue / china_issues | POWERTRAIN-MISMATCH (discard) | unconfirmed | Severe transmission jerk/shudder, body abnormal noise, very poor sound | https://www.dongchedi.com/community/730029750000000/quality",
+  "Geely Coolray / Binyue / china_issues | verified | unconfirmed | Minor faults such as window air leak, central control screen lag, and  | https://www.autohome.com.cn/ask/9285850.html",
+  "Geely Coolray / Binyue / china_issues | DEAD LINK (discard) | unconfirmed | Window air leak due to loose rubber seals; central control screen free | https://baike.pcauto.com.cn/30431.html",
+  "Geely Coolray / Binyue / china_issues | page couldn't be verified | unconfirmed | Customers report strong steering wheel shake during hard braking; serv | https://zhuanlan.zhihu.com/p/69823910",
+  "Geely Coolray / Binyue / china_issues | verified | unconfirmed | Engine malfunction indicator light commonly seen; possible causes incl | https://m.pcauto.com.cn/x/3565/35655020.html",
+  "Geely Coolray / Binyue / china_issues | verified | unconfirmed | No-start common causes: low/damaged battery, ignition system fault (sp | https://m.qcds.com/content-detail/BPBmn",
+  "Geely Coolray / Binyue / global_issues | verified | unconfirmed | The wet dual-clutch transmission is the most criticised weak point of  | https://avtomir.site/es/problemses/geely-coolray-problemas-comunes-y-c",
+  "Haval Raptor / china_issues | page doesn't name the model (downgrade) | confirmed -> unconfirmed | Infotainment/HiCar abnormal noise; owner requests repair. | https://www.12365auto.com/zlts/0-0-0-0-0-0_0-0-1-0-0-0-0-1.shtml",
+  "Haval Raptor / china_issues | verified | unconfirmed | Complaint data for the model concentrated on engine/electric motor ins | https://view.inews.qq.com/a/20250922A01V0800",
+  "Haval Raptor / china_issues | page couldn't be verified | unconfirmed | Owner reported that after a repair, while driving normally, the half-s | https://hao.yiche.com/wenzhang/89130899/",
+  "Haval Raptor / china_issues | verified | unconfirmed | Owner reports seat ventilation only works on the cushion and not the b | https://m.12365auto.com/threadforum/256444.shtml",
+  "Haval Raptor / china_issues | verified | unconfirmed | According to some owner feedback, reported issues include unstable bat | https://bk.taobao.com/k/hafu_1739/7561c0c9d6240bdb73aec897f209392a.htm"
+ ],
+ "checks": [
+  {
+   "url": "https://club.autohome.com.cn/bbs/thread/b0915741586ec8ca/110446928-1.html",
+   "httpStatus": 200,
+   "status": "verified",
+   "note": "page names the model"
+  },
+  {
+   "url": "https://club.m.autohome.com.cn/bbs/thread/b0915741586ec8ca/110446928-2.html",
+   "httpStatus": 200,
+   "status": "unverifiable",
+   "note": "page has almost no server-rendered text (JS app or bot wall)"
+  },
+  {
+   "url": "https://www.reddit.com/r/electricvehicles/comments/1m90ski/geely_galaxy_starship_7_hud_language_change/",
+   "httpStatus": 200,
+   "status": "unverifiable",
+   "note": "page has almost no server-rendered text (JS app or bot wall)"
+  },
+  {
+   "url": "https://carnewschina.com/2025/10/15/haval-raptor-phev-adds-unexpected-aquatic-mode-great-wall-offers-free-fix/",
+   "httpStatus": 200,
+   "status": "verified",
+   "note": "page names the model"
+  },
+  {
+   "url": "https://www.12365auto.com/zlts/20250715/1461521.shtml",
+   "httpStatus": 200,
+   "status": "verified",
+   "note": "page names the model"
+  },
+  {
+   "url": "https://chejiahao.m.autohome.com.cn/info/24550830",
+   "httpStatus": 200,
+   "status": "verified",
+   "note": "page names the model"
+  },
+  {
+   "url": "https://www.news18a.com/news/storys_214265.html",
+   "httpStatus": 200,
+   "status": "verified",
+   "note": "page names the model"
+  },
+  {
+   "url": "https://www.dongchedi.com/community/6206/quality",
+   "finalUrl": "https://www.dongchedi.com/login-required?redirect=%2Fcommunity%2F6206%2Fquality",
+   "httpStatus": 200,
+   "status": "unverifiable",
+   "note": "page has almost no server-rendered text (JS app or bot wall)"
+  },
+  {
+   "url": "https://club.m.autohome.com.cn/bbs/thread/74da69d504c70f47/105565041-1.html",
+   "httpStatus": 200,
+   "status": "verified",
+   "note": "page names the model"
+  },
+  {
+   "url": "https://www.12365auto.com/zlts/20250816/1482019.shtml",
+   "httpStatus": 404,
+   "status": "broken",
+   "note": "HTTP 404 — page does not exist"
+  },
+  {
+   "url": "https://m.12365auto.com/zlts/20250715/1461213.shtml",
+   "httpStatus": 200,
+   "status": "verified",
+   "note": "page names the model"
+  },
+  {
+   "url": "https://www.12365auto.com/zlts/20250704/1455218.shtml",
+   "httpStatus": 404,
+   "status": "broken",
+   "note": "HTTP 404 — page does not exist"
+  },
+  {
+   "url": "https://club.m.autohome.com.cn/bbs/thread/32ec6477964e6a2f/111662920-1.html",
+   "httpStatus": 200,
+   "status": "verified",
+   "note": "page names the model"
+  },
+  {
+   "url": "https://m.12365auto.com/series/z3690_3_1.shtml",
+   "httpStatus": 200,
+   "status": "verified",
+   "note": "page names the model"
+  },
+  {
+   "url": "https://www.12365auto.com/zjdy/20250104/198859.shtml",
+   "httpStatus": 200,
+   "status": "verified",
+   "note": "page names the model"
+  },
+  {
+   "url": "https://club.autohome.com.cn/bbs/thread/ab436d291cad0af1/112240696-1.html",
+   "httpStatus": 200,
+   "status": "verified",
+   "note": "page names the model"
+  },
+  {
+   "url": "https://q.qcds.com/content-detail/my0B9",
+   "httpStatus": 200,
+   "status": "verified",
+   "note": "page names the model"
+  },
+  {
+   "url": "https://hao.yiche.com/wenzhang/99197562",
+   "status": "unverifiable",
+   "note": "fetch failed (ETIMEDOUT) (after retry)"
+  },
+  {
+   "url": "https://aikahao.xcar.com.cn/item/2232858.html",
+   "httpStatus": 500,
+   "status": "unverifiable",
+   "note": "HTTP 500 — blocked or erroring, page not seen"
+  },
+  {
+   "url": "https://m.12365auto.com/zlts/20250728/1469472.shtml",
+   "httpStatus": 200,
+   "status": "verified",
+   "note": "page names the model"
+  },
+  {
+   "url": "https://news.qq.com/rain/a/20240607A09PD100",
+   "httpStatus": 200,
+   "status": "verified",
+   "note": "page names the model"
+  },
+  {
+   "url": "https://www.yiche.com/zhai/2070579",
+   "status": "unverifiable",
+   "note": "fetch failed (ETIMEDOUT) (after retry)"
+  },
+  {
+   "url": "https://www.autohome.com.cn/ask/21577642.html",
+   "httpStatus": 200,
+   "status": "verified",
+   "note": "page names the model"
+  },
+  {
+   "url": "https://www.autohome.com.cn/ask/22607197.html",
+   "httpStatus": 200,
+   "status": "verified",
+   "note": "page names the model"
+  },
+  {
+   "url": "https://tousu.sina.com.cn/complaint/view/17378601004?sld=4cb40cc11afcf48b8fd71d7304682134",
+   "httpStatus": 200,
+   "status": "verified",
+   "note": "page names the model"
+  },
+  {
+   "url": "https://share-m.kakamobi.com/m.toutiao.kakamobi.com/detail/?origin=1&id=3122885",
+   "httpStatus": 200,
+   "status": "unverifiable",
+   "note": "page has almost no server-rendered text (JS app or bot wall)"
+  },
+  {
+   "url": "https://www.reddit.com/r/chinesecarsuae/comments/1spbcjj/what_are_the_realworld_problems_with_the_jetour/",
+   "httpStatus": 200,
+   "status": "unverifiable",
+   "note": "page has almost no server-rendered text (JS app or bot wall)"
+  },
+  {
+   "url": "https://www.tiktok.com/discover/jetour-t2-issues",
+   "httpStatus": 200,
+   "status": "unverifiable",
+   "note": "page has almost no server-rendered text (JS app or bot wall)"
+  },
+  {
+   "url": "https://carinterior.alibaba.com/buyingguides/jetour-t2-screen-common-problems-guide",
+   "httpStatus": 200,
+   "status": "verified",
+   "note": "page names the model"
+  },
+  {
+   "url": "https://www.sikayetvar.com/en/chery-us/im-experiencing-multiple-issues-with-my-chery-tiggo-8-pro-avangard",
+   "httpStatus": 403,
+   "status": "unverifiable",
+   "note": "HTTP 403 — blocked or erroring, page not seen"
+  },
+  {
+   "url": "https://yearstoavoid.co/chery-tiggo-8-pro-years-to-avoid/",
+   "httpStatus": 200,
+   "status": "verified",
+   "note": "page names the model"
+  },
+  {
+   "url": "https://www.sikayetvar.com/en/chery-us",
+   "httpStatus": 403,
+   "status": "unverifiable",
+   "note": "HTTP 403 — blocked or erroring, page not seen"
+  },
+  {
+   "url": "https://www.sikayetvar.com/en/chery-us/chery-tiggo-8-pro-engine-failure-warranty-denied-due-to-service-misguidance",
+   "httpStatus": 403,
+   "status": "unverifiable",
+   "note": "HTTP 403 — blocked or erroring, page not seen"
+  },
+  {
+   "url": "https://www.sikayetvar.com/en/chery-us/chery-tiggo-8-pro-dashboard-radio-and-screen-malfunctions-not-fixed",
+   "httpStatus": 403,
+   "status": "unverifiable",
+   "note": "HTTP 403 — blocked or erroring, page not seen"
+  },
+  {
+   "url": "https://www.12365auto.com/zlts/20250512/1428976.shtml",
+   "httpStatus": 200,
+   "status": "verified",
+   "note": "page names the model"
+  },
+  {
+   "url": "https://www.dongchedi.com/community/4340/maintenance",
+   "finalUrl": "https://www.dongchedi.com/login-required?redirect=%2Fcommunity%2F4340%2Fmaintenance",
+   "httpStatus": 200,
+   "status": "unverifiable",
+   "note": "page has almost no server-rendered text (JS app or bot wall)"
+  },
+  {
+   "url": "https://www.reddit.com/r/LynkCo/comments/1qvp6s4/lynk_co_06_emp_latam/",
+   "httpStatus": 200,
+   "status": "unverifiable",
+   "note": "page has almost no server-rendered text (JS app or bot wall)"
+  },
+  {
+   "url": "https://www.12365auto.com/series/v-2407-1-0.shtml",
+   "httpStatus": 200,
+   "status": "verified",
+   "note": "page names the model"
+  },
+  {
+   "url": "https://m.12365auto.com/carseries/index.aspx?sid=2407",
+   "httpStatus": 200,
+   "status": "verified",
+   "note": "page names the model"
+  },
+  {
+   "url": "https://www.autohome.com.cn/ask/9285850.html",
+   "httpStatus": 200,
+   "status": "verified",
+   "note": "page names the model"
+  },
+  {
+   "url": "https://baike.pcauto.com.cn/30431.html",
+   "httpStatus": 404,
+   "status": "broken",
+   "note": "HTTP 404 — page does not exist"
+  },
+  {
+   "url": "https://zhuanlan.zhihu.com/p/69823910",
+   "httpStatus": 403,
+   "status": "unverifiable",
+   "note": "HTTP 403 — blocked or erroring, page not seen"
+  },
+  {
+   "url": "https://m.pcauto.com.cn/x/3565/35655020.html",
+   "httpStatus": 200,
+   "status": "verified",
+   "note": "page names the model"
+  },
+  {
+   "url": "https://m.qcds.com/content-detail/BPBmn",
+   "httpStatus": 200,
+   "status": "verified",
+   "note": "page names the model"
+  },
+  {
+   "url": "https://avtomir.site/es/problemses/geely-coolray-problemas-comunes-y-codigos-dtc/",
+   "httpStatus": 200,
+   "status": "verified",
+   "note": "page names the model"
+  },
+  {
+   "url": "https://www.12365auto.com/zlts/0-0-0-0-0-0_0-0-1-0-0-0-0-1.shtml",
+   "httpStatus": 200,
+   "status": "no_target_mention",
+   "note": "page does not mention the model — hub/listing or unrelated page?"
+  },
+  {
+   "url": "https://view.inews.qq.com/a/20250922A01V0800",
+   "finalUrl": "https://news.qq.com/rain/a/20250922A01V0800?id=20250922A01V0800&path=a&app=news&suid=&redirect_pc=1",
+   "httpStatus": 200,
+   "status": "verified",
+   "note": "page names the model"
+  },
+  {
+   "url": "https://hao.yiche.com/wenzhang/89130899/",
+   "status": "unverifiable",
+   "note": "fetch failed (ETIMEDOUT) (after retry)"
+  },
+  {
+   "url": "https://m.12365auto.com/threadforum/256444.shtml",
+   "httpStatus": 200,
+   "status": "verified",
+   "note": "page names the model"
+  },
+  {
+   "url": "https://bk.taobao.com/k/hafu_1739/7561c0c9d6240bdb73aec897f209392a.html",
+   "httpStatus": 200,
+   "status": "verified",
+   "note": "page names the model"
+  }
+ ]
+}

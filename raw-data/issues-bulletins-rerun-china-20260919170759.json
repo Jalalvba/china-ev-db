@@ -1,0 +1,101 @@
+{
+ "label": "rerun-china",
+ "readOnly": true,
+ "results": [
+  {
+   "model": "Starship 7 EM-i",
+   "brand": "Geely Galaxy",
+   "id": "6aa47e9b1ec445aa4df91d4a",
+   "passes": [
+    {
+     "pass": "china_issues",
+     "status": "found",
+     "sources": 10,
+     "grounded": true,
+     "kept": [],
+     "rejected": [],
+     "warnings": [],
+     "flags": []
+    }
+   ]
+  },
+  {
+   "model": "Haval Raptor",
+   "brand": "Haval",
+   "id": "6aab0ba0a1ae850d4f986386",
+   "passes": [
+    {
+     "pass": "china_issues",
+     "status": "found",
+     "sources": 9,
+     "grounded": true,
+     "kept": [
+      {
+       "issue_description": "Infotainment/HiCar abnormal noise; owner requests repair.",
+       "affected_systems": [
+        "electronics"
+       ],
+       "frequency_signal": "single complaint entry; no complaint count or ranking shown",
+       "source": "车质网",
+       "source_url": "https://www.12365auto.com/zlts/0-0-0-0-0-0_0-0-1-0-0-0-0-1.shtml",
+       "confidence": "confirmed"
+      },
+      {
+       "issue_description": "Complaint data for the model concentrated on engine/electric motor insufficient power and power battery faults, involving 2023 and 2024 models; the 2026 model was expected to have lower probability but this was not yet confirmed.",
+       "affected_systems": [
+        "engine",
+        "motor",
+        "battery"
+       ],
+       "frequency_signal": "main complaint categories in near-one-year complaint data for 2023/2024 models; not confirmed for 2026",
+       "source": "腾讯新闻",
+       "source_url": "https://view.inews.qq.com/a/20250922A01V0800",
+       "confidence": "unconfirmed"
+      },
+      {
+       "issue_description": "Owner reported that after a repair, while driving normally, the half-shaft detached and the rear motor was damaged; responsibility was disputed among owner, manufacturer and 4S store.",
+       "affected_systems": [
+        "chassis",
+        "motor"
+       ],
+       "frequency_signal": "isolated report",
+       "source": "易车",
+       "source_url": "https://hao.yiche.com/wenzhang/89130899/",
+       "confidence": "unconfirmed"
+      },
+      {
+       "issue_description": "Owner reports seat ventilation only works on the cushion and not the backrest, despite official promotion and configuration list indicating backrest ventilation; described as configuration shortfall/false advertising.",
+       "affected_systems": [
+        "body"
+       ],
+       "frequency_signal": "isolated forum complaint",
+       "source": "车质网",
+       "source_url": "https://m.12365auto.com/threadforum/256444.shtml",
+       "confidence": "unconfirmed"
+      },
+      {
+       "issue_description": "According to some owner feedback, reported issues include unstable battery range, occasional air-conditioning failure, and infotainment screen lag.",
+       "affected_systems": [
+        "battery",
+        "climate",
+        "electronics"
+       ],
+       "frequency_signal": "some owners report; not quantified",
+       "source": "淘宝百科网",
+       "source_url": "https://bk.taobao.com/k/hafu_1739/7561c0c9d6240bdb73aec897f209392a.html",
+       "confidence": "unconfirmed"
+      }
+     ],
+     "rejected": [],
+     "warnings": [
+      "Source does not state the model year/generation — kept as unconfirmed, verify before relying on it: \"Owner reported that after a repair, while driving normally, the half-shaft detached and the rear motor was dam\"",
+      "Source does not state the model year/generation — kept as unconfirmed, verify before relying on it: \"Owner reports seat ventilation only works on the cushion and not the backrest, despite official promotion and \"",
+      "Source does not state the model year/generation — kept as unconfirmed, verify before relying on it: \"According to some owner feedback, reported issues include unstable battery range, occasional air-conditioning \""
+     ],
+     "flags": []
+    }
+   ]
+  }
+ ],
+ "stopped": null
+}

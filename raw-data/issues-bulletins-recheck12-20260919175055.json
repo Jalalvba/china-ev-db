@@ -1,0 +1,988 @@
+{
+ "label": "recheck12",
+ "readOnly": true,
+ "results": [
+  {
+   "model": "Song Ultra DM-i",
+   "brand": "BYD",
+   "id": "6aa47dd5ee15cebb2bbd5b65",
+   "passes": [
+    {
+     "pass": "china_issues",
+     "status": "found",
+     "sources": 3,
+     "grounded": true,
+     "kept": [],
+     "rejected": [],
+     "warnings": [],
+     "flags": []
+    },
+    {
+     "pass": "global_issues",
+     "status": "not_found",
+     "sources": 12,
+     "grounded": true,
+     "kept": [],
+     "rejected": [],
+     "warnings": [],
+     "flags": []
+    },
+    {
+     "pass": "bulletins",
+     "status": "not_found",
+     "sources": 6,
+     "grounded": true,
+     "kept": [],
+     "rejected": [],
+     "warnings": [],
+     "flags": []
+    }
+   ]
+  },
+  {
+   "model": "Starship 7 EM-i",
+   "brand": "Geely Galaxy",
+   "id": "6aa47e9b1ec445aa4df91d4a",
+   "passes": [
+    {
+     "pass": "china_issues",
+     "status": "found",
+     "sources": 10,
+     "grounded": true,
+     "kept": [],
+     "rejected": [],
+     "warnings": [],
+     "flags": []
+    },
+    {
+     "pass": "global_issues",
+     "status": "not_found",
+     "sources": 12,
+     "grounded": true,
+     "kept": [],
+     "rejected": [],
+     "warnings": [],
+     "flags": []
+    },
+    {
+     "pass": "bulletins",
+     "status": "not_found",
+     "sources": 4,
+     "grounded": true,
+     "kept": [],
+     "rejected": [],
+     "warnings": [],
+     "flags": []
+    }
+   ]
+  },
+  {
+   "model": "Haval Raptor",
+   "brand": "Haval",
+   "id": "6aab0ba0a1ae850d4f986386",
+   "passes": [
+    {
+     "pass": "china_issues",
+     "status": "found",
+     "sources": 9,
+     "grounded": true,
+     "kept": [
+      {
+       "issue_description": "During normal driving, the half-shaft detached and the rear motor was damaged. The vehicle was left at the destination while the manufacturer and 4S store disputed responsibility and repair costs.",
+       "affected_systems": [
+        "chassis",
+        "motor"
+       ],
+       "frequency_signal": "Isolated report.",
+       "source": "易车",
+       "source_url": "https://hao.yiche.com/wenzhang/89130899/",
+       "confidence": "unconfirmed"
+      }
+     ],
+     "rejected": [
+      "off-model: not attested as applying to the target model — \"Complaint data over the previous year showed faults concentrated in insufficient engine/electric motor power a\"",
+      "dead link: HTTP 404 — page does not exist [https://www.12365auto.com/zlts/20250618/1446274.shtml]"
+     ],
+     "warnings": [
+      "Source does not state the model year/generation — kept as unconfirmed, verify before relying on it: \"Backrest ventilation function is missing despite being advertised; only cushion ventilation works, causing bac\"",
+      "Source does not state the model year/generation — kept as unconfirmed, verify before relying on it: \"During normal driving, the half-shaft detached and the rear motor was damaged. The vehicle was left at the des\""
+     ],
+     "flags": [],
+     "verification": {
+      "broken": 1,
+      "unverifiable": 1
+     }
+    },
+    {
+     "pass": "global_issues",
+     "status": "found",
+     "sources": 14,
+     "grounded": true,
+     "kept": [
+      {
+       "region": "global",
+       "issue_description": "Water ingress ('aquatic mode') reported on the Haval Raptor PHEV; Haval/GWM offered a free fix and said it would take full responsibility for potentially affected units.",
+       "affected_systems": [
+        "body"
+       ],
+       "frequency_signal": "Source describes the incident as isolated.",
+       "source": "CarNewsChina",
+       "source_url": "https://carnewschina.com/2025/10/15/haval-raptor-phev-adds-unexpected-aquatic-mode-great-wall-offers-free-fix/",
+       "confidence": "unconfirmed"
+      }
+     ],
+     "rejected": [],
+     "warnings": [
+      "Source does not state the model year/generation — kept as unconfirmed, verify before relying on it: \"Water ingress ('aquatic mode') reported on the Haval Raptor PHEV; Haval/GWM offered a free fix and said it wou\""
+     ],
+     "flags": [],
+     "verification": {
+      "verified": 1
+     }
+    },
+    {
+     "pass": "bulletins",
+     "status": "not_found",
+     "sources": 6,
+     "grounded": true,
+     "kept": [],
+     "rejected": [],
+     "warnings": [],
+     "flags": []
+    }
+   ]
+  },
+  {
+   "model": "WEY Lanshan",
+   "brand": "WEY",
+   "id": "6aab0ba4a1ae850d4f98638d",
+   "passes": [
+    {
+     "pass": "china_issues",
+     "status": "found",
+     "sources": 10,
+     "grounded": true,
+     "kept": [
+      {
+       "issue_description": "Instrument panel/dashboard decorative panel cracking ('crackgate'; instrument panel cracks).",
+       "affected_systems": [
+        "body"
+       ],
+       "frequency_signal": "Article describes a 'crackgate' affecting all three generations; no numeric complaint count shown.",
+       "source": "汽车之家车家号",
+       "source_url": "https://chejiahao.m.autohome.com.cn/info/24550830",
+       "confidence": "unconfirmed"
+      },
+      {
+       "issue_description": "Instrument panel/dashboard cracking controversy; manufacturer reportedly offered free replacement under warranty.",
+       "affected_systems": [
+        "body"
+       ],
+       "frequency_signal": "Described as a controversy; no numeric complaint count shown.",
+       "source": "网通社号",
+       "source_url": "https://www.news18a.com/news/storys_214265.html",
+       "confidence": "unconfirmed"
+      },
+      {
+       "issue_description": "Chassis/CDC suspension makes loud rumbling/clunking noises on cement roads.",
+       "affected_systems": [
+        "chassis"
+       ],
+       "frequency_signal": "Single owner report; no quantified frequency shown.",
+       "source": "懂车帝",
+       "source_url": "https://www.dongchedi.com/community/6206/quality",
+       "confidence": "unconfirmed"
+      },
+      {
+       "issue_description": "Lidar failure causing multiple fault codes and loss of safety-driving functions; replacement part unavailable with 7-10 working-day order lead time.",
+       "affected_systems": [
+        "electronics"
+       ],
+       "frequency_signal": "Single 车质网 complaint dated 2025-07-15; no count/rank shown.",
+       "source": "车质网",
+       "source_url": "https://www.12365auto.com/zlts/20250715/1461521.shtml",
+       "confidence": "unconfirmed"
+      },
+      {
+       "issue_description": "Adaptive cruise control mode cannot perform energy recuperation.",
+       "affected_systems": [
+        "electronics",
+        "battery",
+        "motor"
+       ],
+       "frequency_signal": "Single owner thread; no quantified frequency shown.",
+       "source": "汽车之家论坛",
+       "source_url": "https://club.m.autohome.com.cn/bbs/thread/74da69d504c70f47/105565041-1.html",
+       "confidence": "unconfirmed"
+      }
+     ],
+     "rejected": [],
+     "warnings": [
+      "Source does not state the model year/generation — kept as unconfirmed, verify before relying on it: \"Instrument panel/dashboard decorative panel cracking ('crackgate'; instrument panel cracks).\"",
+      "Source does not state the model year/generation — kept as unconfirmed, verify before relying on it: \"Instrument panel/dashboard cracking controversy; manufacturer reportedly offered free replacement under warran\"",
+      "Source does not state the model year/generation — kept as unconfirmed, verify before relying on it: \"Chassis/CDC suspension makes loud rumbling/clunking noises on cement roads.\"",
+      "Source does not state the model year/generation — kept as unconfirmed, verify before relying on it: \"Lidar failure causing multiple fault codes and loss of safety-driving functions; replacement part unavailable \"",
+      "Source does not state the model year/generation — kept as unconfirmed, verify before relying on it: \"Adaptive cruise control mode cannot perform energy recuperation.\""
+     ],
+     "flags": [],
+     "verification": {
+      "unverifiable": 2,
+      "verified": 3
+     }
+    },
+    {
+     "pass": "global_issues",
+     "status": "not_found",
+     "sources": 11,
+     "grounded": true,
+     "kept": [],
+     "rejected": [],
+     "warnings": [],
+     "flags": []
+    },
+    {
+     "pass": "bulletins",
+     "status": "not_found",
+     "sources": 6,
+     "grounded": true,
+     "kept": [],
+     "rejected": [],
+     "warnings": [],
+     "flags": []
+    }
+   ]
+  },
+  {
+   "model": "08 EM-P",
+   "brand": "Lynk & Co",
+   "id": "6aa47eb21ec445aa4df91e1f",
+   "passes": [
+    {
+     "pass": "china_issues",
+     "status": "found",
+     "sources": 12,
+     "grounded": true,
+     "kept": [
+      {
+       "issue_description": "Auxiliary battery not secured, causing full vehicle power loss; the same complaint also reports a driver's door handle not springing back, right-rear window abnormal automatic up/down, abnormal AC compressor noise in rapid-cooling mode, and abnormal interaction between the head unit and dedicated software.",
+       "affected_systems": [
+        "battery",
+        "body",
+        "climate",
+        "electronics"
+       ],
+       "frequency_signal": "Isolated owner complaint describing multiple faults; no complaint count or ranking shown.",
+       "source": "车质网",
+       "source_url": "https://m.12365auto.com/zlts/20250715/1461213.shtml",
+       "confidence": "unconfirmed"
+      },
+      {
+       "issue_description": "Engine malfunction light was on, but the replaced part was an air-conditioning condenser.",
+       "affected_systems": [
+        "engine",
+        "climate"
+       ],
+       "frequency_signal": "One expert Q&A user question; not a complaint count.",
+       "source": "车质网",
+       "source_url": "https://m.12365auto.com/series/z3690_3_1.shtml",
+       "confidence": "unconfirmed"
+      },
+      {
+       "issue_description": "Ambient light LED beads turning white; the ambient light panel was replaced at a 4S service center.",
+       "affected_systems": [
+        "body",
+        "electronics"
+       ],
+       "frequency_signal": "Isolated forum report; owner describes the fault as very uncommon/rare.",
+       "source": "汽车之家论坛",
+       "source_url": "https://club.m.autohome.com.cn/bbs/thread/32ec6477964e6a2f/111662920-1.html",
+       "confidence": "unconfirmed"
+      }
+     ],
+     "rejected": [
+      "dead link: HTTP 404 — page does not exist [https://www.12365auto.com/zlts/20250816/1482019.shtml]",
+      "dead link: HTTP 404 — page does not exist [https://www.12365auto.com/zlts/20250704/1455218.shtml]"
+     ],
+     "warnings": [
+      "Source does not state the model year/generation — kept as unconfirmed, verify before relying on it: \"Pirelli tire sidewall cracking on a nearly new vehicle: three cracks in the left-front tire sidewall at an ind\"",
+      "Source does not state the model year/generation — kept as unconfirmed, verify before relying on it: \"Auxiliary battery not secured, causing full vehicle power loss; the same complaint also reports a driver's doo\"",
+      "Source does not state the model year/generation — kept as unconfirmed, verify before relying on it: \"Sudden loss of power and a steering issue during normal city driving without warning; earlier repeated driver-\"",
+      "Source does not state the model year/generation — kept as unconfirmed, verify before relying on it: \"Engine malfunction light was on, but the replaced part was an air-conditioning condenser.\"",
+      "Powertrain component issue, but the source does not say which variant (PHEV vs ICE/other) — kept as unconfirmed, verify before relying on it: \"Engine malfunction light was on, but the replaced part was an air-conditioning condenser.\"",
+      "Source does not state the model year/generation — kept as unconfirmed, verify before relying on it: \"Ambient light LED beads turning white; the ambient light panel was replaced at a 4S service center.\""
+     ],
+     "flags": [],
+     "verification": {
+      "broken": 2,
+      "verified": 3
+     }
+    },
+    {
+     "pass": "global_issues",
+     "status": "not_found",
+     "sources": 13,
+     "grounded": true,
+     "kept": [],
+     "rejected": [
+      "off-model: not attested as applying to the target model — \"In the EU, speed-limit and attention warning sounds must be turned off every time the car is started; there ar\""
+     ],
+     "warnings": [],
+     "flags": []
+    },
+    {
+     "pass": "bulletins",
+     "status": "not_found",
+     "sources": 9,
+     "grounded": true,
+     "kept": [],
+     "rejected": [],
+     "warnings": [],
+     "flags": []
+    }
+   ]
+  },
+  {
+   "model": "Landian E5",
+   "brand": "Landian",
+   "id": "6aa589e1459a4cbe4a9c65ad",
+   "passes": [
+    {
+     "pass": "china_issues",
+     "status": "found",
+     "sources": 14,
+     "grounded": true,
+     "kept": [
+      {
+       "issue_description": "Brake master cylinder failure reported; a 车质网 expert Q&A asks whether it is a quality problem.",
+       "affected_systems": [
+        "chassis"
+       ],
+       "frequency_signal": "Single expert Q&A inquiry; no complaint count stated.",
+       "source": "车质网",
+       "source_url": "https://www.12365auto.com/zjdy/20250104/198859.shtml",
+       "confidence": "unconfirmed"
+      },
+      {
+       "issue_description": "Tire uneven wear reported as an issue from user complaints/feedback.",
+       "affected_systems": [
+        "chassis"
+       ],
+       "frequency_signal": "Not quantified; listed as an issue seen in user complaints/feedback.",
+       "source": "易车",
+       "source_url": "https://hao.yiche.com/wenzhang/99197562",
+       "confidence": "unconfirmed"
+      },
+      {
+       "issue_description": "Abnormal noise reported as an issue from user complaints/feedback.",
+       "affected_systems": [
+        "other"
+       ],
+       "frequency_signal": "Not quantified; listed as an issue seen in user complaints/feedback.",
+       "source": "易车",
+       "source_url": "https://hao.yiche.com/wenzhang/99197562",
+       "confidence": "unconfirmed"
+      },
+      {
+       "issue_description": "Seatbelt failure reported as an issue from user complaints/feedback.",
+       "affected_systems": [
+        "body"
+       ],
+       "frequency_signal": "Not quantified; listed as an issue seen in user complaints/feedback.",
+       "source": "易车",
+       "source_url": "https://hao.yiche.com/wenzhang/99197562",
+       "confidence": "unconfirmed"
+      },
+      {
+       "issue_description": "Infotainment system lag reported as an issue from user complaints/feedback.",
+       "affected_systems": [
+        "electronics"
+       ],
+       "frequency_signal": "Not quantified; listed as an issue seen in user complaints/feedback.",
+       "source": "易车",
+       "source_url": "https://hao.yiche.com/wenzhang/99197562",
+       "confidence": "unconfirmed"
+      },
+      {
+       "issue_description": "Sound insulation issue reported as an issue from user complaints/feedback.",
+       "affected_systems": [
+        "body"
+       ],
+       "frequency_signal": "Not quantified; listed as an issue seen in user complaints/feedback.",
+       "source": "易车",
+       "source_url": "https://hao.yiche.com/wenzhang/99197562",
+       "confidence": "unconfirmed"
+      },
+      {
+       "issue_description": "After one year of ownership, battery fault with battery warning, engine red light, 'red turtle' power limitation indicator, failure to start, and vehicle towed.",
+       "affected_systems": [
+        "battery",
+        "engine",
+        "electronics"
+       ],
+       "frequency_signal": "Single forum post; isolated report.",
+       "source": "汽车之家论坛",
+       "source_url": "https://club.autohome.com.cn/bbs/thread/ab436d291cad0af1/112240696-1.html",
+       "confidence": "unconfirmed"
+      },
+      {
+       "issue_description": "Motor controller failure; source discusses causes and lists software fault as 30% of cases.",
+       "affected_systems": [
+        "motor",
+        "electronics"
+       ],
+       "frequency_signal": "No complaint count; source lists software fault as 30% of motor controller failure causes.",
+       "source": "汽车大师",
+       "source_url": "https://q.qcds.com/content-detail/my0B9",
+       "confidence": "unconfirmed"
+      }
+     ],
+     "rejected": [],
+     "warnings": [
+      "Source does not state the model year/generation — kept as unconfirmed, verify before relying on it: \"Brake master cylinder failure reported; a 车质网 expert Q&A asks whether it is a quality problem.\"",
+      "Source does not state the model year/generation — kept as unconfirmed, verify before relying on it: \"Tire uneven wear reported as an issue from user complaints/feedback.\"",
+      "Source does not state the model year/generation — kept as unconfirmed, verify before relying on it: \"Abnormal noise reported as an issue from user complaints/feedback.\"",
+      "Source does not state the model year/generation — kept as unconfirmed, verify before relying on it: \"Seatbelt failure reported as an issue from user complaints/feedback.\"",
+      "Source does not state the model year/generation — kept as unconfirmed, verify before relying on it: \"Infotainment system lag reported as an issue from user complaints/feedback.\"",
+      "Source does not state the model year/generation — kept as unconfirmed, verify before relying on it: \"Sound insulation issue reported as an issue from user complaints/feedback.\"",
+      "Source does not state the model year/generation — kept as unconfirmed, verify before relying on it: \"After one year of ownership, battery fault with battery warning, engine red light, 'red turtle' power limitati\"",
+      "Powertrain component issue, but the source does not say which variant (PHEV vs ICE/other) — kept as unconfirmed, verify before relying on it: \"After one year of ownership, battery fault with battery warning, engine red light, 'red turtle' power limitati\"",
+      "Source does not state the model year/generation — kept as unconfirmed, verify before relying on it: \"Motor controller failure; source discusses causes and lists software fault as 30% of cases.\"",
+      "Powertrain component issue, but the source does not say which variant (PHEV vs ICE/other) — kept as unconfirmed, verify before relying on it: \"Motor controller failure; source discusses causes and lists software fault as 30% of cases.\""
+     ],
+     "flags": [],
+     "verification": {
+      "verified": 3,
+      "unverifiable": 1
+     }
+    },
+    {
+     "pass": "global_issues",
+     "status": "not_found",
+     "sources": 14,
+     "grounded": true,
+     "kept": [],
+     "rejected": [],
+     "warnings": [],
+     "flags": []
+    },
+    {
+     "pass": "bulletins",
+     "status": "not_found",
+     "sources": 6,
+     "grounded": true,
+     "kept": [],
+     "rejected": [],
+     "warnings": [],
+     "flags": []
+    }
+   ]
+  },
+  {
+   "model": "T2",
+   "brand": "Jetour",
+   "id": "6aa5bd68f4edfe3ef0af6728",
+   "passes": [
+    {
+     "pass": "china_issues",
+     "status": "found",
+     "sources": 9,
+     "grounded": true,
+     "kept": [
+      {
+       "issue_description": "Window lift system failure reported as a common fault on used 捷途旅行者 vehicles.",
+       "affected_systems": [
+        "body"
+       ],
+       "frequency_signal": "Described as one of the main common faults on used models; no complaint count given.",
+       "source": "汽车之家",
+       "source_url": "https://www.autohome.com.cn/ask/21577642.html",
+       "confidence": "unconfirmed"
+      },
+      {
+       "issue_description": "Illumination of warning lights reported as a common fault on used 捷途旅行者 vehicles.",
+       "affected_systems": [
+        "electronics"
+       ],
+       "frequency_signal": "Described as one of the main common faults on used models; no complaint count given.",
+       "source": "汽车之家",
+       "source_url": "https://www.autohome.com.cn/ask/22607197.html",
+       "confidence": "unconfirmed"
+      },
+      {
+       "issue_description": "Owner reported quality problems including vehicle abnormal noises, paint peeling, and fault codes.",
+       "affected_systems": [
+        "body",
+        "electronics",
+        "other"
+       ],
+       "frequency_signal": "Isolated report (single complaint).",
+       "source": "黑猫投诉",
+       "source_url": "https://tousu.sina.com.cn/complaint/view/17378601004?sld=4cb40cc11afcf48b8fd71d7304682134",
+       "confidence": "unconfirmed"
+      },
+      {
+       "issue_description": "Noticeable electric current noise when accelerating from a standstill, widespread on the first batch of 捷途旅行者; manufacturer improved by replacing high-pressure oil pipe and sound insulation.",
+       "affected_systems": [
+        "engine",
+        "other"
+       ],
+       "frequency_signal": "Widespread on first batch per source; manufacturer issued a fix.",
+       "source": "腾讯新闻",
+       "source_url": "https://news.qq.com/rain/a/20240607A09PD100",
+       "confidence": "unconfirmed"
+      },
+      {
+       "issue_description": "New vehicle had transmission fault light on and unable to accelerate on the day of delivery.",
+       "affected_systems": [
+        "transmission"
+       ],
+       "frequency_signal": "Isolated report (single complaint on 车质网).",
+       "source": "车质网",
+       "source_url": "https://m.12365auto.com/zlts/20250728/1469472.shtml",
+       "confidence": "unconfirmed"
+      }
+     ],
+     "rejected": [],
+     "warnings": [
+      "Source does not state the model year/generation — kept as unconfirmed, verify before relying on it: \"Window lift system failure reported as a common fault on used 捷途旅行者 vehicles.\"",
+      "Source does not state the model year/generation — kept as unconfirmed, verify before relying on it: \"Illumination of warning lights reported as a common fault on used 捷途旅行者 vehicles.\"",
+      "Source does not state the model year/generation — kept as unconfirmed, verify before relying on it: \"Owner reported quality problems including vehicle abnormal noises, paint peeling, and fault codes.\"",
+      "Source does not state the model year/generation — kept as unconfirmed, verify before relying on it: \"Noticeable electric current noise when accelerating from a standstill, widespread on the first batch of 捷途旅行者;\"",
+      "Powertrain component issue, but the source does not say which variant (PHEV vs ICE/other) — kept as unconfirmed, verify before relying on it: \"Noticeable electric current noise when accelerating from a standstill, widespread on the first batch of 捷途旅行者;\"",
+      "Source does not state the model year/generation — kept as unconfirmed, verify before relying on it: \"New vehicle had transmission fault light on and unable to accelerate on the day of delivery.\"",
+      "Powertrain component issue, but the source does not say which variant (PHEV vs ICE/other) — kept as unconfirmed, verify before relying on it: \"New vehicle had transmission fault light on and unable to accelerate on the day of delivery.\""
+     ],
+     "flags": [],
+     "verification": {
+      "verified": 4,
+      "unverifiable": 1
+     }
+    },
+    {
+     "pass": "global_issues",
+     "status": "found",
+     "sources": 11,
+     "grounded": true,
+     "kept": [
+      {
+       "region": "global",
+       "issue_description": "Alignment issue causing the vehicle to steer to the left on its own; repeated attempts to fix it were reportedly unsuccessful, with Jetour Service centre confirming it as unfixable.",
+       "affected_systems": [
+        "chassis"
+       ],
+       "frequency_signal": "Single owner report in a Reddit thread; multiple alignment repair attempts mentioned.",
+       "source": "Reddit r/chinesecarsuae",
+       "source_url": "https://www.reddit.com/r/chinesecarsuae/comments/1spbcjj/what_are_the_realworld_problems_with_the_jetour/",
+       "confidence": "unconfirmed"
+      },
+      {
+       "region": "global",
+       "issue_description": "4x4 system not engaging, with only the front tires rotating during a recovery attempt in sand.",
+       "affected_systems": [
+        "transmission"
+       ],
+       "frequency_signal": "Single TikTok video snippet on a Jetour T2 issues discover page.",
+       "source": "TikTok",
+       "source_url": "https://www.tiktok.com/discover/jetour-t2-issues",
+       "confidence": "unconfirmed"
+      }
+     ],
+     "rejected": [],
+     "warnings": [
+      "Source does not state the model year/generation — kept as unconfirmed, verify before relying on it: \"4x4 system not engaging, with only the front tires rotating during a recovery attempt in sand.\"",
+      "Powertrain component issue, but the source does not say which variant (PHEV vs ICE/other) — kept as unconfirmed, verify before relying on it: \"4x4 system not engaging, with only the front tires rotating during a recovery attempt in sand.\"",
+      "Cited page couldn't be verified (page has almost no server-rendered text (JS app or bot wall)) — \"confirmed\" downgraded: \"Alignment issue causing the vehicle to steer to the left on its own; repeated attempts to \" [https://www.reddit.com/r/chinesecarsuae/comments/1spbcjj/what_are_the_realworld_problems_with_the_jetour/]"
+     ],
+     "flags": [],
+     "verification": {
+      "unverifiable": 2
+     }
+    },
+    {
+     "pass": "bulletins",
+     "status": "not_found",
+     "sources": 6,
+     "grounded": true,
+     "kept": [],
+     "rejected": [],
+     "warnings": [],
+     "flags": []
+    }
+   ]
+  },
+  {
+   "model": "S06 DM",
+   "brand": "Soueast",
+   "id": "6aa5d7be8bb7411b4ed17669",
+   "passes": [
+    {
+     "pass": "china_issues",
+     "status": "found",
+     "sources": 10,
+     "grounded": true,
+     "kept": [],
+     "rejected": [],
+     "warnings": [],
+     "flags": []
+    },
+    {
+     "pass": "global_issues",
+     "status": "not_found",
+     "sources": 13,
+     "grounded": true,
+     "kept": [],
+     "rejected": [],
+     "warnings": [],
+     "flags": []
+    },
+    {
+     "pass": "bulletins",
+     "status": "not_found",
+     "sources": 3,
+     "grounded": true,
+     "kept": [],
+     "rejected": [],
+     "warnings": [],
+     "flags": []
+    }
+   ]
+  },
+  {
+   "model": "Tiggo 8 Pro",
+   "brand": "Chery",
+   "id": "6aa47dd5ee15cebb2bbd5b93",
+   "passes": [
+    {
+     "pass": "china_issues",
+     "status": "found",
+     "sources": 5,
+     "grounded": true,
+     "kept": [],
+     "rejected": [
+      "off-model: source is about \"2022款瑞虎8 PRO\", not Chery Tiggo 8 Pro — \"Braking-system complaints: abnormal noise from the brake system, hard brake pedal, and braking judder/vibratio\""
+     ],
+     "warnings": [],
+     "flags": []
+    },
+    {
+     "pass": "global_issues",
+     "status": "found",
+     "sources": 13,
+     "grounded": true,
+     "kept": [
+      {
+       "region": "global",
+       "issue_description": "Dashboard, radio, and screen malfunctions: the radio does not work, the screen completely shuts off, and the speedometer and gear indicator get stuck; the problem is recurring and worsening over about three weeks.",
+       "affected_systems": [
+        "electronics"
+       ],
+       "frequency_signal": "recurring over roughly three weeks and worsening",
+       "source": "Xolvie",
+       "source_url": "https://www.sikayetvar.com/en/chery-us/chery-tiggo-8-pro-dashboard-radio-and-screen-malfunctions-not-fixed",
+       "confidence": "unconfirmed"
+      },
+      {
+       "region": "global",
+       "issue_description": "Airbags reportedly failed to deploy in a crash of a Chery Tiggo 8 Pro in Russia; the claim is presented as a possible production defect, with a vague reference to similar cases.",
+       "affected_systems": [
+        "other"
+       ],
+       "frequency_signal": "single crash claim; no reliable frequency given",
+       "source": "TikTok",
+       "source_url": "https://www.tiktok.com/discover/fallas-chery-tiggo-8-pro",
+       "confidence": "unconfirmed"
+      }
+     ],
+     "rejected": [],
+     "warnings": [
+      "Source does not state the model year/generation — kept as unconfirmed, verify before relying on it: \"Dashboard, radio, and screen malfunctions: the radio does not work, the screen completely shuts off, and the s\"",
+      "Source does not state the model year/generation — kept as unconfirmed, verify before relying on it: \"Airbags reportedly failed to deploy in a crash of a Chery Tiggo 8 Pro in Russia; the claim is presented as a p\""
+     ],
+     "flags": [],
+     "verification": {
+      "unverifiable": 2
+     }
+    },
+    {
+     "pass": "bulletins",
+     "status": "not_found",
+     "sources": 4,
+     "grounded": true,
+     "kept": [],
+     "rejected": [],
+     "warnings": [],
+     "flags": []
+    }
+   ]
+  },
+  {
+   "model": "06 EM-P",
+   "brand": "Lynk & Co",
+   "id": "6aa47eb21ec445aa4df91e11",
+   "passes": [
+    {
+     "pass": "china_issues",
+     "status": "found",
+     "sources": 9,
+     "grounded": true,
+     "kept": [
+      {
+       "issue_description": "Owner reported delivery of a problem car with incomplete PDI; the 360-degree panoramic camera remained seriously faulty and unusable after nine months, and later repair/disassembly caused door rattling.",
+       "affected_systems": [
+        "electronics",
+        "body"
+       ],
+       "frequency_signal": "Single complaint; no complaint count or ranking shown.",
+       "source": "车质网",
+       "source_url": "https://www.12365auto.com/zlts/20250512/1428976.shtml",
+       "confidence": "unconfirmed"
+      },
+      {
+       "issue_description": "An owner of a 06 hybrid reported a hard brake pedal accompanied by a clicking sound like phone typing.",
+       "affected_systems": [
+        "chassis"
+       ],
+       "frequency_signal": "Isolated forum post; no complaint count or ranking.",
+       "source": "懂车帝",
+       "source_url": "https://www.dongchedi.com/community/4340/maintenance",
+       "confidence": "unconfirmed"
+      },
+      {
+       "issue_description": "An owner reported that after about ten days, the vehicle developed severe whole-body shaking at 6–7 mph; the 4S shop allegedly insisted there was no problem and delayed resolution.",
+       "affected_systems": [
+        "chassis",
+        "body"
+       ],
+       "frequency_signal": "Isolated forum post; no complaint count or ranking.",
+       "source": "懂车帝",
+       "source_url": "https://www.dongchedi.com/community/4340/maintenance",
+       "confidence": "unconfirmed"
+      }
+     ],
+     "rejected": [],
+     "warnings": [
+      "Source does not state the model year/generation — kept as unconfirmed, verify before relying on it: \"Owner reported delivery of a problem car with incomplete PDI; the 360-degree panoramic camera remained serious\"",
+      "Source does not state the model year/generation — kept as unconfirmed, verify before relying on it: \"An owner of a 06 hybrid reported a hard brake pedal accompanied by a clicking sound like phone typing.\"",
+      "Source does not state the model year/generation — kept as unconfirmed, verify before relying on it: \"An owner reported that after about ten days, the vehicle developed severe whole-body shaking at 6–7 mph; the 4\""
+     ],
+     "flags": [],
+     "verification": {
+      "verified": 1,
+      "unverifiable": 1
+     }
+    },
+    {
+     "pass": "global_issues",
+     "status": "found",
+     "sources": 13,
+     "grounded": true,
+     "kept": [
+      {
+       "region": "global",
+       "issue_description": "Native Bluetooth connectivity/compatibility issue reported with many Samsung Galaxy devices; one owner said it was resolved after an update.",
+       "affected_systems": [
+        "electronics"
+       ],
+       "frequency_signal": "single Reddit comment; source says many Samsung Galaxy devices were affected",
+       "source": "Reddit r/LynkCo",
+       "source_url": "https://www.reddit.com/r/LynkCo/comments/1qvp6s4/lynk_co_06_emp_latam/",
+       "confidence": "unconfirmed"
+      }
+     ],
+     "rejected": [],
+     "warnings": [
+      "Source does not state the model year/generation — kept as unconfirmed, verify before relying on it: \"Native Bluetooth connectivity/compatibility issue reported with many Samsung Galaxy devices; one owner said it\""
+     ],
+     "flags": [],
+     "verification": {
+      "unverifiable": 1
+     }
+    },
+    {
+     "pass": "bulletins",
+     "status": "not_found",
+     "sources": 8,
+     "grounded": true,
+     "kept": [],
+     "rejected": [],
+     "warnings": [],
+     "flags": []
+    }
+   ]
+  },
+  {
+   "model": "CS55 PHEV",
+   "brand": "Changan",
+   "id": "6aa5c907f4edfe3ef0af6771",
+   "passes": [
+    {
+     "pass": "china_issues",
+     "status": "found",
+     "sources": 6,
+     "grounded": true,
+     "kept": [],
+     "rejected": [],
+     "warnings": [],
+     "flags": []
+    },
+    {
+     "pass": "global_issues",
+     "status": "not_found",
+     "sources": 10,
+     "grounded": true,
+     "kept": [],
+     "rejected": [],
+     "warnings": [],
+     "flags": []
+    },
+    {
+     "pass": "bulletins",
+     "status": "not_found",
+     "sources": 6,
+     "grounded": true,
+     "kept": [],
+     "rejected": [],
+     "warnings": [],
+     "flags": []
+    }
+   ]
+  },
+  {
+   "model": "Geely Coolray / Binyue",
+   "brand": "Geely",
+   "id": "6aa58fc2459a4cbe4a9c65dd",
+   "passes": [
+    {
+     "pass": "china_issues",
+     "status": "found",
+     "sources": 13,
+     "grounded": true,
+     "kept": [
+      {
+       "issue_description": "Window/door seal air leak, allowing wind to be felt inside the cabin.",
+       "affected_systems": [
+        "body"
+       ],
+       "frequency_signal": "Described as one of the most commonly occurring issues; no complaint count provided.",
+       "source": "太平洋汽车百科",
+       "source_url": "https://baike.pcauto.com.cn/30431.html",
+       "confidence": "unconfirmed"
+      },
+      {
+       "issue_description": "Central infotainment screen freezes or lags after the vehicle has been driven for a period; head unit cannot be upgraded.",
+       "affected_systems": [
+        "electronics"
+       ],
+       "frequency_signal": "Described as having a high probability of freezing; no complaint count provided.",
+       "source": "太平洋汽车百科",
+       "source_url": "https://baike.pcauto.com.cn/30431.html",
+       "confidence": "unconfirmed"
+      },
+      {
+       "issue_description": "Abnormal noise from the brake system.",
+       "affected_systems": [
+        "chassis"
+       ],
+       "frequency_signal": "Described as a very common issue; no complaint count provided.",
+       "source": "太平洋汽车百科",
+       "source_url": "https://baike.pcauto.com.cn/30431.html",
+       "confidence": "unconfirmed"
+      },
+      {
+       "issue_description": "Steering wheel shakes noticeably during hard braking.",
+       "affected_systems": [
+        "chassis"
+       ],
+       "frequency_signal": "Isolated customer report ('a customer reported'); no complaint count provided.",
+       "source": "知乎",
+       "source_url": "https://zhuanlan.zhihu.com/p/69823910",
+       "confidence": "unconfirmed"
+      },
+      {
+       "issue_description": "Body rattles/abnormal noises from the body.",
+       "affected_systems": [
+        "body"
+       ],
+       "frequency_signal": "Single owner feedback post; no complaint count provided.",
+       "source": "懂车帝",
+       "source_url": "https://www.dongchedi.com/community/730029750000000/quality",
+       "confidence": "unconfirmed"
+      },
+      {
+       "issue_description": "Very poor cabin sound insulation.",
+       "affected_systems": [
+        "body"
+       ],
+       "frequency_signal": "Single owner feedback post; no complaint count provided.",
+       "source": "懂车帝",
+       "source_url": "https://www.dongchedi.com/community/730029750000000/quality",
+       "confidence": "unconfirmed"
+      },
+      {
+       "issue_description": "Paint is very thin.",
+       "affected_systems": [
+        "body"
+       ],
+       "frequency_signal": "Single owner feedback post; no complaint count provided.",
+       "source": "懂车帝",
+       "source_url": "https://www.dongchedi.com/community/730029750000000/quality",
+       "confidence": "unconfirmed"
+      },
+      {
+       "issue_description": "Exhaust pipe abnormal noise.",
+       "affected_systems": [
+        "engine"
+       ],
+       "frequency_signal": "Single complaint title on 车质网; no count provided.",
+       "source": "车质网",
+       "source_url": "https://www.12365auto.com/series/v-2407-1-0.shtml",
+       "confidence": "unconfirmed"
+      }
+     ],
+     "rejected": [
+      "dead link: HTTP 404 — page does not exist [https://www.12365auto.com/zlts/20241122/1285713.shtml]"
+     ],
+     "warnings": [
+      "Source does not state the model year/generation — kept as unconfirmed, verify before relying on it: \"Window/door seal air leak, allowing wind to be felt inside the cabin.\"",
+      "Source does not state the model year/generation — kept as unconfirmed, verify before relying on it: \"Central infotainment screen freezes or lags after the vehicle has been driven for a period; head unit cannot b\"",
+      "Source does not state the model year/generation — kept as unconfirmed, verify before relying on it: \"Abnormal noise from the brake system.\"",
+      "Source does not state the model year/generation — kept as unconfirmed, verify before relying on it: \"Steering wheel shakes noticeably during hard braking.\"",
+      "Source does not state the model year/generation — kept as unconfirmed, verify before relying on it: \"Vehicle infotainment system cannot be used; no software upgrade available.\"",
+      "Source does not state the model year/generation — kept as unconfirmed, verify before relying on it: \"Exhaust pipe abnormal noise.\"",
+      "Powertrain component issue, but the source does not say which variant (PHEV vs ICE/other) — kept as unconfirmed, verify before relying on it: \"Exhaust pipe abnormal noise.\"",
+      "Cited page couldn't be verified (page has almost no server-rendered text (JS app or bot wall)) — \"confirmed\" downgraded: \"Body rattles/abnormal noises from the body.\" [https://www.dongchedi.com/community/730029750000000/quality]",
+      "Cited page couldn't be verified (page has almost no server-rendered text (JS app or bot wall)) — \"confirmed\" downgraded: \"Very poor cabin sound insulation.\" [https://www.dongchedi.com/community/730029750000000/quality]",
+      "Cited page couldn't be verified (page has almost no server-rendered text (JS app or bot wall)) — \"confirmed\" downgraded: \"Paint is very thin.\" [https://www.dongchedi.com/community/730029750000000/quality]"
+     ],
+     "flags": [],
+     "verification": {
+      "unverifiable": 3,
+      "broken": 1,
+      "verified": 1
+     }
+    },
+    {
+     "pass": "global_issues",
+     "status": "not_found",
+     "sources": 19,
+     "grounded": true,
+     "kept": [],
+     "rejected": [],
+     "warnings": [],
+     "flags": []
+    },
+    {
+     "pass": "bulletins",
+     "status": "not_found",
+     "sources": 10,
+     "grounded": true,
+     "kept": [],
+     "rejected": [],
+     "warnings": [],
+     "flags": []
+    }
+   ]
+  }
+ ],
+ "stopped": null
+}
