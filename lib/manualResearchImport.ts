@@ -27,6 +27,8 @@ import { buildOutputLanguageRule, THERMAL_MANAGEMENT_MANDATORY_RULE, TRIM_NAME_F
 import { SEGMENTS } from "@/models/Model";
 import { matchTrimName } from "./trimMatching";
 import type { IBrand } from "@/types";
+import { checkImportedVariantScope, POWERTRAIN_SCOPE_PROMPT } from "@/lib/powertrainScope";
+import type { VariantScopeInput } from "@/lib/powertrainScope";
 
 /** Model fields this workflow may ever read from an import and write back — deliberately excludes _id, brand_id, timestamps, Morocco fields (a different scraped-data pipeline), and any research-log bookkeeping field. Adding a field here means adding it to RESEARCHABLE_MODEL_KEYS below too — kept as two names for the same Set so a future editor sees why both exist. */
 export const RESEARCHABLE_MODEL_KEYS = [
@@ -231,7 +233,10 @@ export function buildManualResearchPrompt(exportDoc: ExportDocument): string {
     ...powertrains.filter((p) => p.research_gaps.length > 0).map((p) => `- "${p.trim_name}": ${p.research_gaps.join("; ")}`),
   ].join("\n");
 
-  return `You are a technical researcher building a spec database of Chinese-market EVs/ICE/hybrids.
+  return `You are a technical researcher building a spec database of Chinese-market plug-in hybrid (PHEV) SUVs.
+
+${POWERTRAIN_SCOPE_PROMPT}
+
 
 Below is the current database record (as JSON) for "${model.brand_name}" — "${model.name_en ?? model.name}"${
     model.name_cn ? ` (${model.name_cn})` : ""
@@ -253,7 +258,7 @@ ${
     ? `Known gaps to focus on first (fields currently missing or unconfirmed):\n${gapLines}\n`
     : "No specific gaps were flagged, but this is still a cross-check pass, not a no-op — independently re-verify fields against real sources per job 2 above rather than assuming the current values are correct.\n"
 }
-This record may be INCOMPLETE at the trim/variant level, not just at the field level: the "powertrains" list below is only whatever trims happen to already be in our database, which may be a subset of the real production lineup for this model (e.g. we might only have a base trim on file when the actual market lineup also includes a higher-output engine option, a PHEV variant, a special edition, etc.). Actively check whether additional trims exist for this model beyond what's listed below — don't limit your research to filling gaps in the trims you were given. If you find a real trim that isn't in the list, add it as a new entry in "powertrains" per rule 2 below (omit "_id" entirely for it).
+This record may be INCOMPLETE at the trim/variant level, not just at the field level: the "powertrains" list below is only whatever trims happen to already be in our database, which may be a subset of the real production lineup for this model (e.g. we might only have a base trim on file when the actual market lineup also includes a higher-output PHEV variant, a special edition, etc.). Actively check whether additional PHEV trims exist for this model beyond what's listed below — don't limit your research to filling gaps in the trims you were given. If you find a real PHEV trim that isn't in the list, add it as a new entry in "powertrains" per rule 2 below (omit "_id" entirely for it). Only PHEV trims within the SCOPE above count: do NOT add petrol/ICE, HEV or BEV versions of the model as entries — they are rejected on import.
 
 CRITICAL RULES — read carefully, this is a round-trip into a strict-schema database:
 1. Return the SAME JSON shape you were given below — same top-level keys ("model", "powertrains"), same nested field names. Do not add, rename, or omit any field. This means NESTED fields stay nested — e.g. transmission type is "transmission": {"type": ...}, never a flat trim-level "transmission_type"; gear count is "transmission": {"speed_count": ...}, never a flat "number_of_gears"; 0-100 acceleration is "performance": {"accel_0_100_s": ...}, never a flat "acceleration_0_100_s"; battery capacity is "battery": {"capacity_total_kwh": ...}, never "battery": {"total_capacity_kwh": ...}. A response using a different-but-plausible-looking flat naming scheme instead of the exact nested shape below is rejected by the importer's strict schema validator, not silently accepted — it must match exactly.
@@ -564,7 +569,7 @@ export function validateManualPowertrain(raw: unknown, index: number): Validated
   const relocated = relocateKnownMisplacedFields(withoutServerComputed);
   const normalized = normalizeKnownValueAliases(relocated);
   const { stripped, notes } = extractSourceNotes(normalized);
-  const { valid, errors } = validateCanonicalVariant(stripped);
+  const { valid, errors } = validateCanonicalVariant(stripped, { enforceScope: false }); // scope is enforced NON-blockingly by the gate in parseManualImport
   return {
     _id: typeof rawId === "string" ? rawId : null,
     variant: stripped,
@@ -623,7 +628,8 @@ export function buildFieldDiff(before: Record<string, unknown> | null | undefine
 // ---------------------------------------------------------------------------
 
 export interface PowertrainImportResult {
-  status: "update" | "new";
+  /** "rejected_out_of_scope" = a trim that violates lib/powertrainScope.ts (ICE/HEV/BEV/REEV, or a confirmed >1.5 L engine). It is NOT an import error: the rest of the import still applies, this trim is skipped and shown with its reason. */
+  status: "update" | "new" | "rejected_out_of_scope";
   /** Set only when status is "update". */
   existingId?: string;
   trimName?: string;
@@ -631,6 +637,10 @@ export interface PowertrainImportResult {
   variant: Record<string, unknown>;
   valid: boolean;
   errors: string[];
+  /** Why the trim was skipped, when status is "rejected_out_of_scope". */
+  rejectedReason?: string;
+  /** Non-blocking scope findings (e.g. an UNCONFIRMED engine above 1.5 L) for the reviewer. */
+  warnings?: string[];
   /**
    * True when this "update" was resolved via trim_name fallback matching,
    * not a real _id match — i.e. the response's _id was missing, fabricated,
@@ -773,7 +783,7 @@ export function parseManualImport(
     return { valid: false, errors, modelDiff, modelChanges: modelResult.cleaned, powertrainResults: [] };
   }
 
-  const powertrainResults: PowertrainImportResult[] = rawPowertrains.map((raw, index) => {
+  const mappedResults: PowertrainImportResult[] = rawPowertrains.map((raw, index) => {
     const parsedVariant = validateManualPowertrain(raw, index);
     if (!parsedVariant.valid) {
       errors.push(...parsedVariant.errors);
@@ -842,6 +852,19 @@ export function parseManualImport(
       valid: true,
       errors: [],
     };
+  });
+
+  // SCOPE GATE (lib/powertrainScope.ts) — the code-level rule behind the prompt's SCOPE paragraph. Judged on what the
+  // trim WOULD BE after applying (an update that omits energy_type is judged by the stored trim), so an ICE trim is
+  // dropped, an update that would turn a PHEV trim into ICE is dropped, and even a refresh of an already-stray
+  // non-PHEV trim is refused. Dropped trims do not block the rest of the import.
+  const existingById2 = new Map(existingPowertrains.map((p) => [String(p._id), p]));
+  const powertrainResults: PowertrainImportResult[] = mappedResults.map((r) => {
+    if (!r.valid) return r;
+    const existing = r.existingId ? existingById2.get(r.existingId) : undefined;
+    const scope = checkImportedVariantScope(r.variant as VariantScopeInput, existing as VariantScopeInput | undefined);
+    if (!scope.ok) return { ...r, status: "rejected_out_of_scope" as const, trimName: r.trimName ?? (r.variant.trim_name as string | undefined), diff: [], errors: [], valid: true, rejectedReason: scope.reasons.join("; ") };
+    return scope.flags.length > 0 ? { ...r, warnings: scope.flags } : r;
   });
 
   return { valid: errors.length === 0, errors, modelDiff, modelChanges: modelResult.cleaned, powertrainResults };

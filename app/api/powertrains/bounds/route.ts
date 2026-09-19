@@ -32,10 +32,15 @@ export async function GET(req: NextRequest) {
   const segmentParam = req.nextUrl.searchParams.get("segment");
   const segmentFilter = segmentParam ? { segment: segmentParam.includes(",") ? { $in: segmentParam.split(",") } : segmentParam } : {};
 
-  let trimMatch: Record<string, unknown> = {};
+  // The trim bounds are ALWAYS computed over PHEV trims only — the same fixed energy_type the Tech Search page
+  // pins on its own results request (app/search/specs/page.tsx). Without it, a stray non-PHEV trim widened the
+  // min/max the inputs show (2026-09-19: two ICE 2.0T trims pushed engine power 145 -> 187 kW, torque 305 -> 390 Nm)
+  // even though Tech Search never listed them. The write-side guard (lib/powertrainScope.ts) is the real fix; this
+  // keeps the read side consistent with what Tech Search actually shows.
+  let trimMatch: Record<string, unknown> = { energy_type: "PHEV" };
   if (segmentParam) {
     const matchingModels = (await ModelSchema.find(segmentFilter, { _id: 1 }).lean()) as unknown as { _id: unknown }[];
-    trimMatch = { model_id: { $in: matchingModels.map((m) => m._id) } };
+    trimMatch = { ...trimMatch, model_id: { $in: matchingModels.map((m) => m._id) } };
   }
 
   const [enginePowerKw, motorPowerKw, combinedPowerKw, engineTorque, motorTorque, batteryKwh, evRangeKm, priceMinUsd, priceMaxUsd, moroccoDh] =

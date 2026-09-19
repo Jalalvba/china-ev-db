@@ -29,7 +29,9 @@
     "apply-workshop-overrides-batch": "tsx scripts/apply-workshop-overrides-batch.ts",
     "research-phev-suv-workshop": "tsx scripts/research-phev-suv-workshop.ts",
     "apply-phev-suv-workshop-batch": "tsx scripts/apply-phev-suv-workshop-batch.ts",
-    "backfill-known-issue-region": "tsx scripts/backfill-known-issue-region.ts"
+    "backfill-known-issue-region": "tsx scripts/backfill-known-issue-region.ts",
+    "audit-scope": "tsx scripts/audit-powertrain-scope.ts",
+    "cleanup-scope": "tsx scripts/cleanup-out-of-scope-trims.ts"
   },
   "dependencies": {
     "dotenv": "^17.4.2",

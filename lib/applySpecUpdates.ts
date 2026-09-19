@@ -23,6 +23,7 @@ import Powertrain from "@/models/Powertrain";
 import { matchTrimName } from "@/lib/trimMatching";
 import { assertSchemaKnowsFields } from "@/lib/schemaGuard";
 import { getCnyPerUsdRate } from "@/lib/deepseekNormalize";
+import { checkVariantScope } from "@/lib/powertrainScope";
 
 export interface ApplyVariantUpdate {
   modelDbId: string;
@@ -250,6 +251,15 @@ export async function applySpecUpdates(opts: {
           modelDbId: update.modelDbId,
           message: `Variant trim_name "${researchedTrimName}" looks like a translated/reworded version of the existing trim "${likelyTranslationOf}" rather than a genuinely new trim — refusing to either auto-match or create a duplicate. Skipped; needs a human to confirm which one this is.`,
         });
+        continue;
+      }
+
+      // SCOPE (lib/powertrainScope.ts): never write a non-PHEV trim or a confirmed >1.5 L engine, whether this
+      // came through the reviewed UI or an unattended script calling applySpecUpdates directly. (The schema
+      // hooks in models/Powertrain.ts are the backstop; this gives a clean per-variant error instead of a throw.)
+      const scope = checkVariantScope({ energy_type: rest.energy_type, engine: (rest.engine as { displacement_l?: unknown; confidence?: unknown } | undefined) ?? undefined });
+      if (!scope.ok) {
+        errors.push({ modelDbId: update.modelDbId, message: `Variant "${researchedTrimName}" skipped — out of scope: ${scope.reasons.join("; ")}.` });
         continue;
       }
 

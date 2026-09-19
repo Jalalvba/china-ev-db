@@ -93,6 +93,12 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
   // --- powertrains ---
   for (const pt of parseResult.powertrainResults) {
+    if (pt.status === "rejected_out_of_scope") {
+      // Out-of-scope trims are skipped, not errors — the rest of the import still applies (lib/powertrainScope.ts).
+      powertrainOutcomes.push({ trimName: (pt.variant.trim_name as string | undefined) ?? pt.trimName, status: "rejected_out_of_scope", applied: false, error: pt.rejectedReason });
+      continue;
+    }
+    try {
     if (pt.status === "update" && pt.existingId) {
       if (pt.diff.length === 0) {
         powertrainOutcomes.push({ trimName: pt.trimName, status: "unchanged", applied: true });
@@ -121,6 +127,13 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       } else {
         powertrainOutcomes.push({ trimName: pt.variant.trim_name as string | undefined, status: "new", applied: true });
       }
+    }
+    } catch (err) {
+      // The Powertrain schema hooks (models/Powertrain.ts) are the backstop behind the parse-time gate above: if one
+      // fires, record it as this trim's outcome instead of failing the whole request with a 500.
+      const msg = `Trim "${(pt.variant.trim_name as string | undefined) ?? pt.trimName}" was refused by the write layer: ${(err as Error).message}`;
+      errors.push(msg);
+      powertrainOutcomes.push({ trimName: (pt.variant.trim_name as string | undefined) ?? pt.trimName, status: pt.status, applied: false, error: msg });
     }
   }
 

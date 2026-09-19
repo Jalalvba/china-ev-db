@@ -1,5 +1,6 @@
 import { Schema, model, models, Types } from "mongoose";
 import type { IPowertrain } from "@/types";
+import { assertDocInScope, assertUpdateInScope, scopeOverrideActive } from "@/lib/powertrainScope";
 
 type PowertrainDoc = Omit<IPowertrain, "model_id"> & { model_id: Types.ObjectId };
 
@@ -145,6 +146,34 @@ const PowertrainSchema = new Schema<PowertrainDoc>(
 );
 
 PowertrainSchema.index({ model_id: 1 });
+
+// ---------------------------------------------------------------------------
+// SCOPE BACKSTOP (see lib/powertrainScope.ts): this collection holds PHEV trims only (engine
+// <=1.5 L). These hooks throw OutOfScopeError on ANY write path that would put an out-of-scope
+// value in — API routes, apply layers, one-off scripts — because prompt wording and per-route
+// validation both proved bypassable (2026-09-19: manual imports created 7 ICE trims). Opt out only
+// deliberately: `.setOptions({ allowOutOfScope: true })` on a query, `doc.$locals.allowOutOfScope = true`
+// on a document, or POWERTRAIN_SCOPE_OVERRIDE=1 for a whole process (legacy seed data / a future
+// scope change). NOT covered: Model.bulkWrite() and raw-driver writes (used by our reviewed cleanup
+// scripts) — those bypass Mongoose middleware by design.
+// ---------------------------------------------------------------------------
+PowertrainSchema.pre("validate", function () {
+  const doc = this as unknown as { energy_type?: unknown; engine?: { displacement_l?: unknown; confidence?: unknown } | null; $locals?: { allowOutOfScope?: boolean } };
+  if (scopeOverrideActive() || doc.$locals?.allowOutOfScope) return;
+  assertDocInScope({ energy_type: doc.energy_type, engine: doc.engine ? { displacement_l: doc.engine.displacement_l, confidence: doc.engine.confidence } : undefined }, "Powertrain save");
+});
+
+PowertrainSchema.pre(["findOneAndUpdate", "updateOne", "updateMany", "findOneAndReplace", "replaceOne"] as never, function (this: { getUpdate(): unknown; getOptions(): { allowOutOfScope?: boolean } }) {
+  if (scopeOverrideActive() || this.getOptions().allowOutOfScope) return;
+  assertUpdateInScope(this.getUpdate(), "Powertrain update");
+});
+
+PowertrainSchema.pre("insertMany", function (docs: unknown) {
+  if (scopeOverrideActive()) return;
+  for (const d of (Array.isArray(docs) ? docs : [docs]) as { energy_type?: unknown; engine?: { displacement_l?: unknown; confidence?: unknown } | null }[]) {
+    assertDocInScope({ energy_type: d?.energy_type, engine: d?.engine ? { displacement_l: d.engine.displacement_l, confidence: d.engine.confidence } : undefined }, "Powertrain insertMany");
+  }
+});
 
 // See the matching comment in models/Model.ts: `models.Powertrain || model(...)`
 // reuses whatever schema is already cached in mongoose's process-global

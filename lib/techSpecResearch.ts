@@ -28,6 +28,7 @@ import {
 } from "../types/canonicalPowertrain";
 import { buildBrandContextBlock, type BrandContext } from "./brandContext";
 import { correctRangeStandard } from "./deepseekNormalize";
+import { checkVariantScope, POWERTRAIN_SCOPE_PROMPT } from "@/lib/powertrainScope";
 import { buildOutputLanguageRule, THERMAL_MANAGEMENT_MANDATORY_RULE, TRIM_NAME_FIDELITY_RULE, CURRENCY_SOURCE_FIDELITY_RULE } from "./researchPromptRules";
 
 /** The active provider's default chat model (DeepSeek by default) — see lib/aiProvider.ts. Override via that provider's own <PROVIDER>_MODEL env var. A FUNCTION, not a constant — call it at the point of use, never capture its result into a module-level const anywhere in this file's own import chain. See the comment on getActiveProvider() in lib/aiProvider.ts: ES `import` hoisting means a module-level `const X = getDefaultModel()` here would resolve before a script's own dotenv.config() call runs, silently ignoring .env.local/.env — this bit a live Qwen smoke test for real. */
@@ -301,7 +302,10 @@ function renderFieldChecklist(specs: FieldSpec[]): string {
 export function buildResearchKickoffPrompt(input: TechSpecPromptInput): string {
   const { brandName, brandNameCn, modelName, modelNameCn, generation, segment, bodyType, existingTrimNames, brandContext, moteurMaContext, knownGaps, priceFocus } = input;
 
-  return `You are a technical researcher building a spec database of Chinese-market EVs/ICE/hybrids. Real web search results for this vehicle are provided below — base your research ONLY on those, do not answer from memory alone.
+  return `You are a technical researcher building a spec database of Chinese-market plug-in hybrid (PHEV) SUVs.
+
+${POWERTRAIN_SCOPE_PROMPT}
+ Real web search results for this vehicle are provided below — base your research ONLY on those, do not answer from memory alone.
 
 Vehicle to research: "${brandName}"${brandNameCn ? ` (${brandNameCn})` : ""} — "${modelName}"${
     modelNameCn ? ` (${modelNameCn})` : ""
@@ -318,7 +322,7 @@ ${
   existingTrimNames?.length
     ? `\nThis model already has these exact trims on file — you MUST select trim_name for each researched trim from EXACTLY this list, byte-for-byte, INCLUDING any Chinese characters if that's how it's stored (never translate, transliterate, reword, reorder words, or append clarifying detail like an engine code or spec summary in parentheses, even if accurate): ${existingTrimNames
         .map((t) => `"${t}"`)
-        .join(", ")}. If a trim you researched genuinely does not correspond to any name in this list (a real new trim this list is missing — not a translated/reworded version of one that's already there), say so explicitly and give it a new, clearly-marked name rather than silently picking the closest existing one.`
+        .join(", ")}. If a trim you researched genuinely does not correspond to any name in this list (a real new PHEV trim this list is missing, within the SCOPE above — never an ICE/HEV/BEV version — and not a translated/reworded version of one that's already there), say so explicitly and give it a new, clearly-marked name rather than silently picking the closest existing one.`
     : `\nEnumerate the current production trim/variant lineup for this model.`
 }
 
@@ -369,7 +373,10 @@ export function buildTechSpecPrompt(input: TechSpecPromptInput): string {
     2
   );
 
-  return `You are a technical researcher building a spec database of Chinese-market EVs/ICE/hybrids.
+  return `You are a technical researcher building a spec database of Chinese-market plug-in hybrid (PHEV) SUVs.
+
+${POWERTRAIN_SCOPE_PROMPT}
+
 
 Vehicle to research: "${brandName}"${brandNameCn ? ` (${brandNameCn})` : ""} — "${modelName}"${
     modelNameCn ? ` (${modelNameCn})` : ""
@@ -520,7 +527,7 @@ export function checkPriceCurrencyFidelity(
 }
 
 /** Validates one variant object against ICanonicalPowertrain's shape. Does not mutate. */
-export function validateCanonicalVariant(raw: unknown): { valid: boolean; errors: string[] } {
+export function validateCanonicalVariant(raw: unknown, opts: { enforceScope?: boolean } = {}): { valid: boolean; errors: string[] } {
   const errors: string[] = [];
   if (typeof raw !== "object" || raw === null || Array.isArray(raw)) {
     return { valid: false, errors: ["variant is not an object"] };
@@ -535,6 +542,14 @@ export function validateCanonicalVariant(raw: unknown): { valid: boolean; errors
   checkEnum(v.energy_type, ENERGY_TYPE_SET, "variant.energy_type", errors);
   if (v.energy_type === undefined || v.energy_type === null) {
     errors.push("variant.energy_type: missing (required)");
+  }
+  // SCOPE (lib/powertrainScope.ts): this DB is PHEV-only, engine <=1.5 L. Enforced here in code, not just in the
+  // prompt — a returned ICE/HEV/BEV/REEV trim (or a confirmed >1.5 L engine) is invalid and never selectable.
+  // The manual import passes enforceScope:false: there an out-of-scope trim must be DROPPED without invalidating (and so
+  // blocking) the rest of the pasted import — parseManualImport's scope gate handles it (lib/manualResearchImport.ts).
+  const engineForScope = typeof v.engine === "object" && v.engine !== null ? (v.engine as Record<string, unknown>) : null;
+  for (const reason of opts.enforceScope === false ? [] : checkVariantScope({ energy_type: v.energy_type, engine: engineForScope ? { displacement_l: engineForScope.displacement_l, confidence: engineForScope.confidence } : undefined }).reasons) {
+    errors.push(`variant: ${reason}`);
   }
   checkEnum(v.confidence, CONFIDENCE_SET, "variant.confidence", errors);
   checkEnum(v.hybrid_type, HYBRID_TYPE_SET, "variant.hybrid_type", errors);

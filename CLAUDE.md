@@ -258,6 +258,40 @@ restructured this often. An untouched field's pre-filled value is display-only
 (never written to the URL), so it auto-updates when the segment selection changes
 without ever clobbering a value the user actually typed.
 
+### Powertrain scope is ENFORCED, not just documented (2026-09-19)
+
+The PHEV-only / engine-≤1.5L scope above was only a convention until 2026-09-19, when manual DeepSeek imports
+created **7 ICE trims** (Tiggo 8 Pro ×4: 1.6TGDI/2.0TGDI; GS4 ×3) next to those models' PHEV trims — a day
+AFTER the cleanup, not missed by it (`raw-data/ui-tech-spec-log.jsonl` shows the `manual-apply` entries). Causes: the
+research/import prompts framed the DB as "Chinese-market EVs/ICE/hybrids" and told the tool to add missing engine
+options; validation and every write path accepted any `energy_type`; the schema had no hooks. Tech Search only *hid*
+them (it pins `energy_type=PHEV`) — but the model page, Compare and the `/api/powertrains/bounds` min/max (145→187 kW,
+305→390 Nm) exposed them. Now enforced at every layer from one policy module, `lib/powertrainScope.ts`
+(`energy_type` must be exactly `"PHEV"`; a **confirmed** engine >1.5L is rejected, an unconfirmed one only flagged;
+`engine.is_range_extender` is deliberately NOT tested — 5 BAIC Taitan 700 trims carry it, a known open review item):
+1. **Prompts** (`lib/manualResearchImport.ts`, `lib/techSpecResearch.ts` ×2): explicit SCOPE paragraph
+   (`POWERTRAIN_SCOPE_PROMPT`); the "add a higher-output engine option" invitation is gone.
+2. **Validation in code**: `validateCanonicalVariant` (AI "Update specs") makes an out-of-scope variant invalid;
+   `applySpecUpdates` refuses it; manual import's `parseManualImport` marks it `rejected_out_of_scope` — **non-blocking**:
+   only that trim is dropped (visible in the review UI), the rest of the import applies. An update that would turn a PHEV
+   trim into ICE, or refresh an already-stray non-PHEV trim, is refused too.
+3. **Schema backstop** (`models/Powertrain.ts`): `pre('validate' | 'insertMany' | findOneAndUpdate | updateOne | updateMany |
+   findOneAndReplace | replaceOne)` throw `OutOfScopeError` on any write path (routes, scripts). Opt-out only via
+   `POWERTRAIN_SCOPE_OVERRIDE=1` or `.setOptions({ allowOutOfScope: true })`. Not covered by design: `bulkWrite` and raw-driver
+   writes (the reviewed cleanup scripts). A hook change needs a **dev-server restart** (stale-schema rule above).
+4. **Read side**: `/api/powertrains/bounds` is scoped to PHEV like Tech Search's own request.
+Tools: `npm run audit-scope` (read-only; exit 1 on findings; names the log entry that created each stray) and
+`npm run cleanup-scope` (dry-run by default; `--apply --ids …` deletes exactly the reviewed ids, backup-first).
+Regression check that proves it: replaying the four real manual-import payloads through the new parse rejects all 7
+strays and leaves the 10 PHEV updates untouched.
+
+**OPEN, logged for later (NOT fixed): unverified imports overwrite existing values with no review.** The same manual imports
+rewrote Tiggo 8 Pro's `price_range` twice within 3 minutes (min 137,900 → 126,900 → 119,900 CNY; max 174,900 → 198,900), each
+backed only by generic source notes, and updated its four PHEV trims' fields as well. Principle to apply when this is
+tackled — same as every guard above: an import (manual or AI) must never silently overwrite an existing *confirmed* value;
+it should surface a per-field conflict for review (or require stronger evidence than the value it replaces) instead of
+applying. Scope of the fix is the update path of `parseManualImport`/`applySpecUpdates`, not the new-trim path.
+
 ## Listing conventions
 
 Everywhere a list of brands or models is shown (homepage, a brand's model grid), the

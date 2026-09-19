@@ -17,7 +17,7 @@ interface FieldDiffEntry {
 }
 
 interface PowertrainImportResult {
-  status: "update" | "new";
+  status: "update" | "new" | "rejected_out_of_scope";
   existingId?: string;
   trimName?: string;
   diff: FieldDiffEntry[];
@@ -25,6 +25,8 @@ interface PowertrainImportResult {
   errors: string[];
   /** True when this "update" was resolved by trim-name fallback, not a real _id match from the pasted response — see lib/manualResearchImport.ts's parseManualImport. */
   matchedViaNameFallback?: boolean;
+  rejectedReason?: string;
+  warnings?: string[];
 }
 
 interface ValidateResponse {
@@ -185,7 +187,7 @@ export default function ManualResearchImporter({ modelDbId }: Props) {
           {validation.powertrainResults.map((pt, i) => (
             <div key={i} className="mb-3">
               <p className="text-sm font-medium mb-1">
-                {pt.status === "new" ? "New trim" : `Trim: ${pt.trimName}`}
+                {pt.status === "rejected_out_of_scope" ? `Skipped trim: ${pt.trimName ?? "(unnamed)"}` : pt.status === "new" ? "New trim" : `Trim: ${pt.trimName}`}
                 {pt.status === "new" && !pt.existingId ? " (no matching _id found — will insert as new)" : ""}
                 {pt.matchedViaNameFallback && (
                   <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400 align-middle">
@@ -194,7 +196,9 @@ export default function ManualResearchImporter({ modelDbId }: Props) {
                 )}
                 {!pt.valid && <span className="text-red-600 dark:text-red-400"> — invalid</span>}
               </p>
-              {pt.errors.length > 0 ? (
+              {pt.status === "rejected_out_of_scope" ? (
+                <p className="text-xs text-red-600 dark:text-red-400">Rejected — out of scope, will NOT be written: {pt.rejectedReason}. The rest of this import is unaffected.</p>
+              ) : pt.errors.length > 0 ? (
                 <ul className="list-disc list-inside text-xs text-red-600 dark:text-red-400">
                   {pt.errors.map((e, j) => (
                     <li key={j}>{e}</li>
@@ -203,6 +207,7 @@ export default function ManualResearchImporter({ modelDbId }: Props) {
               ) : (
                 <DiffTable entries={pt.diff} />
               )}
+              {pt.warnings && pt.warnings.length > 0 && <p className="text-xs text-amber-700 dark:text-amber-400 mt-1">{pt.warnings.join("; ")}</p>}
             </div>
           ))}
 
