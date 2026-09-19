@@ -7,7 +7,7 @@
 // never publicly indexed. An empty result is the correct outcome then, not an error.
 
 import { filterToChineseSources } from "@/lib/chineseSourceGuard";
-import { normalizeBulletin } from "@/lib/categoryValidators";
+import { filterByPowertrainText, normalizeBulletin } from "@/lib/categoryValidators";
 import { commonFormatRules, runCategoryResearch, searchName } from "@/lib/categoryResearch";
 import type { CategoryResearchInput, CategoryResearchResult } from "@/lib/categoryResearch";
 import { AFFECTED_SYSTEMS } from "@/types/researchCategories";
@@ -61,7 +61,10 @@ export async function researchBulletins(model: string, input: CategoryResearchIn
     searchQueries: [`${cn} 技术通告`, `${cn} 技术服务通报 TSB`, `${cn} 服务通知 售后 维修`, `${input.brandName} ${input.modelName} 技术通告 官方`],
     responseKey: "technical_bulletins",
     shape: "array",
+    verify: true,
     groundingFilter: (urls) => filterToChineseSources(urls, { includeManufacturer: true }),
+    // No LLM attestation for bulletins yet — only the deterministic powertrain text check applies.
+    preFilter: (raw) => filterByPowertrainText(raw, input.powertrain),
     normalize: (raw) => normalizeBulletin(raw, { checkChineseSource: true }),
     forceUnconfirmed: (item) => {
       item.confidence = "unconfirmed";

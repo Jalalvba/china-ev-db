@@ -31,6 +31,10 @@ import {
 } from "@/lib/categoryValidators";
 import type { ItemResult } from "@/lib/categoryValidators";
 import { applyModelFields } from "@/lib/applyModelFields";
+import { powertrainTextMismatch } from "@/lib/categoryValidators";
+import type { TargetModel } from "@/lib/categoryValidators";
+import { verifyItemSources } from "@/lib/sourceVerification";
+import type { VerifyOptions } from "@/lib/sourceVerification";
 import { AFFECTED_SYSTEMS, RESEARCH_CATEGORIES_SCHEMA_VERSION, RESEARCH_CATEGORY_KEYS } from "@/types/researchCategories";
 import type { IMarketTrend, IRecall, ITechnicalBulletin, ResearchCategoryKey } from "@/types/researchCategories";
 import type { IKnownIssue } from "@/types";
@@ -223,8 +227,15 @@ export interface CategoryApplyOutcome {
  * client saw), then writes each category that has changes via applyModelFields — one
  * verified write per category, so one failing doesn't mask the others' outcomes.
  */
-export async function applyCategoryImport(modelId: string, rawText: string, existing: ExistingCategoryData): Promise<{ parse: CategoryImportParseResult; outcomes: CategoryApplyOutcome[] }> {
-  const parse = parseCategoryImport(rawText, modelId, existing);
+export async function applyCategoryImport(
+  modelId: string,
+  rawText: string,
+  existing: ExistingCategoryData,
+  /** Async step between parse and write (source verification) — same one the validate route ran, so what is applied is what was previewed. */
+  postParse?: (p: CategoryImportParseResult) => Promise<CategoryImportParseResult>
+): Promise<{ parse: CategoryImportParseResult; outcomes: CategoryApplyOutcome[] }> {
+  let parse = parseCategoryImport(rawText, modelId, existing);
+  if (postParse && parse.valid) parse = await postParse(parse);
   const outcomes: CategoryApplyOutcome[] = [];
   if (!parse.valid) return { parse, outcomes };
   const now = new Date();
@@ -255,4 +266,60 @@ export async function applyCategoryImport(modelId: string, rawText: string, exis
   }
 
   return { parse, outcomes };
+}
+
+
+// ---------- verification of a pasted import (the model-identity + URL check the manual path lacked) ----------
+
+/**
+ * The manual path used to accept a pasted item's stated `confidence` as-is, with no model-identity check and
+ * no check that a cited URL even exists (live test 2026-09-19: an off-model Song Plus thread, a Google-redirect
+ * URL and a fake Reddit URL all sailed through as "confirmed"). This runs, per new item:
+ *   1. the deterministic powertrain text check (an item about the 2.0T ICE is dropped for a PHEV model);
+ *   2. source verification — the cited page is fetched: dead link => item dropped; page doesn't name the model
+ *      (hub/listing/other model's thread) or can't be seen => "confirmed" downgraded; and the model-identity
+ *      question is answered by the PAGE, not by the pasting tool's say-so.
+ * Returns a NEW parse result (does not mutate the input's arrays).
+ */
+export async function verifyImportedItems(parse: CategoryImportParseResult, target: TargetModel, opts: VerifyOptions = {}): Promise<CategoryImportParseResult> {
+  if (!parse.valid) return parse;
+  const out: CategoryImportParseResult = { ...parse };
+  const cache = opts.cache ?? new Map();
+  const runList = async <T extends object>(p: CategoryPreview<T> | undefined): Promise<CategoryPreview<T> | undefined> => {
+    if (!p || p.newItems.length === 0) return p;
+    const dropped = [...p.dropped];
+    const warnings = [...p.warnings];
+    const passed: T[] = [];
+    for (const it of p.newItems) {
+      const desc = String((it as { issue_description?: unknown }).issue_description ?? "");
+      const mm = powertrainTextMismatch(desc, target.powertrain);
+      if (mm) dropped.push({ index: -1, errors: [`powertrain mismatch: ${mm} — "${desc.slice(0, 80)}"`] });
+      else passed.push(it);
+    }
+    const v = await verifyItemSources(passed, target, { ...opts, cache });
+    v.removed.forEach((r) => dropped.push({ index: -1, errors: [r.reason] }));
+    return { ...p, newItems: v.items, dropped, warnings: [...warnings, ...v.warnings] };
+  };
+  out.known_issues = await runList(parse.known_issues);
+  out.technical_bulletins = await runList(parse.technical_bulletins);
+  out.recalls = await runList(parse.recalls);
+
+  if (parse.market_trend?.proposed?.source_url) {
+    const item = { ...parse.market_trend.proposed, confidence: parse.market_trend.proposed._confidence };
+    const v = await verifyItemSources([item], target, { ...opts, cache });
+    out.market_trend = v.items.length === 0
+      ? { ...parse.market_trend, proposed: null, errors: [...parse.market_trend.errors, ...v.removed.map((r) => r.reason)] }
+      : { ...parse.market_trend, proposed: { ...parse.market_trend.proposed, source_url: v.items[0].source_url, _confidence: v.items[0].confidence as "confirmed" | "unconfirmed" }, warnings: [...parse.market_trend.warnings, ...v.warnings] };
+  }
+  out.hasChanges = !!out.market_trend?.proposed || (out.known_issues?.newItems.length ?? 0) > 0 || (out.technical_bulletins?.newItems.length ?? 0) > 0 || (out.recalls?.newItems.length ?? 0) > 0;
+  return out;
+}
+
+/** Builds the identity/powertrain target the verification step checks a pasted import against. */
+export async function targetForModelDoc(
+  modelDoc: { _id: unknown; name: string; name_cn?: string; brand_id: unknown },
+  loaders: { brandName: (brandId: unknown) => Promise<{ name: string; name_en?: string } | null>; powertrain: (modelId: string) => Promise<TargetModel["powertrain"]> }
+): Promise<TargetModel> {
+  const brand = await loaders.brandName(modelDoc.brand_id);
+  return { brandName: brand?.name_en ?? brand?.name ?? "", modelName: modelDoc.name, modelNameCn: modelDoc.name_cn, powertrain: await loaders.powertrain(String(modelDoc._id)) };
 }

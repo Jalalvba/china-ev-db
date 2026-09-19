@@ -4,6 +4,7 @@ import ModelSchema from "@/models/Model";
 import Brand from "@/models/Brand";
 import { getDefaultModel, ModelNotFoundError, SearchProviderError } from "@/lib/techSpecResearch";
 import { researchIssues } from "@/lib/issueResearch";
+import { getModelPowertrain } from "@/lib/modelPowertrain";
 import { getMissingConfigError } from "@/lib/aiProvider";
 
 // Chinese-source-only known-issues research (lib/issueResearch.ts),
@@ -36,6 +37,7 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
       modelNameCn: modelDoc.name_cn,
       generation: modelDoc.generation,
       modelYear: modelDoc.year,
+      powertrain: await getModelPowertrain(modelId),
     });
 
     return NextResponse.json({

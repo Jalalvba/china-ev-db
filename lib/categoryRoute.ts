@@ -4,6 +4,7 @@ import ModelSchema from "@/models/Model";
 import Brand from "@/models/Brand";
 import { getDefaultModel, ModelNotFoundError, SearchProviderError } from "@/lib/techSpecResearch";
 import { getMissingConfigError } from "@/lib/aiProvider";
+import { getModelPowertrain } from "@/lib/modelPowertrain";
 import type { CategoryResearchInput, CategoryResearchResult } from "@/lib/categoryResearch";
 
 /**
@@ -37,6 +38,7 @@ export async function handleCategoryResearch<T>(
       modelNameCn: modelDoc.name_cn,
       generation: modelDoc.generation,
       modelYear: modelDoc.year,
+      powertrain: await getModelPowertrain(modelId),
     });
 
     return NextResponse.json({

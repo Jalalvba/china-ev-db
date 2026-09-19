@@ -16,7 +16,10 @@ import { ModelNotFoundError, SearchProviderError, sleep } from "@/lib/techSpecRe
 import { runGroundedResearch } from "@/lib/groundedResearch";
 import { filterToChineseSources } from "@/lib/chineseSourceGuard";
 import { filterIssuesToTargetModel } from "@/lib/categoryValidators";
-import { exactModelRulePrompt, ISSUE_ATTESTATION_TEMPLATE } from "@/lib/categoryResearch";
+import { exactModelRulePrompt, ISSUE_ATTESTATION_TEMPLATE, POWERTRAIN_FORMAT_RULE, targetOf } from "@/lib/categoryResearch";
+import { verifyItemSources } from "@/lib/sourceVerification";
+import type { SourceCheck } from "@/lib/sourceVerification";
+import type { TargetPowertrain } from "@/lib/categoryValidators";
 
 const CONFIDENCE_SET = new Set(["confirmed", "unconfirmed"]);
 const AFFECTED_SYSTEMS = ["engine", "battery", "motor", "transmission", "electronics", "chassis", "body", "climate", "other"];
@@ -29,6 +32,8 @@ export interface IssueResearchInput {
   modelNameCn?: string;
   generation?: string;
   modelYear?: number;
+  powertrain?: TargetPowertrain;
+  verifySources?: boolean;
 }
 
 const ISSUE_ITEM_TEMPLATE = {
@@ -71,6 +76,7 @@ CRITICAL RULES:
 - "affected_systems" must be an array containing only values from: ${AFFECTED_SYSTEMS.join(", ")}.
 - "confidence" is required on every item — mark "confirmed" only if the specific issue was directly stated in a fetched Chinese source.
 - EXACT MODEL ONLY: include an item only if the source is about the exact target model. Never write "related variant"/"similar model" items — leave clearly off-model reports out. "source_model_name" must be copied from the source (e.g. the model name as 车质网 or 汽车之家 lists it); if it is not the target model's own name, the item is dropped by code. "same_generation": use "not_stated" when the source names the right model but no model year/generation — do NOT omit the item for that reason.
+- ${POWERTRAIN_FORMAT_RULE}
 - Return an empty array for "known_issues" if nothing was found — do NOT pad the list with generic/plausible-sounding issues.
 - Do NOT add, rename, or omit any field from the item shape above.`;
 }
@@ -190,6 +196,8 @@ export interface IssueResearchResult {
   dropped?: { index: number; errors: string[] }[];
   /** e.g. items kept as unconfirmed because the source names the right model but not its year/generation. */
   warnings?: string[];
+  /** One entry per distinct cited URL when source verification ran. */
+  verification?: SourceCheck[];
 }
 
 export async function researchIssues(model: string, input: IssueResearchInput): Promise<IssueResearchResult> {
@@ -213,7 +221,7 @@ export async function researchIssues(model: string, input: IssueResearchInput): 
     // Hard exact-model filter (lib/categoryValidators.ts) BEFORE validation: keeps only items
     // attested + code-verified as about the target model, and strips the attestation keys so
     // the persisted item shape is unchanged. Rejections are returned, never silently lost.
-    const { kept, rejected, warnings } = filterIssuesToTargetModel(parsed.known_issues, { brandName: input.brandName, modelName: input.modelName, modelNameCn: input.modelNameCn });
+    const { kept, rejected, warnings } = filterIssuesToTargetModel(parsed.known_issues, targetOf(input));
     const offModel = rejected.map((r) => ({ index: r.index, errors: [`off-model: ${r.reason}${r.summary ? ` — "${r.summary}"` : ""}`] }));
 
     const { valid, errors } = validateResearchedIssues(kept);
@@ -221,8 +229,21 @@ export async function researchIssues(model: string, input: IssueResearchInput): 
       return { status: "not_found", sourceUrls, hasGrounding, known_issues: kept as Record<string, unknown>[], valid, errors, dropped: offModel, warnings };
     }
 
-    const gated = applyIssuesGroundingGate((kept as Record<string, unknown>[]).map((i) => ({ ...i })), hasGrounding);
-    return { status: "found", sourceUrls, hasGrounding, known_issues: gated, valid: true, errors: [], dropped: offModel, warnings };
+    let gated = applyIssuesGroundingGate((kept as Record<string, unknown>[]).map((i) => ({ ...i })), hasGrounding);
+
+    // Fetch each cited page: dead links are removed, and "confirmed" survives only when the page was
+    // actually seen and names the model (lib/sourceVerification.ts).
+    let verification: SourceCheck[] | undefined;
+    let allWarnings = warnings;
+    let allDropped = offModel;
+    if (input.verifySources !== false && gated.length > 0) {
+      const v = await verifyItemSources(gated, targetOf(input));
+      gated = v.items;
+      allWarnings = [...warnings, ...v.warnings];
+      allDropped = [...offModel, ...v.removed.map((r) => ({ index: -1, errors: [r.reason] }))];
+      verification = v.checks;
+    }
+    return { status: "found", sourceUrls, hasGrounding, known_issues: gated, valid: true, errors: [], dropped: allDropped, warnings: allWarnings, verification };
   } catch (err) {
     if (err instanceof ModelNotFoundError || err instanceof SearchProviderError) throw err;
     return { status: "error", errorMessage: (err as Error).message, sourceUrls: [], hasGrounding: false, valid: false, errors: [] };

@@ -394,6 +394,27 @@ drift between them. Research modules: `lib/marketTrendResearch.ts`, `lib/globalI
   array/null means "researched, nothing found" — both write nothing. A pasted item marked "confirmed"
   is downgraded to "unconfirmed" if its `source_url` is missing or off that category's allowlist.
 
+**Known-issues hardening from the first live batches (2026-09-19)** — the exact-model filter above is now joined by:
+- **Name matching fixes** (`lib/categoryValidators.ts`): Chinese names compare case-insensitively with the powertrain suffix
+  stripped ("星舰7 em-i" ≈ "星舰7 EM-i"); "A / B" model names match EITHER half (`modelNameAlternatives`, e.g. "Geely Coolray /
+  Binyue" — 9 real items had been rejected). The "蓝山 also matches 新蓝山" looseness is intentionally unchanged.
+- **Powertrain scope for issues** (the ICE-variant problem: Jetour T2 "2.0T oil leak", Coolray 1.4T/DCT items pass the identity
+  filter because the NAMEPLATE matches): per-item `powertrain_scope` attestation (`phev_specific` / `all_variants` /
+  `other_powertrain_only` / `not_stated`) plus a deterministic text check of engine sizes and non-PHEV variant words against the
+  model's OWN trims (`lib/modelPowertrain.ts` → `TargetPowertrain`). `other_powertrain_only` or a contradicting engine size is
+  rejected; `not_stated` on a powertrain component (engine/gearbox/battery/motor) is kept but forced unconfirmed.
+- **Source verification** (`lib/sourceVerification.ts`): each cited URL is fetched — dead link (404/410/DNS) → item dropped; page
+  fetched but doesn't name the model (hub/listing) or can't be fetched → "confirmed" downgraded; "confirmed" survives only if the
+  page was seen AND names the model. Also unwraps markdown `[t](url)` and Google-redirect URLs, and a "confirmed" item with no usable
+  URL is downgraded. Wired into every research path and into the manual importer (`verifyImportedItems`, which also applies the
+  powertrain text check) — closing the hole where pasted items kept their stated confidence with no identity or URL check.
+- **Reality check**: ~40% of cited URLs can't be read by a plain fetch (JS apps: Reddit, Dongchedi, Autohome forums; bot walls:
+  sikayetvar, zhihu), so "confirmed" is effectively unreachable — that is the intended outcome, not a failure. The verifier also caught
+  invented-looking 12365auto complaint URLs (real 404s) in 4 of 39 kept items on the 12-model re-run.
+- **Batch runner** `scripts/research-issues-bulletins-batch.ts`: read-only (never writes the DB; review files go to `raw-data/`),
+  small attended batches, stops on a HARD off-model leak flag; `--retro` re-checks items already in earlier review files; `--passes`
+  re-runs a subset. Batch 3 is paused pending review of the retro write-up; nothing from these runs has been applied.
+
 Status as of 2026-09-19: built and build/parser-tested, but live research and the review modals have
 **not yet been exercised** — first real runs are still to do.
 

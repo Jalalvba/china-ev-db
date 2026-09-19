@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connectToDatabase } from "@/lib/db";
 import ModelSchema from "@/models/Model";
+import Brand from "@/models/Brand";
+import { getModelPowertrain } from "@/lib/modelPowertrain";
+import { targetForModelDoc, verifyImportedItems } from "@/lib/researchCategoriesImport";
 import { parseCategoryImport } from "@/lib/researchCategoriesImport";
 import type { ExistingCategoryData } from "@/lib/researchCategoriesImport";
 
@@ -17,5 +20,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const modelDoc = await ModelSchema.findById(modelId).lean();
   if (!modelDoc) return NextResponse.json({ error: "Model not found" }, { status: 404 });
 
-  return NextResponse.json(parseCategoryImport(body.json, modelId, modelDoc as unknown as ExistingCategoryData));
+  const parse = parseCategoryImport(body.json, modelId, modelDoc as unknown as ExistingCategoryData);
+  return NextResponse.json(await verifyImportedItems(parse, await targetFor(modelDoc)));
 }
+
+const targetFor = (modelDoc: { _id: unknown; name: string; name_cn?: string; brand_id: unknown }) =>
+  targetForModelDoc(modelDoc, { brandName: (id) => Brand.findById(id).lean() as never, powertrain: getModelPowertrain });

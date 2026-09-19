@@ -13,7 +13,7 @@
 // workshop tool list needs that list, which this research pass does not see.
 
 import { filterItemsToTargetModel, normalizeRecall } from "@/lib/categoryValidators";
-import { commonFormatRules, exactModelRulePrompt, ISSUE_ATTESTATION_TEMPLATE, runCategoryResearch } from "@/lib/categoryResearch";
+import { commonFormatRules, exactModelRulePrompt, ISSUE_ATTESTATION_TEMPLATE, POWERTRAIN_FORMAT_RULE, runCategoryResearch, targetOf } from "@/lib/categoryResearch";
 import type { CategoryResearchInput, CategoryResearchResult } from "@/lib/categoryResearch";
 import { AFFECTED_SYSTEMS } from "@/types/researchCategories";
 import type { IRecall } from "@/types/researchCategories";
@@ -58,6 +58,7 @@ ${JSON.stringify({ recalls: [{ ...RECALL_ITEM_TEMPLATE, ...ISSUE_ATTESTATION_TEM
 
 ${commonFormatRules([
   "Every recall must come from a source you actually found in the search results provided — do not invent one.",
+  POWERTRAIN_FORMAT_RULE,
   "EXACT MODEL ONLY: include a recall only if the notice names the exact target model. Never include a sibling recall labeled related or similar - leave it out. source_model_name must be copied from the notice; if the target model is not among the names it lists, the item is dropped by code. same_generation: use not_stated when the notice names the right model but no year/generation - do NOT omit the recall for that reason.",
   `"affected_component" must be exactly one of: ${AFFECTED_SYSTEMS.join(", ")}.`,
   '"source_url" and "remedy_description" are required on every item; drop an item you cannot cite. "confidence" is "confirmed" only if the recall was directly stated at that URL.',
@@ -76,8 +77,9 @@ export async function researchRecalls(model: string, input: CategoryResearchInpu
     searchQueries: [`${name} recall`, `${cn} 召回`, `${cn} 召回 市场监管总局 缺陷产品`, `${name} recall NHTSA OR safety campaign`],
     responseKey: "recalls",
     shape: "array",
+    verify: true,
     groundingFilter: (urls) => urls,
-    preFilter: (raw) => filterItemsToTargetModel(raw, { brandName: input.brandName, modelName: input.modelName, modelNameCn: input.modelNameCn }),
+    preFilter: (raw) => filterItemsToTargetModel(raw, targetOf(input)),
     normalize: (raw) => normalizeRecall(raw),
     forceUnconfirmed: (item) => {
       item.confidence = "unconfirmed";
