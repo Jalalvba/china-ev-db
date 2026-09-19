@@ -173,6 +173,31 @@ directly against outside claims, not by trusting the claims:
   Landian twin was kept; nothing needed moving. Snapshot: `backups/fix_landian_trim_under_cs55_20260919160209.json`.
   A scan of all trims for names mentioning a different model found only this and `Chery Tiggo 9 C-DM`
   under `Jaecoo J8` (see below). Total trims 148 → 147.
+- **`Changan UNI-K` model-level price data was the GASOLINE car's** (2026-09-19, found while checking Gemini
+  research for its 3 iDD trims before importing). The doc's `price_range` (145,900–184,900 CNY) and Morocco
+  price (464,900 DH, moteur.ma) described the petrol UNI-K: moteur.ma's only UNI-K listing is one "Exclusive
+  Essence" 226 hp version and it lists no UNI-K PHEV (Morocco's Changan PHEV is the `CS55 PHEV`). Both fields
+  were written together on 2026-09-12/13, before the PHEV scoping — `morocco_to_china_price_ratio` 3.186 is
+  exactly 464,900 ÷ 145,900 — and the model had 0 trims, so nothing contradicted them until the iDD trims
+  (187,900 / 207,900 CNY, above the old range's max) arrived. No separate gasoline UNI-K doc exists, so the
+  data had nowhere to move to. Fix: `price_range` → 187,900–207,900 CNY (the two sourced trims; widen when
+  `Zhiqu` is sourced), Morocco price/source/url/ratio/timestamp cleared and `morocco_price_confirmed` false
+  (the model now sits under "no confirmed Morocco price" on brand/homepage lists), and a `notable_facts`
+  note (unconfirmed) records why. Same pattern as S06: a PHEV model kept because of external PHEV
+  confirmation whose top-level fields came from the petrol car — **worth checking in other "petrol + iDD"
+  nameplates** (`UNI-T`, `UNI-Z`, `CS75 Plus`, the M-class in `raw-data/nameplate-split-20260919.md`),
+  which likewise carry model-level prices from the all-powertrain era.
+  Trims written from Gemini output after a source check (`Zhixiang`, `Zhiling` — 2 of 3; `Zhiqu` HELD: no
+  reachable source names it). What the check dropped from Gemini's output: battery supplier CATL, DC 45 kW /
+  AC 3.3 kW, 1,100 km combined range and 235 kW system power (none on any cited page; 235 is just 125+110,
+  left null per the schema rule), and EV range was 117 km **WLTC**, not the "135 km NEDC" Gemini gave (135
+  is only in the trim name). The two Autohome links were JS shells with no data; the real evidence was two
+  news18a.com articles. "Triple-clutch electric drive" has no gearbox enum, so `transmission.type` was
+  mapped to `multi-speed EV transmission` by judgement. Trims were created directly (not via the import
+  route), so their `trim_price_*_usd` had to be set in a follow-up write or the Trim Price row stays hidden
+  — do that in the same step next time. Snapshot: `backups/fix_unik_pre_20260919224003.json`. Total
+  trims 147 → 149; models with no trims 24 → 23. Also corrected `raw-data/nameplate-split-20260919.md`
+  (its "V" for UNI-K meant only the nameplate mix, not the model-level data).
 - **Flagged, not acted on:** `Jaecoo J8` (name_cn 奇瑞瑞虎9, one spec-less trim named "Chery Tiggo 9
   C-DM") vs the empty `Tiggo 9` shell looks like the Tansuo 06/Jaecoo J7 pattern, but J8's notes say
   it "differentiates itself" from its Chery sibling, so verify before merging. `Roewe RX5` mixes
@@ -203,7 +228,7 @@ models remain) but out of date with the actual scope; worth a rename/cleanup pas
 sometime. The scoping deletes themselves were done via one-off `node -e` commands and
 are not in git — only this write-up and the backup record them.
 
-**Known gap #1, not yet acted on**: 24 of the kept models have **zero Powertrain trim
+**Known gap #1, not yet acted on**: 23 of the kept models (was 24 — `UNI-K` got 2 trims on 2026-09-19) have **zero Powertrain trim
 docs at all** — their PHEV status was confirmed via external web research (official
 brand pages/press), not from any trim doc in this database, because they had no trim
 data to run the has-a-PHEV-trim check against in the first place. They're correctly
@@ -213,7 +238,7 @@ collection). Needs a real spec-research pass (`tech-spec-agent` or the manual
 DeepSeek/Kimi round-trip), not a data-integrity fix. Affected models: `S07`, `S08`,
 `S10 DM` (Soueast), `Tiggo 7`, `Tiggo 7 Pro`, `Tiggo 8`, `Tiggo 9`
 (Chery), `Dongfeng Aeolus L8`, `Starray`, `Tugella` (Geely), `Exeed LX`, `Exeed TXL`,
-`Exeed RX`, `Exeed VX`, `T1`, `X70`, `X90`, `X90 Plus` (Jetour), `UNI-K`, `UNI-T`,
+`Exeed RX`, `Exeed VX`, `T1`, `X70`, `X90`, `X90 Plus` (Jetour), `UNI-T`,
 `UNI-Z` (Changan), `Seres SF5`, `WEY V9X`, `Tank 800`.
 
 **Known gap #2, not yet acted on**: `WEY 05` (1 remaining trim) and `TANK Tank 500` (4
@@ -437,7 +462,7 @@ reviewed known-issues data has been applied to the DB.**
 ## Excel export (`/export`, `/api/export`)
 
 Two sheets (exceljs): **Data** — ONE ROW PER TRIM, 72 columns (21 model-level repeated on every trim row of a model + 51 trim-level) — and README.
-A model with no trim docs still gets ONE row (trim columns empty) so it isn't dropped: 171 rows = 147 trims + 24 trimless models in the full export.
+A model with no trim docs still gets ONE row (trim columns empty) so it isn't dropped: 172 rows = 149 trims + 23 trimless models in the full export.
 Column mapping/formats/widths: `lib/export/columns.ts` (model + trim specs) composed by `lib/export/flatColumns.ts`; missing values are truly EMPTY
 cells, prices/power are numbers, kW and hp both exported, a confidence column per block, brand prefix stripped from Model names. "China/Morocco price"
 columns are model-level, "Trim price" columns are trim-level (README explains). `/export?<Tech Search query string>` scopes the export to that result set

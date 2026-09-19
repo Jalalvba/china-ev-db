@@ -51,7 +51,7 @@ P **25** (33%) · M **45** (59%) · ? **6** (8%).
 | BAIC Off-Road | BAIC BJ40 | K | mostly petrol/diesel off-roader |
 | Baojun | Baojun Yunhai | V | BEV AND PHEV under one name |
 | Changan | CS75 Plus | K | mostly petrol + iDD |
-| Changan | UNI-K | V | petrol + iDD |
+| Changan | UNI-K | V | petrol + iDD. **"V" covers only the nameplate mix (moteur.ma sells UNI-K in Morocco as a 226 hp petrol only) — NOT the model-level data.** Until 2026-09-19 the model doc's price_range (145,900–184,900 CNY) and Morocco price (464,900 DH) were the GASOLINE car's; corrected the same day (now 187,900–207,900 CNY from the 2 sourced iDD trims; Morocco fields cleared, no PHEV UNI-K sold there). Any UNI-K known-issues item must still be checked for petrol-variant contamination. |
 | Changan | UNI-T | K | petrol + iDD |
 | Changan | UNI-Z | V | petrol 1.5T + iDD |
 | Chery | Tiggo 7 | K | mostly petrol |
