@@ -1,6 +1,6 @@
 import PptxGenJS from "pptxgenjs";
 import { COLORS, CANVAS, FONT, LAYOUT, SERIES_COLORS, colSpan, colX, px } from "@/lib/presentations/tokens";
-import type { ResolvedChartSlide, ResolvedDeck, ResolvedTableSlide } from "@/lib/presentations/spec";
+import type { ResolvedCalloutSlide, ResolvedChartSlide, ResolvedDeck, ResolvedTableSlide } from "@/lib/presentations/spec";
 
 // pptx renderer: same ResolvedDeck + tokens as the React renderer, but emits NATIVE, editable PowerPoint objects
 // (text boxes, shapes, a real bar chart with embedded data) — not a screenshot.
@@ -47,6 +47,20 @@ function addChartSlide(pptx: PptxGenJS, s: ResolvedChartSlide, logoData?: string
 
   if (d.proxy) slide.addText([{ text: "Proxy metric. ", options: { bold: true } }, { text: `Not ${d.proxy.standsInFor}: ${d.proxy.actually}.` }], { x: px(colX(0)), y: px(LAYOUT.bodyY + 390), w: px(colSpan(3)), h: px(90), fontSize: 10, color: COLORS.red, valign: "top", ...font });
   slide.addText(`Source: ${d.sourceNote} · as of ${d.asOf}`, { x: px(colX(0)), y: px(LAYOUT.footerY), w: px(CANVAS.w - 128), h: px(24), fontSize: 9, color: COLORS.gray600, ...font });
+}
+
+function addCalloutSlide(pptx: PptxGenJS, s: ResolvedCalloutSlide) {
+  const slide = pptx.addSlide();
+  const d = s.data;
+  const font = { fontFace: FONT.family };
+  slide.background = { color: COLORS.navy };
+  slide.addText(s.title, { x: px(colX(0)), y: px(LAYOUT.titleY), w: px(CANVAS.w - 128), h: px(LAYOUT.titleH), fontSize: 27, bold: true, color: COLORS.white, valign: "middle", ...font });
+  slide.addShape("rect", { x: px(colX(0)), y: px(LAYOUT.titleY + LAYOUT.titleH - 6), w: px(96), h: px(4), fill: { color: COLORS.red }, line: { color: COLORS.red, width: 0 } });
+  slide.addText(d.value, { x: px(colX(0)), y: px(170), w: px(d.unconfirmed ? 800 : CANVAS.w - 128), h: px(230), fontSize: 110, bold: true, color: COLORS.amber, valign: "middle", ...font });
+  if (d.unconfirmed) slide.addText("unconfirmed", { x: px(colX(0) + 820), y: px(260), w: px(170), h: px(44), fontSize: 14, color: COLORS.amber, align: "center", valign: "middle", line: { color: COLORS.amber, width: 1.5 }, ...font });
+  slide.addText(d.subtitle, { x: px(colX(0)), y: px(420), w: px(900), h: px(120), fontSize: 24, color: COLORS.white, valign: "top", ...font });
+  if (d.detail) slide.addText(d.detail, { x: px(colX(0)), y: px(555), w: px(900), h: px(40), fontSize: 13, color: COLORS.gray300, ...font });
+  slide.addText(`Source: ${d.sourceNote} · as of ${d.asOf}`, { x: px(colX(0)), y: px(LAYOUT.footerY), w: px(CANVAS.w - 128), h: px(24), fontSize: 9, color: COLORS.gray300, ...font });
 }
 
 function addTableSlide(pptx: PptxGenJS, s: ResolvedTableSlide) {
@@ -97,6 +111,7 @@ export async function buildPptx(deck: ResolvedDeck): Promise<Buffer> {
   for (const s of deck.slides) {
     if (s.type === "chart") addChartSlide(pptx, s, await fetchLogo(s.data.logo?.imageUrl));
     else if (s.type === "table") addTableSlide(pptx, s);
+    else if (s.type === "callout") addCalloutSlide(pptx, s);
   }
   return (await pptx.write({ outputType: "nodebuffer" })) as Buffer;
 }

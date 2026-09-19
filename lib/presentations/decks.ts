@@ -6,6 +6,7 @@ export const DECKS: Record<string, DeckSpec> = {
     id: "phev-market",
     title: "Chinese PHEV SUVs — Morocco entry prices",
     slides: [
+      { type: "callout", title: "Electric range", source: "powertrains.longestEvRange" },
       { type: "chart", title: "Cheapest confirmed Morocco price, by brand", source: "brands.cheapestMoroccoPrice", params: { limit: 10 } },
       { type: "table", title: "Spec comparison — the six cheapest priced models", source: "models.phevSpecComparison", params: { limit: 6 } },
     ],

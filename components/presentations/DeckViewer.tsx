@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import ChartSlide from "@/components/presentations/ChartSlide";
+import CalloutSlide from "@/components/presentations/CalloutSlide";
 import TableSlide from "@/components/presentations/TableSlide";
 import { CANVAS, COLORS, css } from "@/lib/presentations/tokens";
 import type { ResolvedDeck, ResolvedSlide } from "@/lib/presentations/spec";
@@ -10,6 +11,8 @@ function SlideView({ slide }: { slide: ResolvedSlide }) {
   switch (slide.type) {
     case "chart":
       return <ChartSlide slide={slide} />;
+    case "callout":
+      return <CalloutSlide slide={slide} />;
     case "table":
       return <TableSlide slide={slide} />;
   }

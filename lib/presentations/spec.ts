@@ -5,7 +5,7 @@
 
 // section | callout | process are added one at a time. There is deliberately NO reliability/known-issues slide type (not even a stub)
 // until reviewed known-issues data has been applied to the DB — see CLAUDE.md.
-export const SLIDE_TYPES = ["chart", "table"] as const;
+export const SLIDE_TYPES = ["chart", "table", "callout"] as const;
 export type SlideType = (typeof SLIDE_TYPES)[number];
 
 export interface SlideSpec {
@@ -59,6 +59,26 @@ export interface TableData {
   proxy?: ProxyNote;
 }
 
+export interface CalloutData {
+  /** The one big number/phrase, already formatted, e.g. "205 km". */
+  value: string;
+  subtitle: string;
+  /** Optional smaller context line under the subtitle. */
+  detail?: string;
+  /** The headline value is not confirmed against a source — rendered with a visible "unconfirmed" tag. */
+  unconfirmed?: boolean;
+  sourceNote: string;
+  asOf: string;
+  proxy?: ProxyNote;
+}
+
+export interface ResolvedCalloutSlide {
+  type: "callout";
+  title: string;
+  source: string;
+  data: CalloutData;
+}
+
 export interface ResolvedTableSlide {
   type: "table";
   title: string;
@@ -72,7 +92,7 @@ export interface ResolvedChartSlide {
   source: string;
   data: ChartData;
 }
-export type ResolvedSlide = ResolvedChartSlide | ResolvedTableSlide;
+export type ResolvedSlide = ResolvedChartSlide | ResolvedTableSlide | ResolvedCalloutSlide;
 
 export interface ResolvedDeck {
   id: string;

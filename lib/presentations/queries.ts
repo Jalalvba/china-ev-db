@@ -7,7 +7,7 @@ import { getCheapestMoroccoPriceByBrandId } from "@/lib/moroccoPrices";
 import Powertrain from "@/models/Powertrain";
 import ModelSchema from "@/models/Model";
 import { kwToHp } from "@/lib/units";
-import type { ChartData, SlideType, TableData } from "@/lib/presentations/spec";
+import type { CalloutData, ChartData, SlideType, TableData } from "@/lib/presentations/spec";
 
 type Params = Record<string, string | number | boolean>;
 const fmtDh = (n: number) => `${Math.round(n).toLocaleString("en-US")} DH`;
@@ -83,7 +83,28 @@ async function modelsPhevSpecComparison(params: Params): Promise<TableData> {
   };
 }
 
-export const QUERY_REGISTRY: Record<string, { kind: SlideType; run: (params: Params) => Promise<ChartData | TableData> }> = {
+/** The longest claimed pure-EV range among PHEV trims, with the test cycle named (CLTC/NEDC/WLTP figures are not comparable, so the standard is part of the answer). */
+async function powertrainsLongestEvRange(): Promise<CalloutData> {
+  await connectToDatabase();
+  const t = await Powertrain.findOne({ energy_type: "PHEV", "battery.ev_range_km": { $exists: true, $ne: null } }).sort({ "battery.ev_range_km": -1 }).lean();
+  if (!t) throw new Error("no PHEV trim has an EV range");
+  const model = await ModelSchema.findById(t.model_id, { name: 1, brand_id: 1 }).populate("brand_id", "name").lean();
+  const brand = (model?.brand_id as unknown as { name?: string } | null)?.name ?? "";
+  const name = model ? (model.name.toLowerCase().startsWith(brand.toLowerCase()) ? model.name : `${brand} ${model.name}`.trim()) : "unknown model";
+  const km = t.battery!.ev_range_km!;
+  const std = t.battery?.ev_range_standard;
+  return {
+    value: `${km} km`,
+    subtitle: `Longest claimed electric range of any PHEV in the database — ${name}`,
+    detail: `${std ? `${std} test cycle` : "test cycle not stated"} · trim: ${t.trim_name}`,
+    unconfirmed: t.battery?.confidence !== "confirmed",
+    sourceNote: "China EV DB (PHEV trims)",
+    asOf: new Date().toISOString().slice(0, 10),
+  };
+}
+
+export const QUERY_REGISTRY: Record<string, { kind: SlideType; run: (params: Params) => Promise<ChartData | TableData | CalloutData> }> = {
+  "powertrains.longestEvRange": { kind: "callout", run: powertrainsLongestEvRange },
   "brands.cheapestMoroccoPrice": { kind: "chart", run: brandsCheapestMoroccoPrice },
   "models.phevSpecComparison": { kind: "table", run: modelsPhevSpecComparison },
 };
