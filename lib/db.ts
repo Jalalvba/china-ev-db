@@ -1,3 +1,8 @@
+// Server-only: reads MONGODB_URI (never available in the browser) and opens a Mongo
+// connection. `server-only` makes any import of this module from a client component
+// (directly or via a shared file) a BUILD error naming the import chain, instead of a
+// runtime "Missing MONGODB_URI" throw in the browser.
+import "server-only";
 import mongoose from "mongoose";
 
 const MONGODB_URI = process.env.MONGODB_URI;
