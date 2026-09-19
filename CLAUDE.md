@@ -149,7 +149,29 @@ one named `07L` one named `Avatr 07L`, same brand, both REEV/EREV-only), `Seres 
 `Leapmotor C16`, `Leapmotor D19`, `SWM G03F EDi / Big Tiger`, `AIVA ME7`,
 `Polestones 01`, `Yijing X9`, `Voyah Free`, `M-Hero 917`, `Stelato G9`, `Luxeed R7`,
 `Changan Nevo E07`, `Avatr 07`, `Avatr 11`, `Shangjie H5`, `IM6`, `IM LS8`. Final:
-**78 kept models**.
+**78 kept models** (→ **76** after the 2026-09-19 corrections below).
+
+**Post-scoping corrections (2026-09-19)** — two fixes found by checking the live DB
+directly against outside claims, not by trusting the claims:
+- **`S06 ICE` dissolved into `S06 DM`** (Soueast). `S06 ICE` had no ICE data at all: its 4
+  trims were all PHEV S06 DM variants (1.498L, E-CVT, "C-DM" press source) filed under the
+  wrong model — pass 1's has-a-PHEV-trim rule is why the model was kept. Fix: moved
+  `S06 DM Lite`/`Pro`/`Pro Max` to the real `S06 DM` model, deleted the duplicate
+  `Soueast S06 DM` trim under `S06 ICE` (kept the better-sourced copy already on `S06 DM`; the
+  discarded copy's only extra field was an unverified `dc_charge_kw: 0`), then deleted the empty
+  `S06 ICE` model. Its confirmed Morocco price (219,900 DH, the gasoline S06) went with it;
+  `S06 DM` keeps 289,900 DH.
+- **`Tansuo 06` (Chery) merged into `Jaecoo J7`.** One vehicle under two names: `Jaecoo J7`'s own
+  confirmed `notable_facts` says so, its `name_cn` is 奇瑞探索06, its price range is identical,
+  and its trims are named "Tansuo 06 C-DM". The Chery `Tansuo 06` doc was an empty shell (0
+  trims, no unique fields, no references). `Jaecoo J7` survives as the Morocco market name
+  (moteur.ma lists it as such; 338,000 DH confirmed).
+- Checked and deliberately NOT merged: `Starray` vs `Starship 7 EM-i` (different brand, Chinese
+  name, price range — not duplicates); `WEY Lanshan` vs `WEY 07` (different segments, no shared
+  data — inconclusive from the DB alone, left as-is).
+- Raw pre-fix snapshots are in `backups/` (gitignored): `s06_pre_fix_20260919_154811.json`
+  (API view) and `fix_s06_tansuo_raw_20260919145054.json` (exact ObjectIds). Done via one-off
+  scripts, not committed — like the scoping passes, git holds only this write-up.
 
 **Orphaned brands, current as of pass 3** (flagged, not deleted; supersedes the
 smaller pass-2 list — most of these are the single-model-REEV/EREV brands pass 3 just
@@ -169,7 +191,7 @@ models remain) but out of date with the actual scope; worth a rename/cleanup pas
 sometime. The scoping deletes themselves were done via one-off `node -e` commands and
 are not in git — only this write-up and the backup record them.
 
-**Known gap #1, not yet acted on**: 25 of the kept models have **zero Powertrain trim
+**Known gap #1, not yet acted on**: 24 of the kept models have **zero Powertrain trim
 docs at all** — their PHEV status was confirmed via external web research (official
 brand pages/press), not from any trim doc in this database, because they had no trim
 data to run the has-a-PHEV-trim check against in the first place. They're correctly
@@ -177,7 +199,7 @@ kept (real PHEV models), but currently render an empty trim/spec section on thei
 model page and won't appear in Tech Search (which only queries the Powertrain
 collection). Needs a real spec-research pass (`tech-spec-agent` or the manual
 DeepSeek/Kimi round-trip), not a data-integrity fix. Affected models: `S07`, `S08`,
-`S10 DM` (Soueast), `Tiggo 7`, `Tiggo 7 Pro`, `Tiggo 8`, `Tiggo 9`, `Tansuo 06`
+`S10 DM` (Soueast), `Tiggo 7`, `Tiggo 7 Pro`, `Tiggo 8`, `Tiggo 9`
 (Chery), `Dongfeng Aeolus L8`, `Starray`, `Tugella` (Geely), `Exeed LX`, `Exeed TXL`,
 `Exeed RX`, `Exeed VX`, `T1`, `X70`, `X90`, `X90 Plus` (Jetour), `UNI-K`, `UNI-T`,
 `UNI-Z` (Changan), `Seres SF5`, `WEY V9X`, `Tank 800`.
@@ -190,6 +212,16 @@ for lack of proof, consistent with gap #1's same "unresearched ≠ disqualified"
 reasoning — their confirmed-over-1.5L trims (one 2.0L trim each was found and deleted)
 were removed same as everywhere else; only the never-researched ones survive. Needs
 the same real spec-research pass as gap #1 to actually confirm one way or the other.
+
+**Gap #2 is bigger than first logged.** A fuller scan of all 149 live trims (2026-09-19) found
+**14 trims across 10 models** with `displacement_l` unset — the 8 models beyond `WEY 05`/`Tank 500`
+are: `Tank 300` (1/1 trims), `Tank 300L New Energy` (2/2), `Jaecoo J8` (1/1), `Haval Big Dog`
+(1/1), `WEY Macchiato` (1/1), `WEY Coffee 02` (1/1), `WEY Mocca` (1 of 2), `Baojun Yunhai` (1 of
+2). Same "unresearched ≠ disqualified" treatment; any of these could turn out to be over 1.5L and
+out of scope. A one-model "Update specs" attempt on `Tank 300` (2026-09-19, research only, not
+applied) did NOT resolve it: the Chinese config pages returned only navigation text, and the only
+new facts were a 300 kW / 750 Nm combined output and turbo-petrol PHEV 4WD. Needs the manual
+DeepSeek/Kimi round-trip or a source the scraper can actually read.
 
 `app/search/specs/page.tsx`'s `DISPLACEMENT_BUCKETS` (Tech Search's Displacement
 filter) was pruned in lockstep with each tightening above, verified against live data
