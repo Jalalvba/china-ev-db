@@ -444,8 +444,7 @@ in both); no filters = full database. The Mongo filter is shared with `/api/powe
 warranty, market-trend, recalls and bulletins sheets are deliberately NOT exported** until that research has been reviewed and applied — the
 README sheet says so.
 Open items (2026-09-19): (1) the DB lists `tech_partner: "Huawei"` on BAIC, Dongfeng and Jetour (seen in the export's Brands sheet) — CLAUDE.md
-says tech partner must be individually sourced, so this needs a verification pass; not yet checked. (2) `/export` has no filter UI, URL params
-only, and Tech Search has no "Export these results" link yet — someone must build the query string by hand until that is added.
+says tech partner must be individually sourced, so this needs a verification pass; not yet checked. (2) `/export` has no filter UI of its own, URL params only — Tech Search's results header has an "Export these results" link that passes its current query string, which is the intended way to scope an export.
 
 ## Schema/prompt drift guard
 

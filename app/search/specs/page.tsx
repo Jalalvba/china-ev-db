@@ -951,7 +951,9 @@ function SpecSearchInner() {
         <>
           <div className="flex items-center justify-between mb-3">
             <p className="text-sm text-zinc-500 dark:text-zinc-400">
-              {groups.length} model{groups.length === 1 ? "" : "s"}, {trimCount} trim{trimCount === 1 ? "" : "s"} match.
+              {groups.length} model{groups.length === 1 ? "" : "s"}, {trimCount} trim{trimCount === 1 ? "" : "s"} match.{" "}
+              {/* Same query string as this page: /export translates it (lib/export/techSearchParams.ts) to exactly this result set. */}
+              <a href={`/export?${searchParams.toString()}`} className="text-blue-600 dark:text-blue-400 hover:underline">Export these results</a>
             </p>
             <label className="flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-400">
               Sort by
