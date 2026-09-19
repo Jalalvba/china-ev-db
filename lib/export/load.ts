@@ -41,7 +41,7 @@ export async function loadExportData(sp: URLSearchParams): Promise<ExportData> {
   const brandName = (m: Rec) => String(brandById.get(String(m.brand_id))?.name ?? "");
 
   const modelRows: ModelRow[] = models
-    .map((m) => ({ model: m, brandName: brandName(m), trimCount: trimsByModel.get(String(m._id))?.length ?? 0 }))
+    .map((m) => ({ model: m, brandName: brandName(m), trimCount: trimsByModel.get(String(m._id))?.length ?? 0, trimNames: (trimsByModel.get(String(m._id)) ?? []).map((t) => String(t.trim_name ?? "").trim()).filter(Boolean).sort((a, b) => a.localeCompare(b)) }))
     .sort((a, b) => a.brandName.localeCompare(b.brandName) || String(a.model.name).localeCompare(String(b.model.name)));
   const trimRows: TrimRow[] = allTrims
     .filter((t) => modelById.has(String(t.model_id)))

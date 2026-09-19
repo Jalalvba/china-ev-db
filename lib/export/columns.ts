@@ -26,7 +26,7 @@ const INT = "#,##0";
 const DEC1 = "#,##0.0";
 const DEC2 = "#,##0.00";
 
-export interface ModelRow { model: Rec; brandName: string; trimCount: number }
+export interface ModelRow { model: Rec; brandName: string; trimCount: number; /** Names of this model's exported trims. */ trimNames: string[] }
 export interface TrimRow { trim: Rec; model: Rec; brandName: string }
 export interface BrandRow { brand: Rec; modelCount: number; trimCount: number; cheapestMoroccoDh: number | null }
 
@@ -53,6 +53,7 @@ export const MODEL_COLUMNS: ColumnSpec<ModelRow>[] = [
   { header: "Morocco price source", width: 20, get: (r) => s(r.model.morocco_price_source) },
   { header: "Morocco / China price ratio", width: 24, fmt: DEC2, get: (r) => n(r.model.morocco_to_china_price_ratio) },
   { header: "Trim count", width: 11, fmt: "0", get: (r) => r.trimCount },
+  { header: "Trim names", width: 45, get: (r) => (r.trimNames.length ? r.trimNames.join("; ") : null) },
 ];
 
 export const TRIM_COLUMNS: ColumnSpec<TrimRow>[] = [

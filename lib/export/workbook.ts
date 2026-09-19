@@ -3,7 +3,7 @@ import { BRAND_COLUMNS, MODEL_COLUMNS, TRIM_COLUMNS, type ColumnSpec } from "@/l
 import type { ExportData } from "@/lib/export/load";
 import { COLORS } from "@/lib/presentations/tokens";
 
-const WRAP_HEADERS = new Set(["Source", "Battery supplier", "Unverified reason", "Motor type"]);
+const WRAP_HEADERS = new Set(["Source", "Battery supplier", "Unverified reason", "Motor type", "Trim names"]);
 
 function addSheet<T>(wb: ExcelJS.Workbook, name: string, cols: ColumnSpec<T>[], rows: T[]) {
   const ws = wb.addWorksheet(name, { views: [{ state: "frozen", ySplit: 1 }] });

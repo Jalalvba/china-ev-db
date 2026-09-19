@@ -443,6 +443,10 @@ keys the same way `runSearch` in `app/search/specs/page.tsx` does — that page 
 in both); no filters = full database. The Mongo filter is shared with `/api/powertrains` via `lib/powertrainFilter.ts`. **Known-issues,
 warranty, market-trend, recalls and bulletins sheets are deliberately NOT exported** until that research has been reviewed and applied — the
 README sheet says so.
+Data fix (2026-09-19, found by the export's Trim names column): Lynk & Co `08 EM-P` had a trim named "160 Long Range Ultra (new 2026 trim,
+not present in the existing trim list)" — leftover AI commentary in the name; renamed to "160 Long Range Ultra" (raw-driver, backup
+`backups/fix_lynk08_trimname_*.json`, only trim_name changed; nothing else matched that pattern DB-wide). That model's trims still mix English and
+Chinese names — left as-is. The Trim names column joins with "; " because a trim name can itself contain a comma.
 Open items (2026-09-19): (1) the DB lists `tech_partner: "Huawei"` on BAIC, Dongfeng and Jetour (seen in the export's Brands sheet) — CLAUDE.md
 says tech partner must be individually sourced, so this needs a verification pass; not yet checked. (2) `/export` has no filter UI of its own, URL params only — Tech Search's results header has an "Export these results" link that passes its current query string, which is the intended way to scope an export.
 
