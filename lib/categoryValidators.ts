@@ -413,3 +413,103 @@ export function mergeByKey<T>(existing: T[], incoming: T[], keyFn: (t: T) => str
   }
   return { merged: [...existing, ...fresh], added: fresh.length };
 }
+
+// ---------- exact-model gate for known_issues research ----------
+//
+// Real incident (2026-09-19): the first global pass on "Song Ultra DM-i" returned 8
+// items, 7 of them prose-framed as "Related variant (BYD Song Plus DM-i …)" and one a
+// Qin PLUS recall, all stored as if they were Song Ultra issues. Prompt wording alone
+// can't be trusted to prevent that (same lesson as the Soueast S06 mismatch), so every
+// researched issue must carry an explicit attestation AND survive a code-level check the
+// LLM doesn't control. The attestation fields are research-time only: they are stripped
+// here and never reach the UI, the apply route, or the schema.
+
+export const ISSUE_ATTESTATION_KEYS = ["applies_to_target_model", "same_generation", "source_model_name"] as const;
+
+export interface TargetModel {
+  brandName: string;
+  modelName: string;
+  modelNameCn?: string;
+}
+
+// Trailing powertrain-label tokens that a source may legitimately omit ("Song Ultra" for "Song Ultra DM-i").
+const POWERTRAIN_SUFFIX_TOKENS = new Set(["dm", "i", "dmi", "phev", "hev", "em", "p", "ev", "ehs", "hi4", "hybrid"]);
+
+/** Lowercased alphanumeric word tokens; "300L" stays one token, "DM-i" → dm, i. CJK characters are kept as-is (never split). */
+export function tokenizeName(s: string): string[] {
+  return s
+    .toLowerCase()
+    .replace(/[^a-z0-9一-鿿]+/g, " ")
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
+}
+
+function containsSequence(hay: string[], needle: string[]): boolean {
+  if (needle.length === 0 || needle.length > hay.length) return false;
+  for (let i = 0; i <= hay.length - needle.length; i++) {
+    if (needle.every((t, j) => hay[i + j] === t)) return true;
+  }
+  return false;
+}
+
+/**
+ * True only if the model name a source used IS the target model, not a sibling. Token-
+ * sequence match, not substring: "Tank 300" does not match "Tank 300L New Energy", and
+ * "Song Ultra" does not match "Song Plus". Accepts (a) the full name minus a trailing
+ * powertrain label ("Song Ultra DM-i" ≈ "Song Ultra"), (b) the name with the brand
+ * prefix stripped ("WEY Lanshan" ≈ "Lanshan") when what's left is ≥4 chars so a bare
+ * "300" can't match, or (c) the Chinese name as a substring.
+ */
+export function matchesTargetModel(sourceModelName: string, target: TargetModel): boolean {
+  const src = tokenizeName(sourceModelName);
+  if (src.length === 0) return false;
+  if (target.modelNameCn && sourceModelName.includes(target.modelNameCn)) return true;
+
+  const full = tokenizeName(target.modelName);
+  const core = [...full];
+  while (core.length > 1 && POWERTRAIN_SUFFIX_TOKENS.has(core[core.length - 1])) core.pop();
+  if (containsSequence(src, core)) return true;
+
+  const brand = tokenizeName(target.brandName);
+  const distinctive = [...core];
+  while (distinctive.length > 1 && brand.includes(distinctive[0])) distinctive.shift();
+  if (distinctive.length < core.length && distinctive.join("").length >= 4 && containsSequence(src, distinctive)) return true;
+  return false;
+}
+
+// Backstop only — catches the prose the LLM uses when it KNOWS an item is off-model but includes it anyway.
+const OFF_MODEL_PROSE = /\b(related variant|related model|sibling|sister model|different model|other model|predecessor|previous generation|older generation|not the same (model|vehicle))\b|^\s*not\s+[a-z0-9]/i;
+
+export interface RejectedItem {
+  index: number;
+  reason: string;
+}
+
+/**
+ * Hard filter applied to the RAW researched issue array before normalization. Keeps an
+ * item only if ALL hold: applies_to_target_model === true (strict boolean, not "true"),
+ * same_generation === true, source_model_name non-empty and matches the target by
+ * matchesTargetModel(), and the description doesn't read as off-model prose. Returns the
+ * kept items with the attestation keys stripped, plus each rejection with its reason.
+ */
+export function filterIssuesToTargetModel(raw: unknown, target: TargetModel): { kept: unknown[]; rejected: RejectedItem[] } {
+  if (!Array.isArray(raw)) return { kept: [], rejected: [] };
+  const kept: unknown[] = [];
+  const rejected: RejectedItem[] = [];
+  raw.forEach((item, index) => {
+    const rec = typeof item === "object" && item !== null && !Array.isArray(item) ? (item as Record<string, unknown>) : null;
+    if (!rec) return void rejected.push({ index, reason: "not an object" });
+    if (rec.applies_to_target_model !== true) return void rejected.push({ index, reason: "not attested as applying to the target model" });
+    if (rec.same_generation !== true) return void rejected.push({ index, reason: "not attested as the same generation" });
+    const srcModel = normalizeString(rec.source_model_name);
+    if (!srcModel) return void rejected.push({ index, reason: "source_model_name missing" });
+    if (!matchesTargetModel(srcModel, target)) return void rejected.push({ index, reason: `source is about "${srcModel}", not ${target.brandName} ${target.modelName}` });
+    const desc = typeof rec.issue_description === "string" ? rec.issue_description : "";
+    if (OFF_MODEL_PROSE.test(desc)) return void rejected.push({ index, reason: "description is framed as another/related model" });
+    const stripped = { ...rec };
+    for (const k of ISSUE_ATTESTATION_KEYS) delete stripped[k];
+    kept.push(stripped);
+  });
+  return { kept, rejected };
+}

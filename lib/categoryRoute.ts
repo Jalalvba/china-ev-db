@@ -35,6 +35,8 @@ export async function handleCategoryResearch<T>(
       modelName: modelDoc.name,
       brandNameCn: brand.name_cn,
       modelNameCn: modelDoc.name_cn,
+      generation: modelDoc.generation,
+      modelYear: modelDoc.year,
     });
 
     return NextResponse.json({

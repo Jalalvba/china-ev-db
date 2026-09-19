@@ -34,6 +34,8 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
       modelName: modelDoc.name,
       brandNameCn: brand.name_cn,
       modelNameCn: modelDoc.name_cn,
+      generation: modelDoc.generation,
+      modelYear: modelDoc.year,
     });
 
     return NextResponse.json({

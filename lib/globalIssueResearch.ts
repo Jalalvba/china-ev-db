@@ -8,8 +8,8 @@
 // Items are stamped region: "global" and written by ../apply-issues (region param).
 
 import { isAllowedChineseSource } from "@/lib/chineseSourceGuard";
-import { normalizeIssue } from "@/lib/categoryValidators";
-import { commonFormatRules, runCategoryResearch } from "@/lib/categoryResearch";
+import { filterIssuesToTargetModel, normalizeIssue } from "@/lib/categoryValidators";
+import { commonFormatRules, exactModelRulePrompt, ISSUE_ATTESTATION_TEMPLATE, runCategoryResearch } from "@/lib/categoryResearch";
 import type { CategoryResearchInput, CategoryResearchResult } from "@/lib/categoryResearch";
 import { AFFECTED_SYSTEMS } from "@/types/researchCategories";
 import type { IKnownIssue } from "@/types";
@@ -29,6 +29,8 @@ export function buildGlobalIssueKickoffPrompt(input: CategoryResearchInput): str
 
 Model to research: "${brandName} ${modelName}"
 
+${exactModelRulePrompt(input)}
+
 This is the INTERNATIONAL / export-market pass. Use English, French or Arabic sources: owner forums and communities, independent long-term reviews and motoring-press reliability coverage, consumer/regulator complaint databases (e.g. NHTSA where the model is sold there), and importer/dealer-market coverage for markets such as Morocco, Europe, the Middle East, Australia, Southeast Asia or Latin America.
 DO NOT use Chinese-market complaint platforms (车质网/12365auto.com, 汽车投诉网/tousu.99.com) or other Chinese-language sources — that population is covered by a separate, Chinese-only pass and must not be mixed in here. If a search result below is a Chinese-language or Chinese-platform source, IGNORE it.
 
@@ -39,10 +41,11 @@ Report your findings in plain prose with citations (the actual URL for each issu
 
 export function buildGlobalIssueFormatPrompt(): string {
   return `Convert your findings above into ONLY a JSON object (no markdown fencing, no prose before or after) in exactly this shape ("known_issues" is an array — each element describes the type each field must have, not a literal example value; return an empty array if nothing was found):
-${JSON.stringify({ known_issues: [GLOBAL_ISSUE_ITEM_TEMPLATE] }, null, 2)}
+${JSON.stringify({ known_issues: [{ ...GLOBAL_ISSUE_ITEM_TEMPLATE, ...ISSUE_ATTESTATION_TEMPLATE }] }, null, 2)}
 
 ${commonFormatRules([
   "Every issue must come from a non-Chinese-market source you actually found in the search results provided (grounding is enabled) — do not invent an issue or use general knowledge.",
+  'EXACT MODEL ONLY: include an item only if the source is about the exact target model and generation. Never write "related variant"/"similar model" items — leave them out. "source_model_name" must be copied from the source; if it is not the target model\'s own name, the item is dropped by code.',
   `"affected_systems" must be an array containing only values from: ${AFFECTED_SYSTEMS.join(", ")}.`,
   '"confidence" is "confirmed" only if the specific issue was directly stated in a fetched source and "source_url" is that page.',
 ])}`;
@@ -61,6 +64,7 @@ export async function researchGlobalIssues(model: string, input: CategoryResearc
     shape: "array",
     // Inverse of the Chinese guard: grounding must come from OUTSIDE the Chinese-market allowlist.
     groundingFilter: (urls) => urls.filter((u) => !isAllowedChineseSource(u)),
+    preFilter: (raw) => filterIssuesToTargetModel(raw, { brandName: input.brandName, modelName: input.modelName, modelNameCn: input.modelNameCn }),
     normalize: (raw) => normalizeIssue(raw, "global"),
     forceUnconfirmed: (item) => {
       item.confidence = "unconfirmed";

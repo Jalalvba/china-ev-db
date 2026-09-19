@@ -16,12 +16,41 @@ export interface CategoryResearchInput {
   modelName: string;
   brandNameCn?: string;
   modelNameCn?: string;
+  /** Model.generation — free text, sometimes prose; only surfaced to prompts when short (see describeTargetModel). */
+  generation?: string;
+  modelYear?: number;
 }
 
 /** Best Chinese-name string to search with: the model's own name_cn, else brand's Chinese name + English model name, else the plain English pair. */
 export function searchName(input: CategoryResearchInput): string {
   return input.modelNameCn ?? (input.brandNameCn ? `${input.brandNameCn} ${input.modelName}` : `${input.brandName} ${input.modelName}`);
 }
+
+/** One-line, unambiguous statement of exactly which vehicle is the research target — used by the exact-model rule below. */
+export function describeTargetModel(input: CategoryResearchInput): string {
+  const cn = input.modelNameCn ? ` (${input.modelNameCn})` : "";
+  const gen = input.generation && input.generation.length <= 60 ? `, generation/model year: ${input.generation}` : input.modelYear ? `, model year: ${input.modelYear}` : "";
+  // A model's name often already starts with its brand ("WEY Lanshan") — don't print it twice.
+  const full = input.modelName.toLowerCase().startsWith(input.brandName.toLowerCase()) ? input.modelName : `${input.brandName} ${input.modelName}`;
+  return `"${full}"${cn}${gen}`;
+}
+
+/**
+ * The EXACT-MODEL RULE paragraph shared by both known-issues passes (China + Global). The
+ * prompt states it, the format prompt makes the model attest to it per item, and
+ * filterIssuesToTargetModel() (lib/categoryValidators.ts) enforces it in code — prose
+ * alone is not trusted. See that function's comment for the incident behind it.
+ */
+export function exactModelRulePrompt(input: CategoryResearchInput): string {
+  return `EXACT-MODEL RULE — a hard requirement, checked in code after you answer. The research target is exactly ${describeTargetModel(input)}. Use ONLY reports that are about this exact model and this generation. EXCLUDE reports about: a sibling or similarly named model (e.g. a "Plus", "Pro", "L" or "Max" variant with a different name), a previous/next generation, an export-market model sold under a different name, or the brand/platform in general. Do NOT include an off-model item and label it "related variant" or "similar model" — an off-model item must be left OUT entirely, not caveated. If the only material found is about other models, return an empty list: an empty list is a correct answer, especially for a recently launched model with little history.`;
+}
+
+/** Per-item attestation fields added to the known-issues FORMAT prompt (research-time only; stripped in code before anything is stored). */
+export const ISSUE_ATTESTATION_TEMPLATE = {
+  applies_to_target_model: "boolean — true ONLY if this specific report is about the exact target model named above; if it is not, leave the item out instead of setting false",
+  same_generation: "boolean — true ONLY if the report's model years/generation match the target's generation; if unknown or different, leave the item out",
+  source_model_name: "string — the vehicle's name EXACTLY as the source itself writes it (e.g. 'Acme Roadster 2.0T'); copy it from the source, never from this prompt",
+};
 
 export function extractJsonObject(text: string): Record<string, unknown> | null {
   const fencedMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/);
@@ -69,6 +98,8 @@ interface RunOpts<T extends { confidence?: string }> {
   /** Filters raw Brave URLs down to what counts as grounding for THIS category (Chinese allowlist, manufacturer allowlist, non-Chinese-only, or everything). */
   groundingFilter: (urls: string[]) => string[];
   normalize: (raw: unknown) => ItemResult<T>;
+  /** Optional hard filter on the RAW array payload, applied before normalization (array shape only). Rejections are reported in `dropped` as off-model, never silently lost. */
+  preFilter?: (raw: unknown) => { kept: unknown[]; rejected: { index: number; reason: string }[] };
   /** Called once per item when there is zero grounding, to force it to "unconfirmed" (the confidence field name differs: `confidence` vs market_trend's `_confidence`). */
   forceUnconfirmed: (item: T) => void;
 }
@@ -122,9 +153,11 @@ export async function runCategoryResearch<T extends { confidence?: string }>(opt
         warnings = res.warnings;
       }
     } else {
-      const res = normalizeArray(payload, opts.normalize);
+      const pre = opts.preFilter ? opts.preFilter(payload) : null;
+      const res = normalizeArray(pre ? pre.kept : payload, opts.normalize);
       items = res.items;
-      dropped = res.dropped;
+      // Indices of `dropped` from normalizeArray refer to the filtered array; the off-model rejections carry the ORIGINAL index.
+      dropped = [...(pre ? pre.rejected.map((r) => ({ index: r.index, errors: [`off-model: ${r.reason}`] })) : []), ...res.dropped];
       warnings = res.warnings;
     }
 

@@ -24,7 +24,7 @@ export default function IssueResearch({ modelId, compact }: Props) {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [items, setItems] = useState<IssueItem[]>([]);
   const [selections, setSelections] = useState<boolean[]>([]);
-  const [meta, setMeta] = useState<{ sourceCount: number; hasGrounding: boolean } | null>(null);
+  const [meta, setMeta] = useState<{ sourceCount: number; hasGrounding: boolean; dropped: { index: number; errors: string[] }[] } | null>(null);
 
   async function handleResearch() {
     setPhase("loading");
@@ -38,7 +38,7 @@ export default function IssueResearch({ modelId, compact }: Props) {
       const found = (result.known_issues ?? []) as IssueItem[];
       if (result.status !== "found" || found.length === 0) {
         setErrorMessage(result.status === "found" ? "No known issues found in Chinese sources for this model." : result.errorMessage ?? "Research failed.");
-        setMeta({ sourceCount: result.sourceUrls?.length ?? 0, hasGrounding: !!result.hasGrounding });
+        setMeta({ sourceCount: result.sourceUrls?.length ?? 0, hasGrounding: !!result.hasGrounding, dropped: result.dropped ?? [] });
         setItems([]);
         setPhase("review");
         return;
@@ -46,7 +46,7 @@ export default function IssueResearch({ modelId, compact }: Props) {
 
       setItems(found);
       setSelections(found.map(() => true));
-      setMeta({ sourceCount: result.sourceUrls?.length ?? 0, hasGrounding: !!result.hasGrounding });
+      setMeta({ sourceCount: result.sourceUrls?.length ?? 0, hasGrounding: !!result.hasGrounding, dropped: result.dropped ?? [] });
       setPhase("review");
     } catch (err) {
       setErrorMessage((err as Error).message);
@@ -132,6 +132,12 @@ export default function IssueResearch({ modelId, compact }: Props) {
               <p className="text-xs text-zinc-500 dark:text-zinc-400 mb-2">
                 {meta.sourceCount} allowlisted Chinese source{meta.sourceCount === 1 ? "" : "s"}
                 {!meta.hasGrounding && " — no Chinese-language citations found, all marked unconfirmed"}
+              </p>
+            )}
+
+            {meta && meta.dropped.length > 0 && (
+              <p className="text-xs text-red-600 dark:text-red-400 mb-2">
+                {meta.dropped.length} item{meta.dropped.length === 1 ? "" : "s"} rejected as not about this exact model: {meta.dropped.map((d) => d.errors.join(", ")).join(" | ")}
               </p>
             )}
 

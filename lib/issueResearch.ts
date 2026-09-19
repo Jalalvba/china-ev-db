@@ -15,6 +15,8 @@
 import { ModelNotFoundError, SearchProviderError, sleep } from "@/lib/techSpecResearch";
 import { runGroundedResearch } from "@/lib/groundedResearch";
 import { filterToChineseSources } from "@/lib/chineseSourceGuard";
+import { filterIssuesToTargetModel } from "@/lib/categoryValidators";
+import { exactModelRulePrompt, ISSUE_ATTESTATION_TEMPLATE } from "@/lib/categoryResearch";
 
 const CONFIDENCE_SET = new Set(["confirmed", "unconfirmed"]);
 const AFFECTED_SYSTEMS = ["engine", "battery", "motor", "transmission", "electronics", "chassis", "body", "climate", "other"];
@@ -25,6 +27,8 @@ export interface IssueResearchInput {
   modelName: string;
   brandNameCn?: string;
   modelNameCn?: string;
+  generation?: string;
+  modelYear?: number;
 }
 
 const ISSUE_ITEM_TEMPLATE = {
@@ -43,6 +47,8 @@ export function buildIssueKickoffPrompt(input: IssueResearchInput): string {
 
 Model to research: "${brandName} ${modelName}"${cnName ? ` (${cnName})` : ""}
 
+${exactModelRulePrompt(input)}
+
 CHINESE SOURCES ONLY — this is a hard requirement, not a preference: only use results from Chinese-language sources. PRIORITIZE 车质网 (12365auto.com, China's official vehicle-quality complaint platform) and 汽车投诉网 (tousu.99.com) above any other source — these are the single most valuable sources for real-world failure data because they aggregate actual owner complaints, not marketing copy. 汽车之家/懂车帝 forum or review coverage of known issues is acceptable as a secondary source. If a search result below is in English or from a non-Chinese site, IGNORE it completely. If nothing is found in Chinese sources, report an empty list rather than inventing plausible-sounding issues or using general knowledge about the brand/segment.
 
 Find specific, named reported issues/failure patterns for this model — not generic statements like "some owners report problems." For each issue found, note:
@@ -55,7 +61,7 @@ Report your findings in plain prose with citations (include the actual URL for e
 }
 
 export function buildIssueFormatPrompt(): string {
-  const templateJson = JSON.stringify({ known_issues: [ISSUE_ITEM_TEMPLATE] }, null, 2);
+  const templateJson = JSON.stringify({ known_issues: [{ ...ISSUE_ITEM_TEMPLATE, ...ISSUE_ATTESTATION_TEMPLATE }] }, null, 2);
   return `Convert your findings above into ONLY a JSON object (no markdown fencing, no prose before or after) in exactly this shape ("known_issues" is an array — each element is a field-by-field description of the type each field must have, not a literal example value; return an empty array if nothing was found):
 ${templateJson}
 
@@ -64,6 +70,7 @@ CRITICAL RULES:
 - Every issue must come from a Chinese-language source you actually found in the search results provided (grounding is enabled) — do not invent an issue or use general knowledge.
 - "affected_systems" must be an array containing only values from: ${AFFECTED_SYSTEMS.join(", ")}.
 - "confidence" is required on every item — mark "confirmed" only if the specific issue was directly stated in a fetched Chinese source.
+- EXACT MODEL ONLY: include an item only if the source is about the exact target model and generation. Never write "related variant"/"similar model" items — leave them out. "source_model_name" must be copied from the source (e.g. the model name as 车质网 or 汽车之家 lists it); if it is not the target model's own name, the item is dropped by code.
 - Return an empty array for "known_issues" if nothing was found — do NOT pad the list with generic/plausible-sounding issues.
 - Do NOT add, rename, or omit any field from the item shape above.`;
 }
@@ -179,6 +186,8 @@ export interface IssueResearchResult {
   known_issues?: Record<string, unknown>[];
   valid: boolean;
   errors: string[];
+  /** Items rejected by the exact-model filter, with the reason (indices refer to the raw researched array). */
+  dropped?: { index: number; errors: string[] }[];
 }
 
 export async function researchIssues(model: string, input: IssueResearchInput): Promise<IssueResearchResult> {
@@ -198,13 +207,20 @@ export async function researchIssues(model: string, input: IssueResearchInput): 
 
     const sourceUrls = filterToChineseSources(rawSourceUrls);
     const hasGrounding = sourceUrls.length > 0;
-    const { valid, errors } = validateResearchedIssues(parsed.known_issues);
+
+    // Hard exact-model filter (lib/categoryValidators.ts) BEFORE validation: keeps only items
+    // attested + code-verified as about the target model, and strips the attestation keys so
+    // the persisted item shape is unchanged. Rejections are returned, never silently lost.
+    const { kept, rejected } = filterIssuesToTargetModel(parsed.known_issues, { brandName: input.brandName, modelName: input.modelName, modelNameCn: input.modelNameCn });
+    const offModel = rejected.map((r) => ({ index: r.index, errors: [`off-model: ${r.reason}`] }));
+
+    const { valid, errors } = validateResearchedIssues(kept);
     if (!valid) {
-      return { status: "not_found", sourceUrls, hasGrounding, known_issues: parsed.known_issues as Record<string, unknown>[], valid, errors };
+      return { status: "not_found", sourceUrls, hasGrounding, known_issues: kept as Record<string, unknown>[], valid, errors, dropped: offModel };
     }
 
-    const gated = applyIssuesGroundingGate((parsed.known_issues as Record<string, unknown>[]).map((i) => ({ ...i })), hasGrounding);
-    return { status: "found", sourceUrls, hasGrounding, known_issues: gated, valid: true, errors: [] };
+    const gated = applyIssuesGroundingGate((kept as Record<string, unknown>[]).map((i) => ({ ...i })), hasGrounding);
+    return { status: "found", sourceUrls, hasGrounding, known_issues: gated, valid: true, errors: [], dropped: offModel };
   } catch (err) {
     if (err instanceof ModelNotFoundError || err instanceof SearchProviderError) throw err;
     return { status: "error", errorMessage: (err as Error).message, sourceUrls: [], hasGrounding: false, valid: false, errors: [] };
