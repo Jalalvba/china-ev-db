@@ -166,6 +166,18 @@ directly against outside claims, not by trusting the claims:
   and its trims are named "Tansuo 06 C-DM". The Chery `Tansuo 06` doc was an empty shell (0
   trims, no unique fields, no references). `Jaecoo J7` survives as the Morocco market name
   (moteur.ma lists it as such; 338,000 DH confirmed).
+- **Mis-filed `2025 Landian E5 PLUS 100km Entry` trim deleted from `Changan CS55 PHEV`** (2026-09-19,
+  found via Tech Search's model cards). It duplicated `Landian E5`'s own `Landian E5 PLUS 1.5L 2WD
+  100km` trim (identical spec, same 99,800 CNY start) and was strictly worse — all-unconfirmed,
+  never researched, 15 fewer fields, and conflicting battery chemistry (NMC vs the twin's LFP). The
+  Landian twin was kept; nothing needed moving. Snapshot: `backups/fix_landian_trim_under_cs55_20260919160209.json`.
+  A scan of all trims for names mentioning a different model found only this and `Chery Tiggo 9 C-DM`
+  under `Jaecoo J8` (see below). Total trims 148 → 147.
+- **Flagged, not acted on:** `Jaecoo J8` (name_cn 奇瑞瑞虎9, one spec-less trim named "Chery Tiggo 9
+  C-DM") vs the empty `Tiggo 9` shell looks like the Tansuo 06/Jaecoo J7 pattern, but J8's notes say
+  it "differentiates itself" from its Chery sibling, so verify before merging. `Roewe RX5` mixes
+  2017/2021/2022/2023-26 eRX5 generations (no generation set; price-range minimum matches no trim) —
+  real different cars, a scoping question, not contamination.
 - Checked and deliberately NOT merged: `Starray` vs `Starship 7 EM-i` (different brand, Chinese
   name, price range — not duplicates); `WEY Lanshan` vs `WEY 07` (different segments, no shared
   data — inconclusive from the DB alone, left as-is).
