@@ -1,4 +1,5 @@
 import { loadExportData } from "@/lib/export/load";
+import { FLAT_COLUMNS } from "@/lib/export/flatColumns";
 
 export const dynamic = "force-dynamic";
 
@@ -12,11 +13,11 @@ export default async function ExportPage({ searchParams }: { searchParams: Promi
   return (
     <div className="max-w-2xl">
       <h1 className="text-2xl font-bold mb-1">Export to Excel</h1>
-      <p className="text-zinc-600 dark:text-zinc-400 mb-6">Download the database as a multi-sheet .xlsx for analysis outside the app.</p>
+      <p className="text-zinc-600 dark:text-zinc-400 mb-6">Download the database as an .xlsx (one Data sheet, one row per trim, plus a README sheet) for analysis outside the app.</p>
 
       {data.filtered ? (
         <div className="mb-6 rounded border border-amber-500/50 bg-amber-500/10 p-4 text-sm">
-          <p className="font-semibold mb-1">Filtered export — exporting {data.trims.length} of {data.totals.trims} trims</p>
+          <p className="font-semibold mb-1">Filtered export — exporting {data.counts.trimRows} of {data.totals.trims} trims</p>
           <p className="mb-2">Scoped to your Tech Search filters: {data.filters.join("; ")}.</p>
           <a href="/export" className="text-blue-600 dark:text-blue-400 hover:underline">Export the full database instead</a>
         </div>
@@ -27,10 +28,10 @@ export default async function ExportPage({ searchParams }: { searchParams: Promi
 
       <table className="text-sm mb-6 border-collapse">
         <tbody>
-          <tr><td className="pr-8 py-1 font-semibold">Models sheet</td><td>{data.models.length} rows</td></tr>
-          <tr><td className="pr-8 py-1 font-semibold">Trims sheet</td><td>{data.trims.length} rows (one per powertrain trim)</td></tr>
-          <tr><td className="pr-8 py-1 font-semibold">Brands sheet</td><td>{data.brands.length} rows, with model and trim counts</td></tr>
-          <tr><td className="pr-8 py-1 font-semibold">README sheet</td><td>scope, filters, units, what is excluded</td></tr>
+          <tr><td className="pr-8 py-1 font-semibold">Data sheet</td><td>{data.counts.rows} rows, {FLAT_COLUMNS.length} columns — one row per trim</td></tr>
+          <tr><td className="pr-8 py-1 font-semibold">Models covered</td><td>{data.counts.models}{data.filtered ? ` of ${data.totals.models}` : ""}</td></tr>
+          {!data.filtered && <tr><td className="pr-8 py-1 font-semibold">Models with no trims</td><td>{data.counts.modelsWithoutTrims} (one row each, trim columns empty)</td></tr>}
+          <tr><td className="pr-8 py-1 font-semibold">README sheet</td><td>scope, filters, units, how to read repeated values, what is excluded</td></tr>
         </tbody>
       </table>
 

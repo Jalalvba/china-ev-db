@@ -436,19 +436,21 @@ reviewed known-issues data has been applied to the DB.**
 
 ## Excel export (`/export`, `/api/export`)
 
-Multi-sheet .xlsx (exceljs): README, Models, Trims, Brands. Column mapping/formats/widths live in `lib/export/columns.ts` (missing values are
-truly EMPTY cells, prices/power are numbers, kW and hp both exported, a confidence column per block, brand prefix stripped from Model
-names). `/export?<Tech Search query string>` scopes the export to that result set (`lib/export/techSearchParams.ts` translates the page's URL
-keys the same way `runSearch` in `app/search/specs/page.tsx` does — that page keeps its own inline copy of the mapping, so a new filter must be added
-in both); no filters = full database. The Mongo filter is shared with `/api/powertrains` via `lib/powertrainFilter.ts`. **Known-issues,
-warranty, market-trend, recalls and bulletins sheets are deliberately NOT exported** until that research has been reviewed and applied — the
-README sheet says so.
-Data fix (2026-09-19, found by the export's Trim names column): Lynk & Co `08 EM-P` had a trim named "160 Long Range Ultra (new 2026 trim,
-not present in the existing trim list)" — leftover AI commentary in the name; renamed to "160 Long Range Ultra" (raw-driver, backup
-`backups/fix_lynk08_trimname_*.json`, only trim_name changed; nothing else matched that pattern DB-wide). That model's trims still mix English and
-Chinese names — left as-is. The Trim names column joins with "; " because a trim name can itself contain a comma.
-Open items (2026-09-19): (1) the DB lists `tech_partner: "Huawei"` on BAIC, Dongfeng and Jetour (seen in the export's Brands sheet) — CLAUDE.md
-says tech partner must be individually sourced, so this needs a verification pass; not yet checked. (2) `/export` has no filter UI of its own, URL params only — Tech Search's results header has an "Export these results" link that passes its current query string, which is the intended way to scope an export.
+Two sheets (exceljs): **Data** — ONE ROW PER TRIM, 72 columns (21 model-level repeated on every trim row of a model + 51 trim-level) — and README.
+A model with no trim docs still gets ONE row (trim columns empty) so it isn't dropped: 171 rows = 147 trims + 24 trimless models in the full export.
+Column mapping/formats/widths: `lib/export/columns.ts` (model + trim specs) composed by `lib/export/flatColumns.ts`; missing values are truly EMPTY
+cells, prices/power are numbers, kW and hp both exported, a confidence column per block, brand prefix stripped from Model names. "China/Morocco price"
+columns are model-level, "Trim price" columns are trim-level (README explains). `/export?<Tech Search query string>` scopes the export to that result set
+(filtered exports include only matching trims, hence no trimless models); `lib/export/techSearchParams.ts` translates the page's URL keys the same way
+`runSearch` in `app/search/specs/page.tsx` does — that page keeps its own inline copy, so a new filter must be added in both; no filters = full database.
+Tech Search's results header links here ("Export these results"). The Mongo filter is shared with `/api/powertrains` via `lib/powertrainFilter.ts`.
+**Known-issues, warranty, market-trend, recalls and bulletins are deliberately NOT exported** until that research has been reviewed and applied — the README says so.
+(History: it was 4 sheets — README/Models/Trims/Brands — until 2026-09-19; the Brands sheet's model/trim counts were dropped as pivotable from Data.)
+Data fix (2026-09-19, found by the export's old Trim names column): Lynk & Co `08 EM-P` had a trim named "160 Long Range Ultra (new 2026 trim,
+not present in the existing trim list)" — leftover AI commentary; renamed to "160 Long Range Ultra" (raw-driver, backup
+`backups/fix_lynk08_trimname_*.json`, only trim_name changed). That model's trims still mix English and Chinese names — left as-is.
+Open items (2026-09-19): (1) the DB lists `tech_partner: "Huawei"` on BAIC, Dongfeng and Jetour (seen in the export) — CLAUDE.md says tech partner
+must be individually sourced, so this needs a verification pass; not yet checked. (2) `/export` has no filter UI of its own, URL params only.
 
 ## Schema/prompt drift guard
 

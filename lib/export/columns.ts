@@ -1,4 +1,4 @@
-// Column mapping for the Excel export: human-readable headers, widths, number formats and the flattening of nested Model/Powertrain
+// Column mapping for the Excel export (composed into the single per-trim "Data" sheet by lib/export/flatColumns.ts): human-readable headers, widths, number formats and the flattening of nested Model/Powertrain
 // documents into one cell per column. Pure (no DB access) so it can be unit-checked and reused by the route and the sample script.
 // Missing values are null -> a truly EMPTY cell (never "—" or 0), so Excel's SUM/AVERAGE/COUNT/pivots behave.
 
@@ -26,9 +26,8 @@ const INT = "#,##0";
 const DEC1 = "#,##0.0";
 const DEC2 = "#,##0.00";
 
-export interface ModelRow { model: Rec; brandName: string; trimCount: number; /** Names of this model's exported trims. */ trimNames: string[] }
+export interface ModelRow { model: Rec; brandName: string }
 export interface TrimRow { trim: Rec; model: Rec; brandName: string }
-export interface BrandRow { brand: Rec; modelCount: number; trimCount: number; cheapestMoroccoDh: number | null }
 
 export const MODEL_COLUMNS: ColumnSpec<ModelRow>[] = [
   { header: "Brand", width: 16, get: (r) => r.brandName },
@@ -52,8 +51,6 @@ export const MODEL_COLUMNS: ColumnSpec<ModelRow>[] = [
   { header: "Morocco price status", width: 20, get: (r) => (n(r.model.morocco_price_dh) === null ? null : r.model.morocco_price_confirmed ? "Confirmed" : "Unconfirmed") },
   { header: "Morocco price source", width: 20, get: (r) => s(r.model.morocco_price_source) },
   { header: "Morocco / China price ratio", width: 24, fmt: DEC2, get: (r) => n(r.model.morocco_to_china_price_ratio) },
-  { header: "Trim count", width: 11, fmt: "0", get: (r) => r.trimCount },
-  { header: "Trim names", width: 45, get: (r) => (r.trimNames.length ? r.trimNames.join("; ") : null) },
 ];
 
 export const TRIM_COLUMNS: ColumnSpec<TrimRow>[] = [
@@ -110,16 +107,4 @@ export const TRIM_COLUMNS: ColumnSpec<TrimRow>[] = [
   { header: "Performance confidence", width: 21, get: (r) => conf(r.trim.performance?.confidence) },
   { header: "Overall confidence", width: 18, get: (r) => conf(r.trim.confidence) },
   { header: "Source", width: 40, get: (r) => s(r.trim.source) },
-];
-
-export const BRAND_COLUMNS: ColumnSpec<BrandRow>[] = [
-  { header: "Brand", width: 18, get: (r) => s(r.brand.name) },
-  { header: "Chinese name", width: 16, get: (r) => s(r.brand.name_cn) },
-  { header: "Parent group", width: 22, get: (r) => s(r.brand.parent_group) },
-  { header: "Relationship type", width: 22, get: (r) => s(r.brand.relationship_type) },
-  { header: "Tech partner", width: 16, get: (r) => s(r.brand.tech_partner) },
-  { header: "Status", width: 12, get: (r) => s(r.brand.status) },
-  { header: "Model count", width: 12, fmt: "0", get: (r) => r.modelCount },
-  { header: "Trim count", width: 11, fmt: "0", get: (r) => r.trimCount },
-  { header: "Cheapest confirmed Morocco price (DH)", width: 34, fmt: INT, get: (r) => r.cheapestMoroccoDh },
 ];
