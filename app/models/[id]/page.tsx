@@ -12,6 +12,8 @@ import type { IBrand, IModel, IMoroccoListing, IPowertrain } from "@/types";
 import { kwToHp } from "@/lib/units";
 import { formatRelativeTime } from "@/lib/relativeTime";
 import TechSpecUpdater from "@/app/TechSpecUpdater";
+import PositioningResearch from "@/app/PositioningResearch";
+import IssueResearch from "@/app/IssueResearch";
 import ManualResearchImporter from "@/app/ManualResearchImporter";
 import ExportForManualResearchButton from "@/app/ExportForManualResearchButton";
 import MoroccoPriceFetcher from "@/app/MoroccoPriceFetcher";
@@ -123,6 +125,8 @@ export default async function ModelPage({ params }: { params: Promise<{ id: stri
 
       <div className="flex items-center gap-2 flex-wrap">
         <TechSpecUpdater scope="model" id={model._id as string} />
+        <PositioningResearch modelId={model._id as string} />
+        <IssueResearch modelId={model._id as string} />
         <MoroccoPriceFetcher id={model._id as string} />
         <ExportForManualResearchButton modelDbId={model._id as string} />
       </div>

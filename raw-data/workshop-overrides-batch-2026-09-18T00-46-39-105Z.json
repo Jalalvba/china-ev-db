@@ -1,0 +1,529 @@
+[
+  {
+    "brandId": "6aa47dd5ee15cebb2bbd5b92",
+    "brandName": "Chery",
+    "status": "found",
+    "sourceUrls": [
+      "https://m.pcauto.com.cn/baike/1037991/2040936/"
+    ],
+    "hasGrounding": true,
+    "overrides": {
+      "technician_certification": {
+        "level": null,
+        "body": null,
+        "required_for": null,
+        "retraining_interval_months": null
+      },
+      "lift_requirements": {
+        "type": null,
+        "min_capacity_kg": null,
+        "lift_points_note": null,
+        "battery_removal_capable": null
+      },
+      "special_tools": [
+        {
+          "name": "X431 dedicated vehicle diagnostic instrument",
+          "category": "diagnostic tool",
+          "mandatory": true,
+          "notes": "Chery requires every sales service provider to be equipped with an X431 dedicated vehicle diagnostic instrument for rapid vehicle fault diagnosis."
+        }
+      ],
+      "source": "Chery official New Energy Vehicle After-Sales Service Commitment, https://www.chery.cn/others/service-commitment/",
+      "confidence": "confirmed"
+    },
+    "passesSpecificity": true,
+    "valid": true,
+    "errors": []
+  },
+  {
+    "brandId": "6aa47dd5ee15cebb2bbd5b8d",
+    "brandName": "Geely",
+    "status": "thin",
+    "sourceUrls": [
+      "https://m.pcauto.com.cn/baike/1027103/2019260/"
+    ],
+    "hasGrounding": true,
+    "overrides": {
+      "technician_certification": {
+        "level": null,
+        "body": null,
+        "required_for": null,
+        "retraining_interval_months": null
+      },
+      "lift_requirements": {
+        "type": null,
+        "min_capacity_kg": null,
+        "lift_points_note": null,
+        "battery_removal_capable": null
+      },
+      "special_tools": [],
+      "source": null,
+      "confidence": null
+    },
+    "passesSpecificity": false,
+    "valid": true,
+    "errors": []
+  },
+  {
+    "brandId": "6aa47dd5ee15cebb2bbd5b9f",
+    "brandName": "Changan",
+    "status": "not_found",
+    "sourceUrls": [],
+    "hasGrounding": false,
+    "overrides": {
+      "technician_certification": {
+        "level": null,
+        "body": null,
+        "required_for": null,
+        "retraining_interval_months": null
+      },
+      "lift_requirements": {
+        "type": null,
+        "min_capacity_kg": null,
+        "lift_points_note": null,
+        "battery_removal_capable": null
+      },
+      "special_tools": [],
+      "source": null,
+      "confidence": null
+    },
+    "passesSpecificity": false,
+    "valid": true,
+    "errors": []
+  },
+  {
+    "brandId": "6aa47dd5ee15cebb2bbd5bb3",
+    "brandName": "Zeekr",
+    "status": "thin",
+    "sourceUrls": [
+      "https://www.autohome.com.cn/ask/14308208.html",
+      "https://www.pcauto.com.cn/ask/884746.html",
+      "https://www.autohome.com.cn/ask/14292093.html",
+      "https://baike.pcauto.com.cn/583688/1134450.html",
+      "https://www.autohome.com.cn/ask/13622719.html",
+      "https://www.xchuxing.com/article/103537",
+      "https://www.autohome.com.cn/ask/14323958.html",
+      "https://www.autohome.com.cn/ask/22284701.html"
+    ],
+    "hasGrounding": true,
+    "overrides": {
+      "technician_certification": {
+        "level": null,
+        "body": null,
+        "required_for": null,
+        "retraining_interval_months": null
+      },
+      "lift_requirements": {
+        "type": null,
+        "min_capacity_kg": null,
+        "lift_points_note": null,
+        "battery_removal_capable": null
+      },
+      "special_tools": [],
+      "source": null,
+      "confidence": null
+    },
+    "passesSpecificity": false,
+    "valid": true,
+    "errors": []
+  },
+  {
+    "brandId": "6aa4843cb824dbb3c01b5bff",
+    "brandName": "Soueast",
+    "status": "not_found",
+    "sourceUrls": [],
+    "hasGrounding": false,
+    "overrides": {
+      "technician_certification": {
+        "level": null,
+        "body": null,
+        "required_for": null,
+        "retraining_interval_months": null
+      },
+      "lift_requirements": {
+        "type": null,
+        "min_capacity_kg": null,
+        "lift_points_note": null,
+        "battery_removal_capable": null
+      },
+      "special_tools": [],
+      "source": null,
+      "confidence": null
+    },
+    "passesSpecificity": false,
+    "valid": true,
+    "errors": []
+  },
+  {
+    "brandId": "6aa47f03f6f9b7dca1c09c12",
+    "brandName": "DFSK",
+    "status": "thin",
+    "sourceUrls": [
+      "https://www.autohome.com.cn/ask/8133071.html",
+      "https://www.autohome.com.cn/ask/13369568.html"
+    ],
+    "hasGrounding": true,
+    "overrides": {
+      "technician_certification": {
+        "level": null,
+        "body": null,
+        "required_for": null,
+        "retraining_interval_months": null
+      },
+      "lift_requirements": {
+        "type": null,
+        "min_capacity_kg": null,
+        "lift_points_note": null,
+        "battery_removal_capable": null
+      },
+      "special_tools": [],
+      "source": null,
+      "confidence": null
+    },
+    "passesSpecificity": false,
+    "valid": true,
+    "errors": []
+  },
+  {
+    "brandId": "6aa47dd5ee15cebb2bbd5bc4",
+    "brandName": "Dongfeng",
+    "status": "not_found",
+    "sourceUrls": [],
+    "hasGrounding": false,
+    "overrides": {
+      "technician_certification": {
+        "level": null,
+        "body": null,
+        "required_for": null,
+        "retraining_interval_months": null
+      },
+      "lift_requirements": {
+        "type": null,
+        "min_capacity_kg": null,
+        "lift_points_note": null,
+        "battery_removal_capable": null
+      },
+      "special_tools": [],
+      "source": null,
+      "confidence": null
+    },
+    "passesSpecificity": false,
+    "valid": true,
+    "errors": []
+  },
+  {
+    "brandId": "6aa47f03f6f9b7dca1c09c10",
+    "brandName": "Exeed",
+    "status": "thin",
+    "sourceUrls": [
+      "https://www.autohome.com.cn/ask/891568.html"
+    ],
+    "hasGrounding": true,
+    "overrides": {
+      "technician_certification": {
+        "level": null,
+        "body": null,
+        "required_for": null,
+        "retraining_interval_months": null
+      },
+      "lift_requirements": {
+        "type": null,
+        "min_capacity_kg": null,
+        "lift_points_note": null,
+        "battery_removal_capable": null
+      },
+      "special_tools": [],
+      "source": null,
+      "confidence": null
+    },
+    "passesSpecificity": false,
+    "valid": true,
+    "errors": []
+  },
+  {
+    "brandId": "6aa4864c19f705a0345c67fb",
+    "brandName": "BAIC",
+    "status": "thin",
+    "sourceUrls": [
+      "https://club.m.autohome.com.cn/bbs/thread/0a3c5260211cd382/5891235-1.html"
+    ],
+    "hasGrounding": true,
+    "overrides": {
+      "technician_certification": {
+        "level": null,
+        "body": null,
+        "required_for": null,
+        "retraining_interval_months": null
+      },
+      "lift_requirements": {
+        "type": null,
+        "min_capacity_kg": null,
+        "lift_points_note": null,
+        "battery_removal_capable": null
+      },
+      "special_tools": [],
+      "source": null,
+      "confidence": null
+    },
+    "passesSpecificity": false,
+    "valid": true,
+    "errors": []
+  },
+  {
+    "brandId": "6aa47dd5ee15cebb2bbd5ba9",
+    "brandName": "XPeng",
+    "status": "thin",
+    "sourceUrls": [
+      "https://www.xchuxing.com/ins/50096"
+    ],
+    "hasGrounding": true,
+    "overrides": {
+      "technician_certification": {
+        "level": null,
+        "body": null,
+        "required_for": null,
+        "retraining_interval_months": null
+      },
+      "lift_requirements": {
+        "type": null,
+        "min_capacity_kg": null,
+        "lift_points_note": null,
+        "battery_removal_capable": null
+      },
+      "special_tools": [],
+      "source": null,
+      "confidence": null
+    },
+    "passesSpecificity": false,
+    "valid": true,
+    "errors": []
+  },
+  {
+    "brandId": "6aa4866e5162e18952335908",
+    "brandName": "Jetour",
+    "status": "thin",
+    "sourceUrls": [
+      "https://m.pcauto.com.cn/baike/682765/1332244/"
+    ],
+    "hasGrounding": true,
+    "overrides": {
+      "technician_certification": {
+        "level": null,
+        "body": null,
+        "required_for": null,
+        "retraining_interval_months": null
+      },
+      "lift_requirements": {
+        "type": null,
+        "min_capacity_kg": null,
+        "lift_points_note": null,
+        "battery_removal_capable": null
+      },
+      "special_tools": [],
+      "source": null,
+      "confidence": null
+    },
+    "passesSpecificity": false,
+    "valid": true,
+    "errors": []
+  },
+  {
+    "brandId": "6aa47eb21ec445aa4df91df6",
+    "brandName": "Lynk & Co",
+    "status": "not_found",
+    "sourceUrls": [],
+    "hasGrounding": false,
+    "overrides": {
+      "technician_certification": {
+        "level": null,
+        "body": null,
+        "required_for": null,
+        "retraining_interval_months": null
+      },
+      "lift_requirements": {
+        "type": null,
+        "min_capacity_kg": null,
+        "lift_points_note": null,
+        "battery_removal_capable": null
+      },
+      "special_tools": [],
+      "source": null,
+      "confidence": null
+    },
+    "passesSpecificity": false,
+    "valid": true,
+    "errors": []
+  },
+  {
+    "brandId": "6aa47dd5ee15cebb2bbd5bb6",
+    "brandName": "Leapmotor",
+    "status": "thin",
+    "sourceUrls": [
+      "https://www.autohome.com.cn/ask/10455928.html"
+    ],
+    "hasGrounding": true,
+    "overrides": {
+      "technician_certification": {
+        "level": null,
+        "body": null,
+        "required_for": null,
+        "retraining_interval_months": null
+      },
+      "lift_requirements": {
+        "type": null,
+        "min_capacity_kg": null,
+        "lift_points_note": null,
+        "battery_removal_capable": null
+      },
+      "special_tools": [],
+      "source": null,
+      "confidence": null
+    },
+    "passesSpecificity": false,
+    "valid": true,
+    "errors": []
+  },
+  {
+    "brandId": "6aa47dd5ee15cebb2bbd5b98",
+    "brandName": "GWM (Great Wall Motor)",
+    "status": "not_found",
+    "sourceUrls": [],
+    "hasGrounding": false,
+    "overrides": {
+      "technician_certification": {
+        "level": null,
+        "body": null,
+        "required_for": null,
+        "retraining_interval_months": null
+      },
+      "lift_requirements": {
+        "type": null,
+        "min_capacity_kg": null,
+        "lift_points_note": null,
+        "battery_removal_capable": null
+      },
+      "special_tools": [],
+      "source": null,
+      "confidence": null
+    },
+    "passesSpecificity": false,
+    "valid": true,
+    "errors": []
+  },
+  {
+    "brandId": "6aa47dd5ee15cebb2bbd5b82",
+    "brandName": "Denza",
+    "status": "thin",
+    "sourceUrls": [
+      "https://www.autohome.com.cn/ask/16035859.html"
+    ],
+    "hasGrounding": true,
+    "overrides": {
+      "technician_certification": {
+        "level": null,
+        "body": null,
+        "required_for": null,
+        "retraining_interval_months": null
+      },
+      "lift_requirements": {
+        "type": null,
+        "min_capacity_kg": null,
+        "lift_points_note": null,
+        "battery_removal_capable": null
+      },
+      "special_tools": [],
+      "source": null,
+      "confidence": null
+    },
+    "passesSpecificity": false,
+    "valid": true,
+    "errors": []
+  },
+  {
+    "brandId": "6aa47dd5ee15cebb2bbd5b5e",
+    "brandName": "BYD",
+    "status": "thin",
+    "sourceUrls": [
+      "https://www.autohome.com.cn/ask/8019962.html"
+    ],
+    "hasGrounding": true,
+    "overrides": {
+      "technician_certification": {
+        "level": null,
+        "body": null,
+        "required_for": null,
+        "retraining_interval_months": null
+      },
+      "lift_requirements": {
+        "type": null,
+        "min_capacity_kg": null,
+        "lift_points_note": null,
+        "battery_removal_capable": null
+      },
+      "special_tools": [],
+      "source": null,
+      "confidence": null
+    },
+    "passesSpecificity": false,
+    "valid": true,
+    "errors": []
+  },
+  {
+    "brandId": "6aa4864c19f705a0345c67fa",
+    "brandName": "Seres",
+    "status": "thin",
+    "sourceUrls": [
+      "https://www.autohome.com.cn/ask/6927056.html",
+      "https://www.autohome.com.cn/ask/16044269.html",
+      "https://www.autohome.com.cn/ask/14074441.html"
+    ],
+    "hasGrounding": true,
+    "overrides": {
+      "technician_certification": {
+        "level": null,
+        "body": null,
+        "required_for": null,
+        "retraining_interval_months": null
+      },
+      "lift_requirements": {
+        "type": null,
+        "min_capacity_kg": null,
+        "lift_points_note": null,
+        "battery_removal_capable": null
+      },
+      "special_tools": [],
+      "source": null,
+      "confidence": null
+    },
+    "passesSpecificity": false,
+    "valid": true,
+    "errors": []
+  },
+  {
+    "brandId": "6aa4864c19f705a0345c67fd",
+    "brandName": "Jaecoo",
+    "status": "not_found",
+    "sourceUrls": [],
+    "hasGrounding": false,
+    "overrides": {
+      "technician_certification": {
+        "level": null,
+        "body": null,
+        "required_for": null,
+        "retraining_interval_months": null
+      },
+      "lift_requirements": {
+        "type": null,
+        "min_capacity_kg": null,
+        "lift_points_note": null,
+        "battery_removal_capable": null
+      },
+      "special_tools": [],
+      "source": null,
+      "confidence": null
+    },
+    "passesSpecificity": false,
+    "valid": true,
+    "errors": []
+  }
+]

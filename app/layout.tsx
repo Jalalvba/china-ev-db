@@ -46,6 +46,21 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             <a href="/compare" className="text-sm text-zinc-300 hover:text-white">
               Compare
             </a>
+            <a href="/warranty" className="text-sm text-zinc-300 hover:text-white">
+              Warranty
+            </a>
+            <a href="/workshop" className="text-sm text-zinc-300 hover:text-white">
+              Workshop
+            </a>
+            <a href="/workshop-phev-suv" className="text-sm text-zinc-300 hover:text-white">
+              PHEV/REEV SUV Workshop
+            </a>
+            <a href="/known-issues" className="text-sm text-zinc-300 hover:text-white">
+              Known Issues
+            </a>
+            <a href="/benchmarking" className="text-sm text-zinc-300 hover:text-white">
+              Benchmarking
+            </a>
             <div className="ml-auto">
               <ThemeToggle />
             </div>

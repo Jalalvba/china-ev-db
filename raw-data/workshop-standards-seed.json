@@ -1,0 +1,266 @@
+[
+  {
+    "powertrain_category": "ICE",
+    "service_tier": "routine",
+    "technician_certification": {
+      "level": "五级/初级工 (Grade 5, Junior Technician)",
+      "body": "人社部 (Ministry of Human Resources and Social Security) national vocational grading — 新能源汽车维修工 occupational standard, ICE-baseline tier",
+      "required_for": ["oil/fluid changes", "filter replacement", "brake pad/rotor service", "tire service"],
+      "retraining_interval_months": 24
+    },
+    "lift_requirements": {
+      "type": "2-post or 4-post general-service lift",
+      "min_capacity_kg": 3000,
+      "lift_points_note": "Standard OEM chassis jack points, no special handling",
+      "battery_removal_capable": false
+    },
+    "special_tools": [
+      { "name": "OBD-II generic scan tool", "category": "diagnostic", "mandatory": true, "notes": "Manufacturer-specific software is a routine-tier convenience, not a requirement" },
+      { "name": "Standard torque wrench set", "category": "hand tool", "mandatory": true }
+    ],
+    "_source": "industry_standard",
+    "_confidence": "confirmed"
+  },
+  {
+    "powertrain_category": "ICE",
+    "service_tier": "major_repair",
+    "technician_certification": {
+      "level": "三级/高级工 (Grade 3, Senior Technician)",
+      "body": "人社部 新能源汽车维修工 occupational standard, ICE-baseline tier",
+      "required_for": ["engine teardown/rebuild", "transmission overhaul", "timing system service"],
+      "retraining_interval_months": 24
+    },
+    "lift_requirements": {
+      "type": "4-post lift with engine crane access",
+      "min_capacity_kg": 4500,
+      "lift_points_note": "Standard OEM chassis jack points; engine hoist clearance required",
+      "battery_removal_capable": false
+    },
+    "special_tools": [
+      { "name": "Engine timing tool kit (model-specific)", "category": "mechanical", "mandatory": true },
+      { "name": "Compression/leak-down tester", "category": "diagnostic", "mandatory": true },
+      { "name": "OEM diagnostic software (brand-specific)", "category": "diagnostic", "mandatory": false, "notes": "Confirmed per-brand via brand_workshop_overrides where published" }
+    ],
+    "_source": "industry_standard",
+    "_confidence": "confirmed"
+  },
+  {
+    "powertrain_category": "HEV",
+    "service_tier": "routine",
+    "technician_certification": {
+      "level": "四级/中级工 (Grade 4, Intermediate Technician) + 新能源汽车维修 supplementary module",
+      "body": "人社部 新能源汽车维修工 occupational standard",
+      "required_for": ["fluid changes on hybrid drivetrain", "12V battery service", "routine inspection with HV system present but not opened"],
+      "retraining_interval_months": 24
+    },
+    "lift_requirements": {
+      "type": "2-post or 4-post general-service lift",
+      "min_capacity_kg": 3000,
+      "lift_points_note": "Standard OEM chassis jack points; avoid HV cabling routed under sill in some layouts — brand-specific note where published",
+      "battery_removal_capable": false
+    },
+    "special_tools": [
+      { "name": "OBD-II + hybrid-aware scan tool", "category": "diagnostic", "mandatory": true },
+      { "name": "Insulated hand tool set (1000V rated)", "category": "safety", "mandatory": true, "notes": "Baseline precaution even for non-HV-opening routine work, per national HV-safety guidance" }
+    ],
+    "_source": "industry_standard",
+    "_confidence": "confirmed"
+  },
+  {
+    "powertrain_category": "HEV",
+    "service_tier": "major_repair",
+    "technician_certification": {
+      "level": "三级/高级工 (Grade 3, Senior Technician) + HV系统 (HV system) endorsement",
+      "body": "人社部 新能源汽车维修工 occupational standard",
+      "required_for": ["hybrid transaxle/eCVT repair", "engine-motor coupling service", "HV harness work with system de-energized"],
+      "retraining_interval_months": 12
+    },
+    "lift_requirements": {
+      "type": "4-post lift with engine/transaxle removal capability",
+      "min_capacity_kg": 4500,
+      "lift_points_note": "OEM jack points; transaxle drop fixtures required for eCVT-equipped models",
+      "battery_removal_capable": false
+    },
+    "special_tools": [
+      { "name": "HV insulation resistance tester", "category": "safety/diagnostic", "mandatory": true },
+      { "name": "Insulated tool set (1000V rated)", "category": "safety", "mandatory": true },
+      { "name": "HV glove tester (Class 0, 1000V AC / 1500V DC)", "category": "safety", "mandatory": true },
+      { "name": "Lockout-tagout (LOTO) kit for HV service disconnect", "category": "safety", "mandatory": true }
+    ],
+    "_source": "industry_standard",
+    "_confidence": "confirmed"
+  },
+  {
+    "powertrain_category": "HEV",
+    "service_tier": "hv_battery",
+    "technician_certification": {
+      "level": "二级/技师 (Grade 2, Technician/Master) + HV电池 (HV battery) endorsement",
+      "body": "人社部 新能源汽车维修工 occupational standard, highest HEV-applicable tier (HEV traction packs are smaller/sealed but still HV)",
+      "required_for": ["HV battery pack removal/replacement", "HV battery diagnostics", "battery coolant loop service where present"],
+      "retraining_interval_months": 12
+    },
+    "lift_requirements": {
+      "type": "4-post lift with dedicated battery-lowering table/scissor lift",
+      "min_capacity_kg": 4500,
+      "lift_points_note": "Battery-specific lowering points per OEM service manual; never generic chassis points for pack removal",
+      "battery_removal_capable": true
+    },
+    "special_tools": [
+      { "name": "HV insulation resistance tester", "category": "safety/diagnostic", "mandatory": true },
+      { "name": "Insulated tool set (1000V rated)", "category": "safety", "mandatory": true },
+      { "name": "HV glove tester (Class 0, 1000V AC / 1500V DC)", "category": "safety", "mandatory": true },
+      { "name": "Lockout-tagout (LOTO) kit for HV service disconnect", "category": "safety", "mandatory": true },
+      { "name": "Battery lowering/lifting table (model-specific fixture)", "category": "mechanical", "mandatory": true },
+      { "name": "Thermal imaging camera", "category": "diagnostic", "mandatory": false, "notes": "Recommended for cell-level fault isolation, not universally mandated" }
+    ],
+    "_source": "industry_standard",
+    "_confidence": "confirmed"
+  },
+  {
+    "powertrain_category": "PHEV",
+    "service_tier": "routine",
+    "technician_certification": {
+      "level": "四级/中级工 (Grade 4, Intermediate Technician) + 新能源汽车维修 supplementary module",
+      "body": "人社部 新能源汽车维修工 occupational standard",
+      "required_for": ["fluid changes", "charge-port inspection", "routine inspection with HV system present but not opened"],
+      "retraining_interval_months": 24
+    },
+    "lift_requirements": {
+      "type": "2-post or 4-post general-service lift",
+      "min_capacity_kg": 3000,
+      "lift_points_note": "Standard OEM chassis jack points; larger PHEV battery packs shift jack-point loading vs. equivalent ICE model — confirm per OEM manual",
+      "battery_removal_capable": false
+    },
+    "special_tools": [
+      { "name": "OBD-II + PHEV-aware scan tool", "category": "diagnostic", "mandatory": true },
+      { "name": "Insulated hand tool set (1000V rated)", "category": "safety", "mandatory": true },
+      { "name": "AC charge point tester", "category": "diagnostic", "mandatory": true, "notes": "Type 2 (or GB/T in China-market context) onboard charger circuit check" }
+    ],
+    "_source": "industry_standard",
+    "_confidence": "confirmed"
+  },
+  {
+    "powertrain_category": "PHEV",
+    "service_tier": "major_repair",
+    "technician_certification": {
+      "level": "三级/高级工 (Grade 3, Senior Technician) + HV系统 (HV system) endorsement",
+      "body": "人社部 新能源汽车维修工 occupational standard",
+      "required_for": ["hybrid transaxle/motor-generator repair", "range-extender engine service (REEV)", "HV harness work with system de-energized"],
+      "retraining_interval_months": 12
+    },
+    "lift_requirements": {
+      "type": "4-post lift with engine/transaxle removal capability",
+      "min_capacity_kg": 4500,
+      "lift_points_note": "OEM jack points; underfloor battery placement common on PHEV/REEV — verify clearance before lift point selection",
+      "battery_removal_capable": false
+    },
+    "special_tools": [
+      { "name": "HV insulation resistance tester", "category": "safety/diagnostic", "mandatory": true },
+      { "name": "Insulated tool set (1000V rated)", "category": "safety", "mandatory": true },
+      { "name": "HV glove tester (Class 0, 1000V AC / 1500V DC)", "category": "safety", "mandatory": true },
+      { "name": "Lockout-tagout (LOTO) kit for HV service disconnect", "category": "safety", "mandatory": true }
+    ],
+    "_source": "industry_standard",
+    "_confidence": "confirmed"
+  },
+  {
+    "powertrain_category": "PHEV",
+    "service_tier": "hv_battery",
+    "technician_certification": {
+      "level": "一级/高级技师 (Grade 1, Senior Master Technician) + HV电池 (HV battery) endorsement",
+      "body": "人社部 新能源汽车维修工 occupational standard, top tier — PHEV/REEV packs approach BEV-scale voltage/capacity",
+      "required_for": ["HV battery pack removal/replacement", "HV battery diagnostics", "battery coolant loop service"],
+      "retraining_interval_months": 12
+    },
+    "lift_requirements": {
+      "type": "4-post lift with dedicated battery-lowering table/scissor lift",
+      "min_capacity_kg": 4500,
+      "lift_points_note": "Battery-specific lowering points per OEM service manual",
+      "battery_removal_capable": true
+    },
+    "special_tools": [
+      { "name": "HV insulation resistance tester", "category": "safety/diagnostic", "mandatory": true },
+      { "name": "Insulated tool set (1000V rated)", "category": "safety", "mandatory": true },
+      { "name": "HV glove tester (Class 0, 1000V AC / 1500V DC)", "category": "safety", "mandatory": true },
+      { "name": "Lockout-tagout (LOTO) kit for HV service disconnect", "category": "safety", "mandatory": true },
+      { "name": "Battery lowering/lifting table (model-specific fixture)", "category": "mechanical", "mandatory": true },
+      { "name": "Thermal imaging camera", "category": "diagnostic", "mandatory": false }
+    ],
+    "_source": "industry_standard",
+    "_confidence": "confirmed"
+  },
+  {
+    "powertrain_category": "BEV",
+    "service_tier": "routine",
+    "technician_certification": {
+      "level": "四级/中级工 (Grade 4, Intermediate Technician) + 新能源汽车维修 supplementary module",
+      "body": "人社部 新能源汽车维修工 occupational standard",
+      "required_for": ["tire/brake service", "12V auxiliary battery service", "charge-port inspection", "software/OTA-adjacent checks"],
+      "retraining_interval_months": 24
+    },
+    "lift_requirements": {
+      "type": "2-post or 4-post general-service lift, EV-rated jack pads",
+      "min_capacity_kg": 3500,
+      "lift_points_note": "BEV skateboard chassis requires EV-specific jack pads to avoid battery-pack floor contact — never generic ICE jack points",
+      "battery_removal_capable": false
+    },
+    "special_tools": [
+      { "name": "OBD-II/proprietary BEV scan tool", "category": "diagnostic", "mandatory": true },
+      { "name": "Insulated hand tool set (1000V rated)", "category": "safety", "mandatory": true },
+      { "name": "DC fast-charge port tester", "category": "diagnostic", "mandatory": true, "notes": "GB/T DC standard in China-market context" }
+    ],
+    "_source": "industry_standard",
+    "_confidence": "confirmed"
+  },
+  {
+    "powertrain_category": "BEV",
+    "service_tier": "major_repair",
+    "technician_certification": {
+      "level": "二级/技师 (Grade 2, Technician/Master) + HV系统 (HV system) endorsement",
+      "body": "人社部 新能源汽车维修工 occupational standard",
+      "required_for": ["drive motor/reduction gear repair", "onboard charger repair", "HV harness work with system de-energized"],
+      "retraining_interval_months": 12
+    },
+    "lift_requirements": {
+      "type": "4-post lift with EV-rated jack pads and motor/subframe drop access",
+      "min_capacity_kg": 4500,
+      "lift_points_note": "EV-specific jack pads mandatory; subframe drop fixtures for drive-unit removal on most skateboard platforms",
+      "battery_removal_capable": false
+    },
+    "special_tools": [
+      { "name": "HV insulation resistance tester", "category": "safety/diagnostic", "mandatory": true },
+      { "name": "Insulated tool set (1000V rated)", "category": "safety", "mandatory": true },
+      { "name": "HV glove tester (Class 0, 1000V AC / 1500V DC)", "category": "safety", "mandatory": true },
+      { "name": "Lockout-tagout (LOTO) kit for HV service disconnect", "category": "safety", "mandatory": true }
+    ],
+    "_source": "industry_standard",
+    "_confidence": "confirmed"
+  },
+  {
+    "powertrain_category": "BEV",
+    "service_tier": "hv_battery",
+    "technician_certification": {
+      "level": "一级/高级技师 (Grade 1, Senior Master Technician) + HV电池 (HV battery) endorsement",
+      "body": "人社部 新能源汽车维修工 occupational standard, top tier — full-size BEV traction packs, highest voltage/capacity class",
+      "required_for": ["HV battery pack removal/replacement", "cell-module-level diagnostics/repair", "battery coolant loop service", "post-collision/thermal-event battery assessment"],
+      "retraining_interval_months": 12
+    },
+    "lift_requirements": {
+      "type": "4-post lift with dedicated battery-lowering table/scissor lift, rated for full pack weight",
+      "min_capacity_kg": 5000,
+      "lift_points_note": "Battery-specific lowering points per OEM service manual; pack weight on large BEV packs (400-700+ kg) requires a rated fixture, not an improvised jack setup",
+      "battery_removal_capable": true
+    },
+    "special_tools": [
+      { "name": "HV insulation resistance tester", "category": "safety/diagnostic", "mandatory": true },
+      { "name": "Insulated tool set (1000V rated)", "category": "safety", "mandatory": true },
+      { "name": "HV glove tester (Class 0, 1000V AC / 1500V DC)", "category": "safety", "mandatory": true },
+      { "name": "Lockout-tagout (LOTO) kit for HV service disconnect", "category": "safety", "mandatory": true },
+      { "name": "Battery lowering/lifting table, full-pack-rated fixture", "category": "mechanical", "mandatory": true },
+      { "name": "Thermal imaging camera", "category": "diagnostic", "mandatory": true, "notes": "Mandatory at BEV hv_battery tier given full-pack thermal-runaway risk, unlike the recommended-only status at lower tiers" },
+      { "name": "Fire suppression rated for lithium battery (Class D-adjacent, per national EV workshop safety guidance)", "category": "safety", "mandatory": true }
+    ],
+    "_source": "industry_standard",
+    "_confidence": "confirmed"
+  }
+]

@@ -114,8 +114,44 @@ export interface IBrand {
   last_researched_at?: string;
   /** Flags a brand whose real-world existence as a currently-operating entity could not be confirmed by audit. */
   data_quality_flag?: string;
+  /** Official warranty terms, Chinese-source-only research (lib/warrantyResearch.ts) — see CLAUDE.md's PHEV split-warranty convention. Undefined means never researched. */
+  warranty_terms?: IWarrantyTerms;
+  /** Set only when a warranty_terms write is verified as actually applied. */
+  warranty_terms_last_researched_at?: string;
+  /** Official after-sales workshop/tooling requirements, Chinese-source-only research (lib/workshopResearch.ts). Undefined means never researched. */
+  workshop_requirements?: IWorkshopRequirements;
+  /** Set only when a workshop_requirements write is verified as actually applied. */
+  workshop_requirements_last_researched_at?: string;
   createdAt?: string;
   updatedAt?: string;
+}
+
+export interface IWarrantyTerms {
+  ice_component_years?: number;
+  ice_component_km?: number;
+  battery_years?: number;
+  battery_km?: number;
+  motor_years?: number;
+  motor_km?: number;
+  source?: string;
+  confidence?: Confidence;
+}
+
+export interface IWorkshopRequirements {
+  special_tools_list?: string[];
+  hv_safety_requirements?: string;
+  diagnostic_software_name?: string;
+  technician_certification_required?: string;
+  source?: string;
+  confidence?: Confidence;
+}
+
+export interface IKnownIssue {
+  issue_description: string;
+  affected_systems: string[];
+  frequency_signal?: string;
+  source: string;
+  confidence: Confidence;
 }
 
 export interface IPriceRange {
@@ -156,6 +192,16 @@ export interface IModel {
   notable_facts_confidence?: Confidence;
   /** Set by lib/applySpecUpdates.ts only when a notable_facts write is verified as actually applied (re-fetched and confirmed) — distinct from `updatedAt`, which changes on any write attempt regardless of whether it succeeded. Undefined means notable_facts has never been touched by the research pipeline (or there is none). */
   notable_facts_last_researched_at?: string;
+  /** How Chinese auto-media sources themselves frame this model's competitive position (e.g. "positioned against the Honda CR-V") — pulled directly from source framing, not our own inference. Chinese-source-only research (lib/positioningResearch.ts). */
+  market_positioning?: string;
+  market_positioning_source?: string;
+  market_positioning_confidence?: Confidence;
+  /** Set only when a market_positioning write is verified as actually applied. */
+  market_positioning_last_researched_at?: string;
+  /** Reported real-world failure patterns, sourced from 车质网/汽车投诉网 and similar Chinese-source-only complaint/quality sites (lib/issueResearch.ts). */
+  known_issues?: IKnownIssue[];
+  /** Set only when a known_issues write is verified as actually applied. */
+  known_issues_last_researched_at?: string;
   /** Set only by app/api/models/[id]/fetch-morocco-price/route.ts — a deterministic HTTP scrape of moteur.ma/wandaloo.com (see lib/moteurMaScraper.ts, lib/wandalooScraper.ts), never AI research. Undefined/false means this model has never been checked, or was checked and isn't listed on either site — the UI should omit the price chip in that case, not show an empty one. */
   morocco_price_dh?: number;
   morocco_price_source?: "moteur.ma" | "wandaloo.com";
@@ -165,7 +211,121 @@ export interface IModel {
   morocco_to_china_price_ratio?: number;
   /** When morocco_to_china_price_ratio was last (re)computed. */
   morocco_to_china_price_ratio_computed_at?: string;
+  /** Coarse powertrain bucket used to resolve workshop_standards (see lib/workshopResolution.ts) — deliberately coarser than Powertrain.energy_type: REEV/EREV folds into "PHEV" and MHEV folds into "HEV" for workshop-tooling purposes (both carry a comparable HV-safety/tooling profile to their bucket-mate), see PowertrainCategory's own comment. Derived from this model's Powertrain documents (highest-complexity one wins: BEV > PHEV > HEV > ICE) by scripts/backfill-powertrain-category.ts; never guessed when a model has no Powertrain docs yet. */
+  powertrain_category?: PowertrainCategory;
   /** Set by mongoose (`timestamps: true`); not touched by the research pipeline. Used as the "Original import data" fallback timestamp when last_researched_at/notable_facts_last_researched_at is unset. */
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+/**
+ * Coarse workshop-tooling bucket, distinct from Powertrain.energy_type (which has 6
+ * values: ICE/HEV/PHEV/BEV/REEV-EREV/MHEV). workshop_standards is seeded at this
+ * coarser 4-value grain because tooling/cert/lift requirements don't meaningfully
+ * differ between REEV/EREV and PHEV (both: ICE + traction battery + HV service needs)
+ * or between MHEV and HEV (both: low-voltage-assist, no HV battery service). Mapping:
+ * REEV/EREV -> "PHEV", MHEV -> "HEV". See CLAUDE.md before changing this mapping.
+ */
+export type PowertrainCategory = "ICE" | "HEV" | "PHEV" | "BEV";
+
+export const SERVICE_TIERS = ["routine", "major_repair", "hv_battery"] as const;
+export type ServiceTier = (typeof SERVICE_TIERS)[number];
+
+export interface ITechnicianCertification {
+  level?: string;
+  body?: string;
+  required_for?: string[];
+  retraining_interval_months?: number;
+}
+
+export interface ILiftRequirements {
+  type?: string;
+  min_capacity_kg?: number;
+  lift_points_note?: string;
+  battery_removal_capable?: boolean;
+}
+
+export interface ISpecialTool {
+  name: string;
+  category?: string;
+  mandatory?: boolean;
+  notes?: string;
+}
+
+/** Generic (non-brand-specific) reference doc: what a workshop needs for a given powertrain_category + service_tier combination, sourced from published industry/national standards rather than any one brand. See lib/workshopResolution.ts for how brand_workshop_overrides merges on top of this. */
+export interface IWorkshopStandard {
+  _id?: string;
+  powertrain_category: PowertrainCategory;
+  service_tier: ServiceTier;
+  technician_certification?: ITechnicianCertification;
+  lift_requirements?: ILiftRequirements;
+  special_tools?: ISpecialTool[];
+  /** "industry_standard" = generic national/industry-standard sourcing (this collection's default); "brand_specific" reserved for a doc seeded from one brand's published spec that turned out to generalize — expected to stay rare here, most brand-specific data belongs in brand_workshop_overrides instead. */
+  _source: "industry_standard" | "brand_specific";
+  _confidence: Confidence;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+/** Sparse, brand-specific deltas on top of the matching workshop_standards doc — only created where real brand-specific research (lib/workshopResearch.ts) actually found something beyond the generic standard. A brand+powertrain_category combination with no override here just uses workshop_standards as-is. */
+export interface IBrandWorkshopOverride {
+  _id?: string;
+  brand_id: string;
+  powertrain_category: PowertrainCategory;
+  /** Partial shape of IWorkshopStandard's researchable fields (technician_certification/lift_requirements/special_tools) — a field present here wins over workshop_standards field-by-field; special_tools is list-replace, not merged item-by-item (see lib/workshopResolution.ts). */
+  overrides: Partial<Pick<IWorkshopStandard, "technician_certification" | "lift_requirements" | "special_tools">>;
+  _source_url?: string;
+  _last_researched_at?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+/** One brand's real (not generic-industry) PHEV/REEV-SUV-specific service infrastructure profile —
+ *  see lib/phevSuvWorkshopResearch.ts and CLAUDE.md-adjacent instructions for this narrowly-scoped
+ *  pipeline. Deliberately separate from IWorkshopStandard/IBrandWorkshopOverride: those are the
+ *  generic cross-category workshop-tooling baseline; this collection exists because a buyer needed
+ *  actual manufacturer-specific data for PHEV/REEV SUVs specifically, not the industry baseline. Never
+ *  inherits/falls back to workshop_standards — a field genuinely not found stays null, it is not
+ *  filled from the generic doc. */
+export interface IBrandPhevSuvWorkshopProfile {
+  _id?: string;
+  brand_id: string;
+  diagnostic_interface?: {
+    tool_name?: string;
+    connector_type?: string;
+    software_platform?: string;
+    requires_dealer_account?: boolean;
+    source_url?: string;
+  };
+  lift_spec?: {
+    type?: string;
+    min_capacity_kg?: number;
+    battery_removal_capable?: boolean;
+    lift_point_notes?: string;
+    source_url?: string;
+  };
+  ppe_required?: Array<{
+    item: string;
+    spec?: string;
+    mandatory?: boolean;
+    source_url?: string;
+  }>;
+  technician_prerequisites?: Array<{
+    certification_name_cn?: string;
+    certification_name_en?: string;
+    issuing_body?: string;
+    minimum_grade?: string;
+    hv_endorsement_required?: boolean;
+    source_url?: string;
+  }>;
+  audit_checklist?: Array<{
+    check_point: string;
+    category?: "tooling" | "certification" | "facility" | "documentation";
+    source_url?: string;
+  }>;
+  _source: "brand_specific";
+  _confidence: Confidence;
+  _last_researched_at?: string;
   createdAt?: string;
   updatedAt?: string;
 }

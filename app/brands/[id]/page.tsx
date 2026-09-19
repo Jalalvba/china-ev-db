@@ -10,6 +10,7 @@ import MoroccoPriceFetcher from "@/app/MoroccoPriceFetcher";
 import MoroccoPriceChipLink from "@/app/MoroccoPriceChipLink";
 import { SegmentLabel } from "@/lib/segmentDisplay";
 import BrandAndModelDiscovery from "@/app/BrandAndModelDiscovery";
+import WarrantyResearch from "@/app/WarrantyResearch";
 import { formatRelativeTime } from "@/lib/relativeTime";
 
 export const dynamic = "force-dynamic";
@@ -106,6 +107,7 @@ export default async function BrandPage({
 
       <div className="flex flex-wrap items-start gap-4 mt-3">
         <BrandAndModelDiscovery brandId={brand._id as string} />
+        <WarrantyResearch brandId={brand._id as string} />
       </div>
 
       <h2 className="text-lg font-semibold mt-6 mb-1">

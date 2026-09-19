@@ -44,6 +44,40 @@ const BrandSchema = new Schema<IBrand>(
     last_researched_at: { type: Date },
     /** Flags a brand whose real-world existence as a currently-operating entity could not be confirmed by audit. */
     data_quality_flag: { type: String, trim: true },
+    /** Chinese-source-only research (lib/warrantyResearch.ts) — see CLAUDE.md's PHEV split-warranty convention. */
+    warranty_terms: {
+      type: new Schema(
+        {
+          ice_component_years: Number,
+          ice_component_km: Number,
+          battery_years: Number,
+          battery_km: Number,
+          motor_years: Number,
+          motor_km: Number,
+          source: { type: String, trim: true },
+          confidence: { type: String, enum: ["confirmed", "unconfirmed"] },
+        },
+        { _id: false }
+      ),
+    },
+    /** Set only by app/api/brands/[id]/apply-warranty/route.ts, only when verified as actually applied. */
+    warranty_terms_last_researched_at: { type: Date },
+    /** Chinese-source-only research (lib/workshopResearch.ts). */
+    workshop_requirements: {
+      type: new Schema(
+        {
+          special_tools_list: [{ type: String, trim: true }],
+          hv_safety_requirements: { type: String, trim: true },
+          diagnostic_software_name: { type: String, trim: true },
+          technician_certification_required: { type: String, trim: true },
+          source: { type: String, trim: true },
+          confidence: { type: String, enum: ["confirmed", "unconfirmed"] },
+        },
+        { _id: false }
+      ),
+    },
+    /** Set only by app/api/brands/[id]/apply-workshop/route.ts, only when verified as actually applied. */
+    workshop_requirements_last_researched_at: { type: Date },
   },
   { timestamps: true }
 );

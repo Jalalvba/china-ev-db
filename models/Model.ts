@@ -21,6 +21,10 @@ export const SEGMENTS = [
 
 export const PRODUCTION_STATUSES = ["in production", "discontinued", "upcoming"];
 
+// Coarse workshop-tooling bucket — see IModel.powertrain_category's doc comment in
+// types/index.ts for the REEV/EREV -> PHEV and MHEV -> HEV folding rationale.
+export const POWERTRAIN_CATEGORIES = ["ICE", "HEV", "PHEV", "BEV"];
+
 const PRICE_RANGE_SCHEMA = new Schema(
   {
     min: Number,
@@ -63,6 +67,28 @@ const ModelSchema = new Schema<ModelDoc>(
     notable_facts_confidence: { type: String, enum: CONFIDENCE_VALUES },
     /** Set only by lib/applySpecUpdates.ts, only when a notable_facts write is verified as actually applied — see the comment on IModel.notable_facts_last_researched_at in types/index.ts. */
     notable_facts_last_researched_at: { type: Date },
+    // Chinese-source-only research (lib/positioningResearch.ts) — see CLAUDE.md's
+    // AI-output-language rule: market_positioning itself is always English,
+    // translated from the Chinese source's own framing.
+    market_positioning: { type: String, trim: true },
+    market_positioning_source: { type: String, trim: true },
+    market_positioning_confidence: { type: String, enum: CONFIDENCE_VALUES },
+    /** Set only by app/api/models/[id]/apply-positioning/route.ts, only when verified as actually applied. */
+    market_positioning_last_researched_at: { type: Date },
+    // Chinese-source-only research (lib/issueResearch.ts), prioritizing
+    // 车质网/汽车投诉网 — see that module's header comment.
+    known_issues: [
+      {
+        _id: false,
+        issue_description: { type: String, trim: true, required: true },
+        affected_systems: [{ type: String, trim: true }],
+        frequency_signal: { type: String, trim: true },
+        source: { type: String, trim: true, required: true },
+        confidence: { type: String, enum: CONFIDENCE_VALUES, required: true },
+      },
+    ],
+    /** Set only by app/api/models/[id]/apply-issues/route.ts, only when verified as actually applied. */
+    known_issues_last_researched_at: { type: Date },
     // Written only by app/api/models/[id]/fetch-morocco-price/route.ts — a
     // deterministic scrape of moteur.ma/wandaloo.com, never the AI. Kept
     // separate from MoroccoListing (which is keyed by brand/model name and
@@ -74,6 +100,9 @@ const ModelSchema = new Schema<ModelDoc>(
     morocco_price_confirmed: { type: Boolean, default: false },
     morocco_to_china_price_ratio: { type: Number },
     morocco_to_china_price_ratio_computed_at: { type: Date },
+    // Derived from this model's Powertrain docs by scripts/backfill-powertrain-category.ts,
+    // not researched directly — see IModel.powertrain_category's doc comment in types/index.ts.
+    powertrain_category: { type: String, enum: POWERTRAIN_CATEGORIES },
   },
   { timestamps: true }
 );

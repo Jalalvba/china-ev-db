@@ -1,0 +1,155 @@
+{
+  "Geely": {
+    "brandName": "Geely",
+    "lastCheckedAt": "2026-09-18T00:39:43.952Z",
+    "queriesRun": [
+      "Geely 经销商招募 售后服务标准",
+      "吉利 特约维修站 认证要求",
+      "吉利 新能源 维修资质 培训"
+    ]
+  },
+  "Changan": {
+    "brandName": "Changan",
+    "lastCheckedAt": "2026-09-18T00:40:09.062Z",
+    "queriesRun": [
+      "Changan 经销商招募 售后服务标准",
+      "长安 特约维修站 认证要求",
+      "长安 新能源 维修资质 培训"
+    ]
+  },
+  "Zeekr": {
+    "brandName": "Zeekr",
+    "lastCheckedAt": "2026-09-18T00:40:42.036Z",
+    "queriesRun": [
+      "Zeekr 经销商招募 售后服务标准",
+      "极氪 特约维修站 认证要求",
+      "极氪 新能源 维修资质 培训"
+    ]
+  },
+  "Soueast": {
+    "brandName": "Soueast",
+    "lastCheckedAt": "2026-09-18T00:41:16.237Z",
+    "queriesRun": [
+      "Soueast 经销商招募 售后服务标准",
+      "东南汽车 特约维修站 认证要求",
+      "东南汽车 新能源 维修资质 培训"
+    ]
+  },
+  "DFSK": {
+    "brandName": "DFSK",
+    "lastCheckedAt": "2026-09-18T00:41:41.625Z",
+    "queriesRun": [
+      "DFSK 经销商招募 售后服务标准",
+      "东风小康 特约维修站 认证要求",
+      "东风小康 新能源 维修资质 培训"
+    ]
+  },
+  "Dongfeng": {
+    "brandName": "Dongfeng",
+    "lastCheckedAt": "2026-09-18T00:42:11.252Z",
+    "queriesRun": [
+      "Dongfeng 经销商招募 售后服务标准",
+      "东风 特约维修站 认证要求",
+      "东风 新能源 维修资质 培训"
+    ]
+  },
+  "Exeed": {
+    "brandName": "Exeed",
+    "lastCheckedAt": "2026-09-18T00:42:31.195Z",
+    "queriesRun": [
+      "Exeed 经销商招募 售后服务标准",
+      "星途 特约维修站 认证要求",
+      "星途 新能源 维修资质 培训"
+    ]
+  },
+  "BAIC": {
+    "brandName": "BAIC",
+    "lastCheckedAt": "2026-09-18T00:42:52.904Z",
+    "queriesRun": [
+      "BAIC 经销商招募 售后服务标准",
+      "北京汽车 特约维修站 认证要求",
+      "北京汽车 新能源 维修资质 培训"
+    ]
+  },
+  "XPeng": {
+    "brandName": "XPeng",
+    "lastCheckedAt": "2026-09-18T00:43:23.152Z",
+    "queriesRun": [
+      "XPeng 经销商招募 售后服务标准",
+      "小鹏 特约维修站 认证要求",
+      "小鹏 新能源 维修资质 培训"
+    ]
+  },
+  "Jetour": {
+    "brandName": "Jetour",
+    "lastCheckedAt": "2026-09-18T00:43:45.623Z",
+    "queriesRun": [
+      "Jetour 经销商招募 售后服务标准",
+      "捷途 特约维修站 认证要求",
+      "捷途 新能源 维修资质 培训"
+    ]
+  },
+  "Lynk & Co": {
+    "brandName": "Lynk & Co",
+    "lastCheckedAt": "2026-09-18T00:44:07.964Z",
+    "queriesRun": [
+      "Lynk & Co 经销商招募 售后服务标准",
+      "领克 特约维修站 认证要求",
+      "领克 新能源 维修资质 培训"
+    ]
+  },
+  "Leapmotor": {
+    "brandName": "Leapmotor",
+    "lastCheckedAt": "2026-09-18T00:44:33.111Z",
+    "queriesRun": [
+      "Leapmotor 经销商招募 售后服务标准",
+      "零跑 特约维修站 认证要求",
+      "零跑 新能源 维修资质 培训"
+    ]
+  },
+  "GWM (Great Wall Motor)": {
+    "brandName": "GWM (Great Wall Motor)",
+    "lastCheckedAt": "2026-09-18T00:44:57.002Z",
+    "queriesRun": [
+      "GWM (Great Wall Motor) 经销商招募 售后服务标准",
+      "长城 特约维修站 认证要求",
+      "长城 新能源 维修资质 培训"
+    ]
+  },
+  "Denza": {
+    "brandName": "Denza",
+    "lastCheckedAt": "2026-09-18T00:45:21.115Z",
+    "queriesRun": [
+      "Denza 经销商招募 售后服务标准",
+      "Denza 特约维修站 认证要求",
+      "Denza 新能源 维修资质 培训"
+    ]
+  },
+  "BYD": {
+    "brandName": "BYD",
+    "lastCheckedAt": "2026-09-18T00:45:45.548Z",
+    "queriesRun": [
+      "BYD 经销商招募 售后服务标准",
+      "比亚迪 特约维修站 认证要求",
+      "比亚迪 新能源 维修资质 培训"
+    ]
+  },
+  "Seres": {
+    "brandName": "Seres",
+    "lastCheckedAt": "2026-09-18T00:46:08.128Z",
+    "queriesRun": [
+      "Seres 经销商招募 售后服务标准",
+      "赛力斯 特约维修站 认证要求",
+      "赛力斯 新能源 维修资质 培训"
+    ]
+  },
+  "Jaecoo": {
+    "brandName": "Jaecoo",
+    "lastCheckedAt": "2026-09-18T00:46:35.104Z",
+    "queriesRun": [
+      "Jaecoo 经销商招募 售后服务标准",
+      "杰酷 特约维修站 认证要求",
+      "杰酷 新能源 维修资质 培训"
+    ]
+  }
+}
