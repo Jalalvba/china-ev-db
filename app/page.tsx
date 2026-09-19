@@ -4,6 +4,7 @@ import Brand from "@/models/Brand";
 import ModelSchema from "@/models/Model";
 import MoroccoListing from "@/models/MoroccoListing";
 import { groupBrands } from "@/lib/brandGrouping";
+import { getCheapestMoroccoPriceByBrandId } from "@/lib/moroccoPrices";
 import { MOROCCO_BRAND_ALIAS } from "@/lib/moroccoBrandAlias";
 import BrandGroupList from "./BrandGroupList";
 import type { IBrand } from "@/types";
@@ -45,23 +46,6 @@ async function getMoroccoDealersByBrandName(): Promise<Record<string, string>> {
     // aren't guaranteed to match exactly (import-morocco.ts itself matches
     // Brand names case-insensitively for the same reason).
     result[brandName.toLowerCase()] = [...dealers][0];
-  }
-  return result;
-}
-
-/** Brand _id (as string) -> cheapest confirmed Morocco price (DH) among its models — used both to hide brands with no Morocco pricing data by default (same "hidden unless asked for" pattern as discontinued/bankrupt brands below) and to sort/display brands cheapest-to-most-expensive. */
-async function getCheapestMoroccoPriceByBrandId(): Promise<Record<string, number>> {
-  await connectToDatabase();
-  const models = await ModelSchema.find(
-    { morocco_price_confirmed: true, morocco_price_dh: { $exists: true, $ne: null } },
-    { brand_id: 1, morocco_price_dh: 1 }
-  ).lean();
-  const result: Record<string, number> = {};
-  for (const m of models) {
-    const brandId = String(m.brand_id);
-    if (result[brandId] === undefined || m.morocco_price_dh! < result[brandId]) {
-      result[brandId] = m.morocco_price_dh!;
-    }
   }
   return result;
 }
