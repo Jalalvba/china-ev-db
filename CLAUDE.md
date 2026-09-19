@@ -303,7 +303,13 @@ row with a "N trims" chip (names on hover); a single-trim row keeps its trim nam
 header reads "V spec variants · T trims" when anything collapsed. The fingerprint is deliberately
 narrower than `specGroupKey` (model detail/Compare): it ignores rating/charging fields
 (`ev_range_km`, dc/ac kW, supplier…) that vary by trim marketing or are null from research gaps,
-and it never collapses trims with no engine/motor/battery/gearbox data (unresearched ≠ identical). Both show an explicit "active filters" summary.
+and it never collapses trims with no engine/motor/battery/gearbox data (unresearched ≠ identical).
+Each model card shows ONE row by default — the first spec variant in the active sort order (highest
+score under Best match; lowest price/HP/range/battery otherwise, i.e. the row that explains the
+card's position) — with a per-card "Show N other variants" toggle (`ModelCard` in
+`app/search/specs/page.tsx`; expanded state survives re-sorting). A card with one variant has no
+toggle. Within a card, an unpriced trim ranks at the model's price-range minimum under the Price
+sort (same assumption that ranks the card), so the default row never contradicts the card's rank. Both show an explicit "active filters" summary.
 `app/api/powertrains/route.ts`'s `GET` refuses an entirely unfiltered request (400) —
 every real caller always has at least one criterion.
 

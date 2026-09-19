@@ -189,6 +189,121 @@ type FilterKey = (typeof FILTER_KEYS)[number];
  * back/forward restores the exact filtered view instead of resetting to
  * empty, and the filtered view is bookmarkable/shareable as a side benefit.
  */
+/**
+ * One row for one hardware-spec variant (1+ trims sharing an identical fingerprint — see
+ * hardwareSpecKey). A single-trim variant keeps its trim name (a real, distinct spec); a
+ * multi-trim variant drops the marketing names and shows an "N trims" chip (names on hover).
+ */
+function VariantRow({ trims, modelHref, modelPriceLabel }: { trims: PopulatedPowertrain[]; modelHref: string; modelPriceLabel: string | undefined }) {
+  const rep = trims[0];
+  const multi = trims.length > 1;
+  const span = variantPriceSpan(trims);
+  const priceLabel =
+    span.min == null
+      ? undefined
+      : formatTrimPrice({ trim_price_min_usd: span.min, trim_price_max_usd: span.max, trim_price_confidence: span.confirmed ? "confirmed" : "unconfirmed" });
+  // Only worth a slot when it says something the model-level price line doesn't.
+  const showPrice = !!priceLabel && priceLabel !== modelPriceLabel;
+  const partialPrice = multi && span.priced > 0 && span.priced < span.total;
+  return (
+    <Link href={modelHref} className="flex items-start justify-between gap-3 px-4 py-2 hover:bg-zinc-50 dark:hover:bg-zinc-800/40 transition">
+      <div className="min-w-0">
+        {!multi && rep.trim_name && <p className="text-xs font-medium text-zinc-800 dark:text-zinc-200 truncate">{rep.trim_name}</p>}
+        <p className="text-xs text-zinc-500 dark:text-zinc-400">
+          {compactSpecLabel(rep)}
+          {multi && COLLAPSED_ROW_LABEL === "with_count" && (
+            <span
+              className="ml-1.5 whitespace-nowrap rounded bg-zinc-100 dark:bg-zinc-800 px-1.5 py-0.5 text-[10px] font-medium text-zinc-500 dark:text-zinc-400"
+              title={trims.map((t) => t.trim_name ?? "(unnamed)").join("\n")}
+            >
+              {trims.length} trims
+            </span>
+          )}
+        </p>
+      </div>
+      {showPrice && (
+        <span className="text-right text-xs font-medium text-zinc-800 dark:text-zinc-200 whitespace-nowrap">
+          {priceLabel}
+          {partialPrice && <span className="block font-normal text-[10px] text-zinc-400 dark:text-zinc-500">{span.priced} of {span.total} priced</span>}
+        </span>
+      )}
+    </Link>
+  );
+}
+
+/**
+ * A model card: model-level facts once, then ONE row by default — the first spec variant in
+ * the active sort order (highest score under Best match; lowest price/etc. under the other
+ * sorts — the row that explains why this card sits where it does). The remaining variants sit
+ * behind a per-card expand button. A card with a single variant has nothing to hide and shows
+ * no button. Expanded state is local to the card, keyed by model id, so it survives re-sorting.
+ */
+function ModelCard({ g }: { g: ModelGroup<PopulatedPowertrain> }) {
+  const [expanded, setExpanded] = useState(false);
+  const model = g.trims[0].model_id;
+  const modelPriceLabel = formatChinaPriceUsd(model?.price_range);
+  const modelHref = `/models/${g.modelId}`;
+  const [featured, ...others] = g.variants;
+  const otherLabel = `${others.length} other variant${others.length === 1 ? "" : "s"}`;
+
+  return (
+    <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg overflow-hidden">
+      {/* Model-level facts, shown ONCE per card — never repeated per trim. */}
+      <Link href={modelHref} className="block p-4 pb-3 hover:bg-zinc-50 dark:hover:bg-zinc-800/40 transition">
+        <div className="flex items-baseline justify-between gap-2">
+          <h3 className="font-semibold">
+            {model?.brand_id?.name} {model?.name}
+          </h3>
+          <span className="text-xs text-zinc-400 dark:text-zinc-500 whitespace-nowrap">{cardCountLabel(g.variants.length, g.trims.length)}</span>
+        </div>
+        {model?.segment && (
+          <p className="text-xs font-medium text-zinc-400 dark:text-zinc-500 mb-1">
+            <SegmentLabel model={model} />
+          </p>
+        )}
+        <div className="text-xs text-zinc-600 dark:text-zinc-400 space-y-0.5">
+          {modelPriceLabel ? (
+            <p>
+              <span className="font-medium text-zinc-800 dark:text-zinc-200">{modelPriceLabel}</span>
+            </p>
+          ) : (
+            <p className="italic">Price not available</p>
+          )}
+          {model?.morocco_price_dh != null && (
+            <p>
+              🇲🇦 {model.morocco_price_dh.toLocaleString()} DH
+              {!model.morocco_price_confirmed && " (unconfirmed)"}
+            </p>
+          )}
+        </div>
+      </Link>
+
+      <ul className="border-t border-zinc-100 dark:border-zinc-800 divide-y divide-zinc-100 dark:divide-zinc-800">
+        <li>
+          <VariantRow trims={featured.trims} modelHref={modelHref} modelPriceLabel={modelPriceLabel} />
+        </li>
+        {expanded &&
+          others.map((v, i) => (
+            <li key={v.trims[0]._id ?? i}>
+              <VariantRow trims={v.trims} modelHref={modelHref} modelPriceLabel={modelPriceLabel} />
+            </li>
+          ))}
+      </ul>
+
+      {others.length > 0 && (
+        <button
+          type="button"
+          onClick={() => setExpanded((e) => !e)}
+          aria-expanded={expanded}
+          className="w-full border-t border-zinc-100 dark:border-zinc-800 px-4 py-2 text-left text-xs font-medium text-blue-600 dark:text-blue-400 hover:bg-zinc-50 dark:hover:bg-zinc-800/40 transition"
+        >
+          {expanded ? "Hide other variants ▴" : `Show ${otherLabel} ▾`}
+        </button>
+      )}
+    </div>
+  );
+}
+
 function SpecSearchInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -854,88 +969,9 @@ function SpecSearchInner() {
             </label>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 items-start">
-            {groups.map((g) => {
-              const model = g.trims[0].model_id;
-              const chinaPriceUsdLabel = formatChinaPriceUsd(model?.price_range);
-              const modelHref = `/models/${g.modelId}`;
-              return (
-                <div key={g.modelId} className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg overflow-hidden">
-                  {/* Model-level facts, shown ONCE per card — never repeated per trim. */}
-                  <Link href={modelHref} className="block p-4 pb-3 hover:bg-zinc-50 dark:hover:bg-zinc-800/40 transition">
-                    <div className="flex items-baseline justify-between gap-2">
-                      <h3 className="font-semibold">
-                        {model?.brand_id?.name} {model?.name}
-                      </h3>
-                      <span className="text-xs text-zinc-400 dark:text-zinc-500 whitespace-nowrap">{cardCountLabel(g.variants.length, g.trims.length)}</span>
-                    </div>
-                    {model?.segment && (
-                      <p className="text-xs font-medium text-zinc-400 dark:text-zinc-500 mb-1">
-                        <SegmentLabel model={model} />
-                      </p>
-                    )}
-                    <div className="text-xs text-zinc-600 dark:text-zinc-400 space-y-0.5">
-                      {chinaPriceUsdLabel ? (
-                        <p>
-                          <span className="font-medium text-zinc-800 dark:text-zinc-200">{chinaPriceUsdLabel}</span>
-                        </p>
-                      ) : (
-                        <p className="italic">Price not available</p>
-                      )}
-                      {model?.morocco_price_dh != null && (
-                        <p>
-                          🇲🇦 {model.morocco_price_dh.toLocaleString()} DH
-                          {!model.morocco_price_confirmed && " (unconfirmed)"}
-                        </p>
-                      )}
-                    </div>
-                  </Link>
-
-                  {/* One compact row per matching trim. */}
-                  <ul className="border-t border-zinc-100 dark:border-zinc-800 divide-y divide-zinc-100 dark:divide-zinc-800">
-                    {g.variants.map((v, vi) => {
-                      const rep = v.trims[0];
-                      const collapsed = v.trims.length > 1;
-                      // One row per DISTINCT hardware spec. A single-trim row keeps its trim name (a
-                      // real spec difference worth naming); a collapsed row drops the marketing names.
-                      const span = variantPriceSpan(v.trims);
-                      const priceLabel =
-                        span.min == null
-                          ? undefined
-                          : formatTrimPrice({ trim_price_min_usd: span.min, trim_price_max_usd: span.max, trim_price_confidence: span.confirmed ? "confirmed" : "unconfirmed" });
-                      // Only worth a slot when it says something the model-level line above doesn't.
-                      const showPrice = !!priceLabel && priceLabel !== chinaPriceUsdLabel;
-                      const partialPrice = collapsed && span.priced > 0 && span.priced < span.total;
-                      return (
-                        <li key={rep._id ?? vi}>
-                          <Link href={modelHref} className="flex items-start justify-between gap-3 px-4 py-2 hover:bg-zinc-50 dark:hover:bg-zinc-800/40 transition">
-                            <div className="min-w-0">
-                              {!collapsed && rep.trim_name && <p className="text-xs font-medium text-zinc-800 dark:text-zinc-200 truncate">{rep.trim_name}</p>}
-                              <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                                {compactSpecLabel(rep)}
-                                {collapsed && COLLAPSED_ROW_LABEL === "with_count" && (
-                                  <span
-                                    className="ml-1.5 whitespace-nowrap rounded bg-zinc-100 dark:bg-zinc-800 px-1.5 py-0.5 text-[10px] font-medium text-zinc-500 dark:text-zinc-400"
-                                    title={v.trims.map((t) => t.trim_name ?? "(unnamed)").join("\n")}
-                                  >
-                                    {v.trims.length} trims
-                                  </span>
-                                )}
-                              </p>
-                            </div>
-                            {showPrice && (
-                              <span className="text-right text-xs font-medium text-zinc-800 dark:text-zinc-200 whitespace-nowrap">
-                                {priceLabel}
-                                {partialPrice && <span className="block font-normal text-[10px] text-zinc-400 dark:text-zinc-500">{span.priced} of {span.total} priced</span>}
-                              </span>
-                            )}
-                          </Link>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                </div>
-              );
-            })}
+            {groups.map((g) => (
+              <ModelCard key={g.modelId} g={g} />
+            ))}
           </div>
         </>
       )}

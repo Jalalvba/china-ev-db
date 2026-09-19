@@ -13,13 +13,15 @@
 //     cheap trim the user filtered out.
 //   - Best match: MODELS are ordered by their BEST-scoring trim (highest score first), trims
 //     inside by score descending.
-//   - A trim missing the metric sorts last WITHIN its card. For the MODEL's ordering key,
-//     `modelFallback` (e.g. the model's own price-range minimum) also counts whenever ANY
-//     matching trim lacks the metric: an unpriced trim's real price is unknown, and the best
-//     information we have is the model's advertised range — the same figure printed on the
-//     card. Without this, a model with two priced expensive trims and five unpriced cheap ones
-//     would rank by the expensive two while its card visibly says "from $27k" (Galaxy M9).
-//     A model with no value and no fallback sorts last.
+//   - A trim's EFFECTIVE metric is its own value, else `modelFallback` (e.g. the model's own
+//     price-range minimum). An unpriced trim's real price is unknown, and the best information
+//     we have is the model's advertised range — the same figure printed on the card. This is
+//     used for BOTH the model's ordering key (min effective value) and the order of trims
+//     inside the card, so the card's FIRST row — the one Tech Search now shows by default — is
+//     always the row that explains the card's position. Without it, a model with two priced
+//     expensive trims and five unpriced cheap ones would rank by the expensive two while its
+//     card says "from $27k" (Galaxy M9), or would feature the expensive variant.
+//     A trim with neither a value nor a fallback sorts last; so does a model with none.
 //   - Ties keep the API's original order (stable).
 
 export interface GroupableTrim {
@@ -78,12 +80,10 @@ export function groupTrimsByModel<T extends GroupableTrim>(trims: T[], mode: Gro
       ordered = [...list].sort((a, b) => mode.scores[b.idx] - mode.scores[a.idx] || a.idx - b.idx);
       key = Math.max(...list.map((x) => mode.scores[x.idx]));
     } else {
-      ordered = [...list].sort((a, b) => ascWithMissingLast(mode.metric(a.t), mode.metric(b.t)) || a.idx - b.idx);
-      const own = list.map((x) => mode.metric(x.t)).filter((v): v is number => v != null);
-      const anyMissing = own.length < list.length;
-      const fallback = mode.modelFallback && anyMissing ? list.map((x) => mode.modelFallback!(x.t)).filter((v): v is number => v != null) : [];
-      const candidates = [...own, ...fallback];
-      key = candidates.length > 0 ? Math.min(...candidates) : undefined;
+      const effective = (t: T) => mode.metric(t) ?? mode.modelFallback?.(t);
+      ordered = [...list].sort((a, b) => ascWithMissingLast(effective(a.t), effective(b.t)) || a.idx - b.idx);
+      const values = list.map((x) => effective(x.t)).filter((v): v is number => v != null);
+      key = values.length > 0 ? Math.min(...values) : undefined;
     }
     return { modelId, ordered, key, firstIdx: Math.min(...list.map((x) => x.idx)) };
   });
