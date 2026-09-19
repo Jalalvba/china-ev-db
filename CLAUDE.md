@@ -159,6 +159,16 @@ emptied out): `Yangwang`, `XPeng`, `Li Auto`, `Zeekr`, `Leapmotor`, `AITO`, `Lux
 
 Backup of the pre-scoping DB (before any of the three passes): `backups/backup_20260918_020737/`.
 
+**Stale "PHEV/REEV SUV" wording (not yet cleaned up)**: the workshop research code
+was written before pass 3 excluded REEV/EREV, so it still says "PHEV/REEV SUV" and
+treats REEV as part of PHEV — `scripts/research-phev-suv-workshop.ts`,
+`scripts/apply-phev-suv-workshop-batch.ts`, `lib/phevSuvWorkshopResearch.ts`
+(prompts), `models/BrandPhevSuvWorkshopProfile.ts`, and the REEV/EREV → PHEV fold in
+`scripts/backfill-powertrain-category.ts`. Harmless against current data (no REEV
+models remain) but out of date with the actual scope; worth a rename/cleanup pass
+sometime. The scoping deletes themselves were done via one-off `node -e` commands and
+are not in git — only this write-up and the backup record them.
+
 **Known gap #1, not yet acted on**: 25 of the kept models have **zero Powertrain trim
 docs at all** — their PHEV status was confirmed via external web research (official
 brand pages/press), not from any trim doc in this database, because they had no trim
