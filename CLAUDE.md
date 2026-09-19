@@ -256,6 +256,51 @@ filter applied to both sides at once, narrowing the model list before it reaches
 either picker; a selection that falls outside a newly-narrowed range is cleared
 automatically. Same "state lives in the URL" pattern as every other Compare control.
 
+## Model-level research categories: market_trend, known_issues regions, technical_bulletins, recalls
+
+Added on top of `market_positioning`/`known_issues` (2026-09-19). Types in
+`types/researchCategories.ts`; every ingestion path (live research, apply routes, the
+manual importer) validates through `lib/categoryValidators.ts` so a shape/enum rule can't
+drift between them. Research modules: `lib/marketTrendResearch.ts`, `lib/globalIssueResearch.ts`,
+`lib/bulletinResearch.ts`, `lib/recallResearch.ts` (shared plumbing in
+`lib/categoryResearch.ts`); all writes go through `lib/applyModelFields.ts` (re-fetch verified).
+
+- **known_issues is ONE array with a `region` tag** (`"china"` | `"global"`), not two fields.
+  Chinese-market complaint data (车质网/汽车投诉网) and international/export-market complaints
+  are different populations and are never silently merged: dedupe is per
+  `(region, issue_description)`, each button writes only its own region, and
+  `/known-issues` + the model page label/group by region. An item with **no `region`** predates
+  the field and is treated as `"china"` on read (every such item came from the Chinese-source-only
+  pipeline); `scripts/backfill-known-issue-region.ts` (dry-run by default, `--apply` to write)
+  tags them explicitly — as of 2026-09-19 the DB had zero known_issues, so it is a no-op.
+- **Two source guards beyond the base Chinese allowlist** (`lib/chineseSourceGuard.ts`):
+  1. **Manufacturer service domains, bulletins only** — `filterToChineseSources(urls, { includeManufacturer: true })`.
+     TSBs live on the maker's own after-sales portals; without these the category would almost
+     always be empty. Even with them, sparse/empty results are expected and correct (most TSBs are
+     dealer-portal-only). NOT applied to warranty/positioning/issues/market_trend. The domain list
+     is not exhaustive — add one when a real bulletin source turns up on a missing domain.
+  2. **Global issues use the inverse filter** — only URLs OUTSIDE the Chinese allowlist count as
+     grounding, so a Chinese complaint-platform hit can't launder in as "global" evidence.
+- **Recalls are deliberately NOT source-restricted** (regulators, manufacturer releases,
+  international coverage). Grounding = any real search result; `source_url` is still required per
+  item. `market_trend` and `technical_bulletins` use the Chinese guard; `known_issues` china uses it too.
+- **`affected_component` is the existing systems enum + free-text `component_detail`**, shared by
+  known_issues/bulletins/recalls so all three group the same way.
+- **Recall tools are LINKS, not a schema**: `required_tools.uses_brand_diagnostic_interface` points at
+  the brand's `IBrandPhevSuvWorkshopProfile.diagnostic_interface`; `special_tool_names` are names from
+  the model's resolved workshop `special_tools` (`lib/workshopResolution.ts`); `extra_tool_note` is only
+  for tooling beyond the brand's standard kit. Live research does not populate `special_tool_names`
+  (it never sees the resolved list) — that comes from manual import/entry.
+- **Manual import is a separate path** from the spec/powertrain round-trip: envelope
+  `research-categories-v1` (`lib/researchCategoriesImport.ts`, routes under
+  `app/api/models/[id]/manual-categories/`, UI in `ManualCategoryExportButton`/`ManualCategoryImporter`).
+  Append-and-dedupe only (no delete path); an absent category key means "not researched", an empty
+  array/null means "researched, nothing found" — both write nothing. A pasted item marked "confirmed"
+  is downgraded to "unconfirmed" if its `source_url` is missing or off that category's allowlist.
+
+Status as of 2026-09-19: built and build/parser-tested, but live research and the review modals have
+**not yet been exercised** — first real runs are still to do.
+
 ## Schema/prompt drift guard
 
 `types/canonicalPowertrain.ts`'s `CANONICAL_POWERTRAIN_FIELD_TEMPLATE` is the single

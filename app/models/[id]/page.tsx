@@ -14,7 +14,12 @@ import { formatRelativeTime } from "@/lib/relativeTime";
 import TechSpecUpdater from "@/app/TechSpecUpdater";
 import PositioningResearch from "@/app/PositioningResearch";
 import IssueResearch from "@/app/IssueResearch";
+import CategoryResearch from "@/app/CategoryResearch";
 import ManualResearchImporter from "@/app/ManualResearchImporter";
+import ManualCategoryImporter from "@/app/ManualCategoryImporter";
+import ManualCategoryExportButton from "@/app/ManualCategoryExportButton";
+import ResearchCategoriesPanel from "@/app/ResearchCategoriesPanel";
+import BrandPhevSuvWorkshopProfile from "@/models/BrandPhevSuvWorkshopProfile";
 import ExportForManualResearchButton from "@/app/ExportForManualResearchButton";
 import MoroccoPriceFetcher from "@/app/MoroccoPriceFetcher";
 import { formatChinaPriceUsd, formatTrimPrice } from "@/lib/priceDisplay";
@@ -27,13 +32,18 @@ type PopulatedModel = Omit<IModel, "brand_id"> & { brand_id: IBrand };
 
 async function getData(
   id: string
-): Promise<{ model: PopulatedModel; powertrains: IPowertrain[]; moroccoListing: IMoroccoListing | null } | null> {
+): Promise<{ model: PopulatedModel; powertrains: IPowertrain[]; moroccoListing: IMoroccoListing | null; brandDiagnosticTool?: string } | null> {
   await connectToDatabase();
   const model = await ModelSchema.findById(id).populate("brand_id").lean();
   if (!model) return null;
   const powertrains = await Powertrain.find({ model_id: id }).lean();
   const moroccoListing = await MoroccoListing.findOne({ model_id: id }).lean();
-  return JSON.parse(JSON.stringify({ model, powertrains, moroccoListing }));
+  // Only what a recall's `uses_brand_diagnostic_interface` flag links to — see IRecallRequiredTools.
+  const workshopProfile = (await BrandPhevSuvWorkshopProfile.findOne(
+    { brand_id: (model.brand_id as unknown as { _id: unknown })._id },
+    { "diagnostic_interface.tool_name": 1 }
+  ).lean()) as { diagnostic_interface?: { tool_name?: string } } | null;
+  return JSON.parse(JSON.stringify({ model, powertrains, moroccoListing, brandDiagnosticTool: workshopProfile?.diagnostic_interface?.tool_name }));
 }
 
 /** Distinguishes AI-researched data from data that's never been touched by the research pipeline (still whatever scripts/seed.ts or scripts/import-deepseek.ts originally wrote). */
@@ -61,7 +71,7 @@ export default async function ModelPage({ params }: { params: Promise<{ id: stri
   const { id } = await params;
   const data = await getData(id);
   if (!data) notFound();
-  const { model, powertrains, moroccoListing } = data;
+  const { model, powertrains, moroccoListing, brandDiagnosticTool } = data;
   const brand = model.brand_id;
 
   // Model.price_range is a "starting from" min-to-max summary DERIVED from
@@ -127,11 +137,18 @@ export default async function ModelPage({ params }: { params: Promise<{ id: stri
         <TechSpecUpdater scope="model" id={model._id as string} />
         <PositioningResearch modelId={model._id as string} />
         <IssueResearch modelId={model._id as string} />
+        <CategoryResearch modelId={model._id as string} category="known_issues_global" />
+        <CategoryResearch modelId={model._id as string} category="market_trend" />
+        <CategoryResearch modelId={model._id as string} category="technical_bulletins" />
+        <CategoryResearch modelId={model._id as string} category="recalls" />
         <MoroccoPriceFetcher id={model._id as string} />
         <ExportForManualResearchButton modelDbId={model._id as string} />
+        <ManualCategoryExportButton modelDbId={model._id as string} />
       </div>
 
       <ManualResearchImporter modelDbId={model._id as string} />
+      <ManualCategoryImporter modelDbId={model._id as string} />
+      <ResearchCategoriesPanel model={model} brandDiagnosticTool={brandDiagnosticTool} />
 
       {moroccoListing && (
         <div className="mt-3 p-3 rounded-lg bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-sm">

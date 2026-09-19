@@ -70,7 +70,7 @@ export default function IssueResearch({ modelId, compact }: Props) {
       const res = await fetch(`/api/models/${modelId}/apply-issues`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ known_issues: selected }),
+        body: JSON.stringify({ region: "china", known_issues: selected }),
       });
       const data = await res.json();
       if (!res.ok || data.applied === false) throw new Error(data?.error ?? `Request failed with status ${res.status}`);
@@ -101,7 +101,7 @@ export default function IssueResearch({ modelId, compact }: Props) {
             handleResearch();
           }}
           disabled={phase === "loading"}
-          title="Research known issues (Chinese sources only, prioritizing 车质网/汽车投诉网)"
+          title="Research known issues — China (Chinese sources only, prioritizing 车质网/汽车投诉网)"
           className="relative z-10 shrink-0 w-7 h-7 flex items-center justify-center rounded-full bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-sm disabled:opacity-60"
         >
           {phase === "loading" ? <Spinner /> : "⚠️"}
@@ -113,7 +113,7 @@ export default function IssueResearch({ modelId, compact }: Props) {
           className="px-3 py-1.5 rounded-md bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 disabled:opacity-60 transition inline-flex items-center gap-2"
         >
           {phase === "loading" && <Spinner />}
-          ⚠️ Research known issues
+          ⚠️ Research known issues (China)
         </button>
       )}
 
@@ -124,7 +124,7 @@ export default function IssueResearch({ modelId, compact }: Props) {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between mb-3">
-              <h3 className="font-semibold text-sm">Known issues research (车质网/汽车投诉网 prioritized, Chinese sources only)</h3>
+              <h3 className="font-semibold text-sm">Known issues (China) research (车质网/汽车投诉网 prioritized, Chinese sources only)</h3>
               <button onClick={close} className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 text-lg leading-none">×</button>
             </div>
 

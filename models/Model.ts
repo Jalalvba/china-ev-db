@@ -1,6 +1,7 @@
 import { Schema, model, models, Types } from "mongoose";
 import type { IModel } from "@/types";
 import { CONFIDENCE_VALUES } from "@/types/canonicalPowertrain";
+import { AFFECTED_SYSTEMS, ISSUE_REGIONS, SALES_TRENDS } from "@/types/researchCategories";
 
 type ModelDoc = Omit<IModel, "brand_id"> & { brand_id: Types.ObjectId };
 
@@ -80,15 +81,82 @@ const ModelSchema = new Schema<ModelDoc>(
     known_issues: [
       {
         _id: false,
+        // Not `required`: items written before this field existed have no region
+        // (treated as "china" on read; scripts/backfill-known-issue-region.ts tags
+        // them). Every NEW write sets it — see apply-issues/route.ts.
+        region: { type: String, enum: ISSUE_REGIONS },
         issue_description: { type: String, trim: true, required: true },
         affected_systems: [{ type: String, trim: true }],
         frequency_signal: { type: String, trim: true },
         source: { type: String, trim: true, required: true },
+        source_url: { type: String, trim: true },
         confidence: { type: String, enum: CONFIDENCE_VALUES, required: true },
       },
     ],
-    /** Set only by app/api/models/[id]/apply-issues/route.ts, only when verified as actually applied. */
+    /** Set only by app/api/models/[id]/apply-issues/route.ts, only when verified as actually applied. Either region's write bumps it; the per-region fields below say which. */
     known_issues_last_researched_at: { type: Date },
+    known_issues_china_last_researched_at: { type: Date },
+    known_issues_global_last_researched_at: { type: Date },
+    // Chinese-source-only (lib/marketTrendResearch.ts). Nested object, unlike
+    // market_positioning's flat prefixed fields, because it carries several
+    // co-dependent fields plus its own _confidence/_last_researched_at.
+    market_trend: {
+      _id: false,
+      type: new Schema(
+        {
+          market_share_segment: { type: String, trim: true },
+          sales_trend: { type: String, enum: SALES_TRENDS },
+          trend_evidence: { type: String, trim: true },
+          source_url: { type: String, trim: true },
+          _confidence: { type: String, enum: CONFIDENCE_VALUES, required: true },
+          _last_researched_at: { type: Date },
+        },
+        { _id: false }
+      ),
+    },
+    // Chinese + manufacturer-service-site sources (lib/bulletinResearch.ts).
+    technical_bulletins: [
+      {
+        _id: false,
+        bulletin_id: { type: String, trim: true },
+        issue_description: { type: String, trim: true, required: true },
+        affected_component: { type: String, enum: AFFECTED_SYSTEMS, required: true },
+        component_detail: { type: String, trim: true },
+        issued_date: { type: String, trim: true },
+        source_url: { type: String, trim: true, required: true },
+        confidence: { type: String, enum: CONFIDENCE_VALUES, required: true },
+      },
+    ],
+    technical_bulletins_last_researched_at: { type: Date },
+    // NOT source-restricted (lib/recallResearch.ts). required_tools LINKS to the
+    // brand's existing workshop data (see IRecallRequiredTools) — no tools schema here.
+    recalls: [
+      {
+        _id: false,
+        recall_id: { type: String, trim: true },
+        issue_description: { type: String, trim: true, required: true },
+        affected_component: { type: String, enum: AFFECTED_SYSTEMS, required: true },
+        component_detail: { type: String, trim: true },
+        recall_date: { type: String, trim: true },
+        remedy_description: { type: String, trim: true, required: true },
+        affected_scope: { type: String, trim: true },
+        issuing_body: { type: String, trim: true },
+        required_tools: {
+          _id: false,
+          type: new Schema(
+            {
+              uses_brand_diagnostic_interface: { type: Boolean, required: true },
+              special_tool_names: [{ type: String, trim: true }],
+              extra_tool_note: { type: String, trim: true },
+            },
+            { _id: false }
+          ),
+        },
+        source_url: { type: String, trim: true, required: true },
+        confidence: { type: String, enum: CONFIDENCE_VALUES, required: true },
+      },
+    ],
+    recalls_last_researched_at: { type: Date },
     // Written only by app/api/models/[id]/fetch-morocco-price/route.ts — a
     // deterministic scrape of moteur.ma/wandaloo.com, never the AI. Kept
     // separate from MoroccoListing (which is keyed by brand/model name and

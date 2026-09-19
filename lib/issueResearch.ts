@@ -32,6 +32,7 @@ const ISSUE_ITEM_TEMPLATE = {
   affected_systems: `array of one or more of: ${AFFECTED_SYSTEMS.join(", ")}`,
   frequency_signal: "string | null (e.g. complaint volume/rank on 车质网 if stated, or 'multiple reports' / 'isolated report' if volume isn't quantified)",
   source: "string (which Chinese source this came from, e.g. '车质网' or '汽车投诉网')",
+  source_url: "string | null (the actual page URL for this issue, if known)",
   confidence: [...CONFIDENCE_SET].join(" | "),
 };
 
@@ -48,7 +49,7 @@ Find specific, named reported issues/failure patterns for this model — not gen
 - What the issue is
 - Which vehicle system(s) it affects (engine, battery, motor, transmission, electronics, chassis, body, climate control, or other)
 - Any frequency signal — e.g. a complaint count/ranking shown on 车质网, or whether the source describes it as a widespread vs. isolated report
-- Which specific Chinese source reported it
+- Which specific Chinese source reported it, and the page URL
 
 Report your findings in plain prose with citations (include the actual URL for each issue) — do not format as JSON yet.`;
 }
@@ -100,6 +101,9 @@ export function validateResearchedIssues(raw: unknown): { valid: boolean; errors
     }
     if (typeof v.source !== "string" || v.source.trim() === "") {
       errors.push(`[${i}].source: required non-empty string`);
+    }
+    if (v.source_url !== undefined && v.source_url !== null && typeof v.source_url !== "string") {
+      errors.push(`[${i}].source_url: must be a string or null`);
     }
     if (typeof v.confidence !== "string" || !CONFIDENCE_SET.has(v.confidence)) {
       errors.push(`[${i}].confidence: invalid value ${JSON.stringify(v.confidence)}`);

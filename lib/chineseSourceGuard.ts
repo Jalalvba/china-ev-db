@@ -32,15 +32,50 @@ const ALLOWED_DOMAINS = [
   "xchuxing.com",
 ];
 
-/** True if `url`'s hostname is the allowlisted domain or a subdomain of it (e.g. "www.autohome.com.cn", "car.autohome.com.cn" both match "autohome.com.cn"). Also allows the official-manufacturer-site pattern: any hostname containing "-owner" is out of scope for that heuristic (manufacturers publish 服务/售后 pages on their own primary domains, which can't be enumerated in advance) — see `isLikelyManufacturerServiceUrl`. */
-export function isAllowedChineseSource(url: string): boolean {
+/**
+ * Manufacturer official/after-sales sites — accepted ONLY when a caller opts in via
+ * `{ includeManufacturer: true }` (currently just technical_bulletins research,
+ * lib/bulletinResearch.ts): TSBs are published on the maker's own service portals, not
+ * on the auto-media sites above, so without these that category would almost always
+ * come back empty. Not exhaustive — add a domain here when a real bulletin source turns
+ * up on one that's missing. Deliberately NOT applied to warranty/positioning/issues/
+ * market_trend, which keep the stricter media/regulator-only list.
+ */
+const MANUFACTURER_SERVICE_DOMAINS = [
+  "chery.cn",
+  "jetour.com.cn",
+  "geely.com",
+  "lynkco.com.cn",
+  "changan.com.cn",
+  "gwm.com.cn",
+  "byd.com",
+  "gac.com.cn",
+  "gacmotor.com",
+  "dongfeng.com.cn",
+  "faw.com.cn",
+  "saicmotor.com",
+  "baicgroup.com.cn",
+];
+
+export interface SourceGuardOptions {
+  /** Also accept the manufacturer service-site domains above. Off by default. */
+  includeManufacturer?: boolean;
+}
+
+function hostMatches(host: string, domains: string[]): boolean {
+  return domains.some((d) => host === d || host.endsWith(`.${d}`));
+}
+
+/** True if `url`'s hostname is the allowlisted domain or a subdomain of it (e.g. "www.autohome.com.cn", "car.autohome.com.cn" both match "autohome.com.cn"). With `includeManufacturer`, official manufacturer service-site domains count too — see MANUFACTURER_SERVICE_DOMAINS. */
+export function isAllowedChineseSource(url: string, opts: SourceGuardOptions = {}): boolean {
   let host: string;
   try {
     host = new URL(url).hostname.toLowerCase();
   } catch {
     return false;
   }
-  return ALLOWED_DOMAINS.some((d) => host === d || host.endsWith(`.${d}`));
+  if (hostMatches(host, ALLOWED_DOMAINS)) return true;
+  return !!opts.includeManufacturer && hostMatches(host, MANUFACTURER_SERVICE_DOMAINS);
 }
 
 /**
@@ -51,6 +86,6 @@ export function isAllowedChineseSource(url: string): boolean {
  * results were non-Chinese) must be treated exactly like zero search results
  * at all: force every confidence field to "unconfirmed".
  */
-export function filterToChineseSources(urls: string[]): string[] {
-  return urls.filter(isAllowedChineseSource);
+export function filterToChineseSources(urls: string[], opts: SourceGuardOptions = {}): string[] {
+  return urls.filter((u) => isAllowedChineseSource(u, opts));
 }

@@ -7,10 +7,13 @@ interface IssueRow {
   modelId: string;
   modelName: string;
   brandName: string;
+  /** "china" | "global" — different populations, filterable and always labeled, never silently merged. Items predating the field arrive here already resolved to "china". */
+  region: "china" | "global";
   issue_description: string;
   affected_systems: string[];
   frequency_signal?: string;
   source: string;
+  source_url?: string;
   confidence: string;
   lastResearchedAt?: string;
 }
@@ -40,6 +43,7 @@ export default function KnownIssuesList({
 }) {
   const [brandFilter, setBrandFilter] = useState("all");
   const [systemFilter, setSystemFilter] = useState("all");
+  const [regionFilter, setRegionFilter] = useState("all");
 
   const brands = useMemo(() => Array.from(new Set(rows.map((r) => r.brandName))).sort(), [rows]);
   const systems = useMemo(
@@ -50,7 +54,8 @@ export default function KnownIssuesList({
   const filtered = rows.filter(
     (r) =>
       (brandFilter === "all" || r.brandName === brandFilter) &&
-      (systemFilter === "all" || r.affected_systems.includes(systemFilter))
+      (systemFilter === "all" || r.affected_systems.includes(systemFilter)) &&
+      (regionFilter === "all" || r.region === regionFilter)
   );
 
   return (
@@ -81,11 +86,21 @@ export default function KnownIssuesList({
               </option>
             ))}
           </select>
-          {(brandFilter !== "all" || systemFilter !== "all") && (
+          <select
+            value={regionFilter}
+            onChange={(e) => setRegionFilter(e.target.value)}
+            className="text-sm border border-zinc-300 dark:border-zinc-700 rounded-md px-2 py-1 bg-white dark:bg-zinc-900"
+          >
+            <option value="all">All regions</option>
+            <option value="china">China</option>
+            <option value="global">Global</option>
+          </select>
+          {(brandFilter !== "all" || systemFilter !== "all" || regionFilter !== "all") && (
             <button
               onClick={() => {
                 setBrandFilter("all");
                 setSystemFilter("all");
+                setRegionFilter("all");
               }}
               className="text-xs text-blue-600 dark:text-blue-400 hover:underline"
             >
@@ -111,9 +126,14 @@ export default function KnownIssuesList({
           {filtered.map((r, i) => (
             <div key={i} className="border border-zinc-200 dark:border-zinc-800 rounded-lg p-4">
               <div className="flex items-center justify-between mb-1">
-                <a href={`/models/${r.modelId}`} className="font-semibold hover:underline text-sm">
-                  {r.brandName} {r.modelName}
-                </a>
+                <span className="flex items-center gap-2">
+                  <a href={`/models/${r.modelId}`} className="font-semibold hover:underline text-sm">
+                    {r.brandName} {r.modelName}
+                  </a>
+                  <span className="px-1.5 py-0.5 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 text-xs">
+                    {r.region === "global" ? "Global" : "China"}
+                  </span>
+                </span>
                 <span
                   className={
                     r.confidence === "unconfirmed"
@@ -127,7 +147,7 @@ export default function KnownIssuesList({
               <p className="text-sm text-zinc-800 dark:text-zinc-200">{r.issue_description}</p>
               <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
                 {r.affected_systems.join(", ")}
-                {r.frequency_signal ? ` · ${r.frequency_signal}` : ""} · Source: {r.source} · Researched{" "}
+                {r.frequency_signal ? ` · ${r.frequency_signal}` : ""} · Source: {r.source_url ? <a href={r.source_url} target="_blank" rel="noopener noreferrer" className="underline">{r.source}</a> : r.source} · Researched{" "}
                 {relativeLabel(r.lastResearchedAt)}
               </p>
             </div>

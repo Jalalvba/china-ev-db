@@ -1,3 +1,5 @@
+import type { IMarketTrend, ITechnicalBulletin, IRecall, IssueRegion } from "./researchCategories";
+
 export type Segment =
   | "A-segment/City"
   | "B-segment/Compact"
@@ -147,10 +149,14 @@ export interface IWorkshopRequirements {
 }
 
 export interface IKnownIssue {
+  /** "china" = Chinese-market complaint data (车质网 et al.), "global" = international/export-market data — deliberately different populations, never silently merged; dedupe is per (region, issue_description). Undefined on items written before this field existed — treat as "china" (every such item came from the Chinese-source-only pipeline; scripts/backfill-known-issue-region.ts tags them explicitly). */
+  region?: IssueRegion;
   issue_description: string;
   affected_systems: string[];
   frequency_signal?: string;
   source: string;
+  /** The specific page the issue came from, when known. Optional — items written before this field existed only carry the site name in `source`. */
+  source_url?: string;
   confidence: Confidence;
 }
 
@@ -200,8 +206,21 @@ export interface IModel {
   market_positioning_last_researched_at?: string;
   /** Reported real-world failure patterns, sourced from 车质网/汽车投诉网 and similar Chinese-source-only complaint/quality sites (lib/issueResearch.ts). */
   known_issues?: IKnownIssue[];
-  /** Set only when a known_issues write is verified as actually applied. */
+  /** Set only when a known_issues write (either region) is verified as actually applied. */
   known_issues_last_researched_at?: string;
+  /** Per-region timestamps — set only when a write of that region's items is verified as actually applied. */
+  known_issues_china_last_researched_at?: string;
+  known_issues_global_last_researched_at?: string;
+  /** Sales/market-position trend, Chinese-source-only research (lib/marketTrendResearch.ts). Undefined means never researched. */
+  market_trend?: IMarketTrend;
+  /** Manufacturer technical service bulletins; Chinese + manufacturer-service-site sources only (lib/bulletinResearch.ts). Often sparse/empty — TSBs are rarely public. */
+  technical_bulletins?: ITechnicalBulletin[];
+  /** Set only when a technical_bulletins write is verified as actually applied. */
+  technical_bulletins_last_researched_at?: string;
+  /** Recalls — deliberately NOT source-restricted (lib/recallResearch.ts): recalls are reported by regulators, manufacturer press releases and international coverage, not just Chinese sources. */
+  recalls?: IRecall[];
+  /** Set only when a recalls write is verified as actually applied. */
+  recalls_last_researched_at?: string;
   /** Set only by app/api/models/[id]/fetch-morocco-price/route.ts — a deterministic HTTP scrape of moteur.ma/wandaloo.com (see lib/moteurMaScraper.ts, lib/wandalooScraper.ts), never AI research. Undefined/false means this model has never been checked, or was checked and isn't listed on either site — the UI should omit the price chip in that case, not show an empty one. */
   morocco_price_dh?: number;
   morocco_price_source?: "moteur.ma" | "wandaloo.com";

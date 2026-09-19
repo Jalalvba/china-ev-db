@@ -1,0 +1,153 @@
+// Shared plumbing for the four newer Model-level research categories
+// (market_trend, global known_issues, technical_bulletins, recalls) — the same
+// search → grounded-extraction → confidence-gate pattern as lib/issueResearch.ts /
+// lib/positioningResearch.ts (runGroundedResearch does the search + two-turn LLM
+// call), with the retry loop, JSON extraction, and gate factored out once instead of
+// copied four more times. Each category module supplies only its own prompts, search
+// queries, source-guard rule, and item normalizer.
+
+import { ModelNotFoundError, SearchProviderError, sleep } from "@/lib/techSpecResearch";
+import { runGroundedResearch } from "@/lib/groundedResearch";
+import { normalizeArray } from "@/lib/categoryValidators";
+import type { ItemResult } from "@/lib/categoryValidators";
+
+export interface CategoryResearchInput {
+  brandName: string;
+  modelName: string;
+  brandNameCn?: string;
+  modelNameCn?: string;
+}
+
+/** Best Chinese-name string to search with: the model's own name_cn, else brand's Chinese name + English model name, else the plain English pair. */
+export function searchName(input: CategoryResearchInput): string {
+  return input.modelNameCn ?? (input.brandNameCn ? `${input.brandNameCn} ${input.modelName}` : `${input.brandName} ${input.modelName}`);
+}
+
+export function extractJsonObject(text: string): Record<string, unknown> | null {
+  const fencedMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/);
+  const candidate = fencedMatch ? fencedMatch[1] : text;
+  const braceStart = candidate.indexOf("{");
+  const braceEnd = candidate.lastIndexOf("}");
+  if (braceStart === -1 || braceEnd === -1 || braceEnd <= braceStart) return null;
+  try {
+    const parsed = JSON.parse(candidate.slice(braceStart, braceEnd + 1));
+    return typeof parsed === "object" && parsed !== null && !Array.isArray(parsed) ? (parsed as Record<string, unknown>) : null;
+  } catch {
+    return null;
+  }
+}
+
+export interface CategoryResearchResult<T> {
+  status: "found" | "not_found" | "error";
+  errorMessage?: string;
+  /** Source URLs that counted as grounding for this category (after that category's source guard). */
+  sourceUrls: string[];
+  hasGrounding: boolean;
+  /** Normalized, gate-applied items (market_trend returns a one-element array). */
+  items: T[];
+  /** Items the normalizer rejected, with why. */
+  dropped: { index: number; errors: string[] }[];
+  /** Non-fatal normalization notes (aliases resolved, downgrades, dropped optional fields). */
+  warnings: string[];
+}
+
+function emptyResult<T>(status: "not_found" | "error", errorMessage?: string): CategoryResearchResult<T> {
+  return { status, errorMessage, sourceUrls: [], hasGrounding: false, items: [], dropped: [], warnings: [] };
+}
+
+interface RunOpts<T extends { confidence?: string }> {
+  model: string;
+  label: string;
+  input: CategoryResearchInput;
+  kickoffPrompt: string;
+  formatPrompt: string;
+  searchQueries: string[];
+  /** Key in the parsed JSON holding this category's payload. */
+  responseKey: string;
+  /** "array" → payload is an array of items; "object" → payload is a single object (or null) wrapped into a one-element array. */
+  shape: "array" | "object";
+  /** Filters raw Brave URLs down to what counts as grounding for THIS category (Chinese allowlist, manufacturer allowlist, non-Chinese-only, or everything). */
+  groundingFilter: (urls: string[]) => string[];
+  normalize: (raw: unknown) => ItemResult<T>;
+  /** Called once per item when there is zero grounding, to force it to "unconfirmed" (the confidence field name differs: `confidence` vs market_trend's `_confidence`). */
+  forceUnconfirmed: (item: T) => void;
+}
+
+export async function runCategoryResearch<T extends { confidence?: string }>(opts: RunOpts<T>): Promise<CategoryResearchResult<T>> {
+  const { model, label, input } = opts;
+  try {
+    const maxAttempts = 3;
+    let lastErr: unknown;
+    let formattedText = "";
+    let rawUrls: string[] = [];
+    let ok = false;
+    for (let attempt = 1; attempt <= maxAttempts && !ok; attempt++) {
+      try {
+        const r = await runGroundedResearch({
+          kickoffPrompt: opts.kickoffPrompt,
+          formatPrompt: opts.formatPrompt,
+          searchQueries: opts.searchQueries,
+          model,
+        });
+        formattedText = r.formattedText;
+        rawUrls = r.sourceUrls;
+        ok = true;
+      } catch (err) {
+        if (err instanceof ModelNotFoundError || err instanceof SearchProviderError) throw err;
+        lastErr = err;
+        const backoffMs = 2000 * attempt;
+        console.error(`  [retry ${attempt}/${maxAttempts}] ${label} ${input.brandName} ${input.modelName}: ${(err as Error).message} — waiting ${backoffMs}ms`);
+        await sleep(backoffMs);
+      }
+    }
+    if (!ok) throw lastErr;
+
+    const parsed = extractJsonObject(formattedText);
+    if (!parsed || !(opts.responseKey in parsed)) {
+      return emptyResult("error", `Could not parse a "${opts.responseKey}" payload from response (first 300 chars): ${formattedText.slice(0, 300)}`);
+    }
+
+    const sourceUrls = opts.groundingFilter(rawUrls);
+    const hasGrounding = sourceUrls.length > 0;
+    const payload = parsed[opts.responseKey];
+
+    let items: T[] = [];
+    let dropped: { index: number; errors: string[] }[] = [];
+    let warnings: string[] = [];
+    if (opts.shape === "object") {
+      if (payload !== null && payload !== undefined) {
+        const res = opts.normalize(payload);
+        if (res.item) items = [res.item];
+        else dropped = [{ index: 0, errors: res.errors }];
+        warnings = res.warnings;
+      }
+    } else {
+      const res = normalizeArray(payload, opts.normalize);
+      items = res.items;
+      dropped = res.dropped;
+      warnings = res.warnings;
+    }
+
+    if (!hasGrounding) items.forEach(opts.forceUnconfirmed);
+    return {
+      status: items.length > 0 ? "found" : "not_found",
+      sourceUrls,
+      hasGrounding,
+      items,
+      dropped,
+      warnings,
+    };
+  } catch (err) {
+    if (err instanceof ModelNotFoundError || err instanceof SearchProviderError) throw err;
+    return emptyResult("error", (err as Error).message);
+  }
+}
+
+/** Shared CRITICAL-RULES tail every category's format prompt ends with. */
+export function commonFormatRules(extra: string[]): string {
+  return `CRITICAL RULES:
+- OUTPUT LANGUAGE: every string value must be English (translate any Chinese/other-language source text before writing it), except a site's proper name quoted directly in a "source" field.
+${extra.map((r) => `- ${r}`).join("\n")}
+- Use null (or an empty array where the shape is an array) for anything you did not actually find. Do NOT pad with generic or plausible-sounding entries.
+- Do NOT add, rename, or omit any field from the shape above.`;
+}
