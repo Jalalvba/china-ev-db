@@ -12,8 +12,8 @@
 // left for manual entry/import, since matching names against the model's resolved
 // workshop tool list needs that list, which this research pass does not see.
 
-import { normalizeRecall } from "@/lib/categoryValidators";
-import { commonFormatRules, runCategoryResearch } from "@/lib/categoryResearch";
+import { filterItemsToTargetModel, normalizeRecall } from "@/lib/categoryValidators";
+import { commonFormatRules, exactModelRulePrompt, ISSUE_ATTESTATION_TEMPLATE, runCategoryResearch } from "@/lib/categoryResearch";
 import type { CategoryResearchInput, CategoryResearchResult } from "@/lib/categoryResearch";
 import { AFFECTED_SYSTEMS } from "@/types/researchCategories";
 import type { IRecall } from "@/types/researchCategories";
@@ -32,12 +32,18 @@ export const RECALL_ITEM_TEMPLATE = {
   confidence: "confirmed | unconfirmed",
 };
 
+const RECALL_SOURCE_MODEL_NAME_DESC =
+  "string - the model name(s) EXACTLY as the recall notice lists them (e.g. 'Acme Roadster, Acme Roadster Plus'); copy it from the source, never from this prompt";
+
 export function buildRecallKickoffPrompt(input: CategoryResearchInput): string {
   const { brandName, modelName, brandNameCn, modelNameCn } = input;
   const cnName = modelNameCn ?? (brandNameCn ? `${brandNameCn} ${modelName}` : undefined);
   return `You are a researcher documenting official vehicle recalls for a specific vehicle model, for an after-sales (SAV) operation that needs to know which recall campaigns exist and what each remedy requires in the workshop.
 
 Model to research: "${brandName} ${modelName}"${cnName ? ` (${cnName})` : ""}
+
+${exactModelRulePrompt(input)}
+RECALL-SPECIFIC: a recall campaign counts ONLY if the recall notice or announcement itself names the target model (a multi-model campaign is fine when the target is among the models listed). A recall of a different model on the same platform, a sibling, or the brand in general does NOT count - leave it out.
 
 Sources are NOT restricted by language or country. Use regulator recall databases (China's SAMR 国家市场监督管理总局 缺陷产品召回, NHTSA and equivalent bodies in other markets), manufacturer recall press releases, and credible international or Chinese motoring-press coverage of a recall. Recalls in export markets count.
 
@@ -48,10 +54,11 @@ Report your findings in plain prose with citations (the actual URL for each reca
 
 export function buildRecallFormatPrompt(): string {
   return `Convert your findings above into ONLY a JSON object (no markdown fencing, no prose before or after) in exactly this shape ("recalls" is an array — each element describes the type each field must have, not a literal example value; return an empty array if no genuine recall was found):
-${JSON.stringify({ recalls: [RECALL_ITEM_TEMPLATE] }, null, 2)}
+${JSON.stringify({ recalls: [{ ...RECALL_ITEM_TEMPLATE, ...ISSUE_ATTESTATION_TEMPLATE, source_model_name: RECALL_SOURCE_MODEL_NAME_DESC }] }, null, 2)}
 
 ${commonFormatRules([
   "Every recall must come from a source you actually found in the search results provided — do not invent one.",
+  "EXACT MODEL ONLY: include a recall only if the notice names the exact target model. Never include a sibling recall labeled related or similar - leave it out. source_model_name must be copied from the notice; if the target model is not among the names it lists, the item is dropped by code. same_generation: use not_stated when the notice names the right model but no year/generation - do NOT omit the recall for that reason.",
   `"affected_component" must be exactly one of: ${AFFECTED_SYSTEMS.join(", ")}.`,
   '"source_url" and "remedy_description" are required on every item; drop an item you cannot cite. "confidence" is "confirmed" only if the recall was directly stated at that URL.',
 ])}`;
@@ -70,6 +77,7 @@ export async function researchRecalls(model: string, input: CategoryResearchInpu
     responseKey: "recalls",
     shape: "array",
     groundingFilter: (urls) => urls,
+    preFilter: (raw) => filterItemsToTargetModel(raw, { brandName: input.brandName, modelName: input.modelName, modelNameCn: input.modelNameCn }),
     normalize: (raw) => normalizeRecall(raw),
     forceUnconfirmed: (item) => {
       item.confidence = "unconfirmed";
