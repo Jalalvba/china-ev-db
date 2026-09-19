@@ -58,6 +58,11 @@ export default function ChartSlide({ slide }: { slide: ResolvedChartSlide }) {
         })}
       </svg>
 
+      {data.proxy && (
+        <div style={{ position: "absolute", left: leftX, top: LAYOUT.bodyY + 390, width: leftW, fontSize: 13, lineHeight: 1.3, color: css(COLORS.red), borderLeft: `4px solid ${css(COLORS.amber)}`, paddingLeft: 10 }}>
+          <b>Proxy metric.</b> Not {data.proxy.standsInFor}: {data.proxy.actually}.
+        </div>
+      )}
       <div style={{ position: "absolute", left: colX(0), top: LAYOUT.footerY, width: CANVAS.w - 128, fontSize: 12, color: css(COLORS.gray600) }}>
         Source: {data.sourceNote} · as of {data.asOf}
       </div>

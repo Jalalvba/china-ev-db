@@ -3,7 +3,9 @@
 // show what the app's own data returns at render time. Both renderers (React, pptxgenjs) consume the RESOLVED
 // slide produced by lib/presentations/resolve.ts, never the raw DB.
 
-export const SLIDE_TYPES = ["chart"] as const; // section | table | callout | process are added one at a time, after chart is proven end-to-end.
+// section | callout | process are added one at a time. There is deliberately NO reliability/known-issues slide type (not even a stub)
+// until reviewed known-issues data has been applied to the DB — see CLAUDE.md.
+export const SLIDE_TYPES = ["chart", "table"] as const;
 export type SlideType = (typeof SLIDE_TYPES)[number];
 
 export interface SlideSpec {
@@ -22,8 +24,17 @@ export interface DeckSpec {
 
 // ---------- resolved data shapes (what a query returns; what renderers draw) ----------
 
+/** Marks a slide whose numbers stand in for a metric the DB does not have. Rendered visibly on the slide, and listed in the pptx document properties, so it is obvious when a real field arrives and the query should be swapped. */
+export interface ProxyNote {
+  /** The metric the audience might assume this shows, e.g. "market share / sales volume". */
+  standsInFor: string;
+  /** What it actually is, one line. */
+  actually: string;
+}
+
 export interface ChartData {
   kind: "bar";
+  proxy?: ProxyNote;
   /** Category labels, top to bottom / left to right. */
   labels: string[];
   series: { name: string; values: number[] }[];
@@ -38,13 +49,30 @@ export interface ChartData {
   asOf: string; // ISO date the query ran
 }
 
+export interface TableData {
+  columns: { label: string; align: "left" | "right" }[];
+  rows: { cells: { text: string; /** value is unconfirmed — rendered with a trailing "*" */ unconfirmed?: boolean }[] }[];
+  sourceNote: string;
+  /** Extra footnote, e.g. how a representative trim was chosen. */
+  footnote?: string;
+  asOf: string;
+  proxy?: ProxyNote;
+}
+
+export interface ResolvedTableSlide {
+  type: "table";
+  title: string;
+  source: string;
+  data: TableData;
+}
+
 export interface ResolvedChartSlide {
   type: "chart";
   title: string;
   source: string;
   data: ChartData;
 }
-export type ResolvedSlide = ResolvedChartSlide;
+export type ResolvedSlide = ResolvedChartSlide | ResolvedTableSlide;
 
 export interface ResolvedDeck {
   id: string;

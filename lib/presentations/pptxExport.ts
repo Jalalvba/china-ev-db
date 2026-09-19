@@ -1,6 +1,6 @@
 import PptxGenJS from "pptxgenjs";
 import { COLORS, CANVAS, FONT, LAYOUT, SERIES_COLORS, colSpan, colX, px } from "@/lib/presentations/tokens";
-import type { ResolvedChartSlide, ResolvedDeck } from "@/lib/presentations/spec";
+import type { ResolvedChartSlide, ResolvedDeck, ResolvedTableSlide } from "@/lib/presentations/spec";
 
 // pptx renderer: same ResolvedDeck + tokens as the React renderer, but emits NATIVE, editable PowerPoint objects
 // (text boxes, shapes, a real bar chart with embedded data) — not a screenshot.
@@ -45,7 +45,33 @@ function addChartSlide(pptx: PptxGenJS, s: ResolvedChartSlide, logoData?: string
     }
   );
 
+  if (d.proxy) slide.addText([{ text: "Proxy metric. ", options: { bold: true } }, { text: `Not ${d.proxy.standsInFor}: ${d.proxy.actually}.` }], { x: px(colX(0)), y: px(LAYOUT.bodyY + 390), w: px(colSpan(3)), h: px(90), fontSize: 10, color: COLORS.red, valign: "top", ...font });
   slide.addText(`Source: ${d.sourceNote} · as of ${d.asOf}`, { x: px(colX(0)), y: px(LAYOUT.footerY), w: px(CANVAS.w - 128), h: px(24), fontSize: 9, color: COLORS.gray600, ...font });
+}
+
+function addTableSlide(pptx: PptxGenJS, s: ResolvedTableSlide) {
+  const slide = pptx.addSlide();
+  const d = s.data;
+  const font = { fontFace: FONT.family };
+  slide.background = { color: COLORS.white };
+  slide.addText(s.title, { x: px(colX(0)), y: px(LAYOUT.titleY), w: px(CANVAS.w - 128), h: px(LAYOUT.titleH), fontSize: 27, bold: true, color: COLORS.navy, valign: "middle", ...font });
+  slide.addShape("rect", { x: px(colX(0)), y: px(LAYOUT.titleY + LAYOUT.titleH - 6), w: px(96), h: px(4), fill: { color: COLORS.red }, line: { color: COLORS.red, width: 0 } });
+
+  const rowH = Math.min(64, (LAYOUT.bodyH - 56) / (d.rows.length + 1));
+  const head = d.columns.map((c) => ({ text: c.label, options: { bold: true, color: COLORS.white, fill: { color: COLORS.navy }, align: c.align, valign: "middle" as const, fontSize: 13, ...font } }));
+  const body = d.rows.map((r, i) =>
+    r.cells.map((cell, j) => ({
+      text: `${cell.text}${cell.unconfirmed ? "*" : ""}`,
+      options: { bold: j === 0, color: j === 0 ? COLORS.navy : COLORS.gray900, fill: { color: i % 2 ? COLORS.white : COLORS.gray100 }, align: d.columns[j].align, valign: "middle" as const, fontSize: 13, ...font },
+    }))
+  );
+  // Native PowerPoint table (editable). Column widths: model column wider, the rest share the remainder equally.
+  const total = CANVAS.w - 128;
+  const first = total * 0.26;
+  const rest = (total - first) / (d.columns.length - 1);
+  slide.addTable([head, ...body], { x: px(colX(0)), y: px(LAYOUT.bodyY), w: px(total), colW: d.columns.map((_, j) => px(j === 0 ? first : rest)), rowH: px(rowH), margin: [0, 0.1, 0, 0.1], border: { type: "none" } });
+  if (d.footnote) slide.addText(d.footnote, { x: px(colX(0)), y: px(LAYOUT.footerY - 26), w: px(total), h: px(22), fontSize: 9.5, color: COLORS.gray600, ...font });
+  slide.addText(`Source: ${d.sourceNote} · as of ${d.asOf}`, { x: px(colX(0)), y: px(LAYOUT.footerY), w: px(total), h: px(24), fontSize: 9, color: COLORS.gray600, ...font });
 }
 
 async function fetchLogo(url?: string): Promise<string | undefined> {
@@ -66,8 +92,11 @@ export async function buildPptx(deck: ResolvedDeck): Promise<Buffer> {
   pptx.defineLayout({ name: "CANVAS", width: px(CANVAS.w), height: px(CANVAS.h) });
   pptx.layout = "CANVAS";
   pptx.title = deck.title;
+  const proxies = deck.slides.flatMap((sl, i) => (sl.data.proxy ? [`slide ${i + 1}: proxy for ${sl.data.proxy.standsInFor} (${sl.data.proxy.actually})`] : []));
+  if (proxies.length) pptx.subject = `PROXY METRICS — ${proxies.join("; ")}`;
   for (const s of deck.slides) {
     if (s.type === "chart") addChartSlide(pptx, s, await fetchLogo(s.data.logo?.imageUrl));
+    else if (s.type === "table") addTableSlide(pptx, s);
   }
   return (await pptx.write({ outputType: "nodebuffer" })) as Buffer;
 }
