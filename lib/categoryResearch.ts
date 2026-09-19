@@ -42,13 +42,13 @@ export function describeTargetModel(input: CategoryResearchInput): string {
  * alone is not trusted. See that function's comment for the incident behind it.
  */
 export function exactModelRulePrompt(input: CategoryResearchInput): string {
-  return `EXACT-MODEL RULE — a hard requirement, checked in code after you answer. The research target is exactly ${describeTargetModel(input)}. Use ONLY reports that are about this exact model and this generation. EXCLUDE reports about: a sibling or similarly named model (e.g. a "Plus", "Pro", "L" or "Max" variant with a different name), a previous/next generation, an export-market model sold under a different name, or the brand/platform in general. Do NOT include an off-model item and label it "related variant" or "similar model" — an off-model item must be left OUT entirely, not caveated. If the only material found is about other models, return an empty list: an empty list is a correct answer, especially for a recently launched model with little history.`;
+  return `EXACT-MODEL RULE — a hard requirement, checked in code after you answer. The research target is exactly ${describeTargetModel(input)}. Use ONLY reports that are about this exact model. EXCLUDE reports about: a sibling or similarly named model (e.g. a "Plus", "Pro", "L" or "Max" variant with a different name), an export-market model sold under a different name, or the brand/platform in general. Generation: a report that names the right model but does not state a model year/generation is ACCEPTABLE (mark it "not_stated" — it will be kept as unconfirmed); a report clearly about a different generation is not (mark it "different"). Do NOT include an off-model item and label it "related variant" or "similar model" — an off-model item must be left OUT entirely, not caveated. If the only material found is about other models, return an empty list: an empty list is a correct answer, especially for a recently launched model with little history.`;
 }
 
 /** Per-item attestation fields added to the known-issues FORMAT prompt (research-time only; stripped in code before anything is stored). */
 export const ISSUE_ATTESTATION_TEMPLATE = {
-  applies_to_target_model: "boolean — true ONLY if this specific report is about the exact target model named above; if it is not, leave the item out instead of setting false",
-  same_generation: "boolean — true ONLY if the report's model years/generation match the target's generation; if unknown or different, leave the item out",
+  applies_to_target_model: "boolean — true ONLY if this specific report is about the exact target model named above. Off-model reports must be left out entirely; if you are genuinely unsure whether a report is the exact model, include it with false so the reviewer can see it was rejected",
+  same_generation: "exactly one of: 'same' (the source states a model year/generation matching the target), 'not_stated' (the source names the right model but gives no model year/generation), 'different' (the source is about another generation)",
   source_model_name: "string — the vehicle's name EXACTLY as the source itself writes it (e.g. 'Acme Roadster 2.0T'); copy it from the source, never from this prompt",
 };
 
@@ -99,7 +99,7 @@ interface RunOpts<T extends { confidence?: string }> {
   groundingFilter: (urls: string[]) => string[];
   normalize: (raw: unknown) => ItemResult<T>;
   /** Optional hard filter on the RAW array payload, applied before normalization (array shape only). Rejections are reported in `dropped` as off-model, never silently lost. */
-  preFilter?: (raw: unknown) => { kept: unknown[]; rejected: { index: number; reason: string }[] };
+  preFilter?: (raw: unknown) => { kept: unknown[]; rejected: { index: number; reason: string; summary?: string }[]; warnings?: string[] };
   /** Called once per item when there is zero grounding, to force it to "unconfirmed" (the confidence field name differs: `confidence` vs market_trend's `_confidence`). */
   forceUnconfirmed: (item: T) => void;
 }
@@ -157,8 +157,8 @@ export async function runCategoryResearch<T extends { confidence?: string }>(opt
       const res = normalizeArray(pre ? pre.kept : payload, opts.normalize);
       items = res.items;
       // Indices of `dropped` from normalizeArray refer to the filtered array; the off-model rejections carry the ORIGINAL index.
-      dropped = [...(pre ? pre.rejected.map((r) => ({ index: r.index, errors: [`off-model: ${r.reason}`] })) : []), ...res.dropped];
-      warnings = res.warnings;
+      dropped = [...(pre ? pre.rejected.map((r) => ({ index: r.index, errors: [`off-model: ${r.reason}${r.summary ? ` — "${r.summary}"` : ""}`] })) : []), ...res.dropped];
+      warnings = [...(pre?.warnings ?? []), ...res.warnings];
     }
 
     if (!hasGrounding) items.forEach(opts.forceUnconfirmed);

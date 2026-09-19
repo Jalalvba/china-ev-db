@@ -484,32 +484,75 @@ const OFF_MODEL_PROSE = /\b(related variant|related model|sibling|sister model|d
 export interface RejectedItem {
   index: number;
   reason: string;
+  /** First ~110 chars of the rejected item's own description, so a reviewer can see WHAT was dropped, not just why. */
+  summary?: string;
+}
+
+/** Tri-state generation attestation. `not_stated` = the source names the right model but gives no model year/generation. */
+export type GenerationMatch = "same" | "not_stated" | "different";
+
+/** Exact token, else known alias; undefined (never a guess) when unrecognized — a missing/garbled attestation is a rejection, not a "not_stated". */
+export function normalizeGenerationMatch(v: unknown): GenerationMatch | undefined {
+  if (v === true) return "same";
+  if (v === false) return "different";
+  if (typeof v !== "string") return undefined;
+  const t = v.trim().toLowerCase().replace(/[\s-]+/g, "_");
+  if (t === "same" || t === "not_stated" || t === "different") return t;
+  if (["true", "match", "matches", "same_generation", "yes"].includes(t)) return "same";
+  if (["unknown", "unclear", "unspecified", "not_specified", "not_given", "unstated", "not_mentioned", "n/a", "na"].includes(t)) return "not_stated";
+  if (["false", "no", "other", "older", "newer", "previous", "different_generation", "mismatch"].includes(t)) return "different";
+  return undefined;
 }
 
 /**
- * Hard filter applied to the RAW researched issue array before normalization. Keeps an
- * item only if ALL hold: applies_to_target_model === true (strict boolean, not "true"),
- * same_generation === true, source_model_name non-empty and matches the target by
- * matchesTargetModel(), and the description doesn't read as off-model prose. Returns the
- * kept items with the attestation keys stripped, plus each rejection with its reason.
+ * Hard filter applied to the RAW researched array before normalization. Keeps an item only
+ * if ALL hold:
+ *   1. applies_to_target_model === true (strict boolean, not "true");
+ *   2. same_generation resolves (normalizeGenerationMatch) to "same" or "not_stated" —
+ *      "different" is rejected, and a missing/unrecognized value is rejected;
+ *   3. source_model_name is non-empty and matches the target by matchesTargetModel();
+ *   4. the description doesn't read as off-model prose.
+ * Model identity (1, 3, 4) is unchanged from the original filter — that is the gate that
+ * caught the Song Plus / Seal U / Qin PLUS mix-up. Only the generation check is
+ * three-valued: a "not_stated" item is KEPT but forced to confidence "unconfirmed" and
+ * reported in `warnings`, since sources often omit the model year (WEY Lanshan live test,
+ * 2026-09-19: a strict boolean made the LLM drop 4 real, cited issues).
+ * Returns kept items with the attestation keys stripped, every rejection with its reason
+ * and item summary, and one warning per downgraded item.
  */
-export function filterIssuesToTargetModel(raw: unknown, target: TargetModel): { kept: unknown[]; rejected: RejectedItem[] } {
-  if (!Array.isArray(raw)) return { kept: [], rejected: [] };
+export function filterIssuesToTargetModel(raw: unknown, target: TargetModel): { kept: unknown[]; rejected: RejectedItem[]; warnings: string[] } {
+  if (!Array.isArray(raw)) return { kept: [], rejected: [], warnings: [] };
   const kept: unknown[] = [];
   const rejected: RejectedItem[] = [];
+  const warnings: string[] = [];
+  // Model names often already start with the brand ("WEY Lanshan") — don't print it twice in messages.
+  const targetLabel = target.modelName.toLowerCase().startsWith(target.brandName.toLowerCase()) ? target.modelName : `${target.brandName} ${target.modelName}`;
   raw.forEach((item, index) => {
     const rec = typeof item === "object" && item !== null && !Array.isArray(item) ? (item as Record<string, unknown>) : null;
     if (!rec) return void rejected.push({ index, reason: "not an object" });
-    if (rec.applies_to_target_model !== true) return void rejected.push({ index, reason: "not attested as applying to the target model" });
-    if (rec.same_generation !== true) return void rejected.push({ index, reason: "not attested as the same generation" });
+    const descRaw = typeof rec.issue_description === "string" ? rec.issue_description : "";
+    const summary = descRaw.replace(/\s+/g, " ").slice(0, 110);
+    const reject = (reason: string) => void rejected.push({ index, reason, summary });
+
+    if (rec.applies_to_target_model !== true) return reject("not attested as applying to the target model");
+    const gen = normalizeGenerationMatch(rec.same_generation);
+    if (gen === undefined) return reject("same_generation attestation missing or unrecognized (expected same / not_stated / different)");
+    if (gen === "different") return reject("source is about a different generation");
     const srcModel = normalizeString(rec.source_model_name);
-    if (!srcModel) return void rejected.push({ index, reason: "source_model_name missing" });
-    if (!matchesTargetModel(srcModel, target)) return void rejected.push({ index, reason: `source is about "${srcModel}", not ${target.brandName} ${target.modelName}` });
-    const desc = typeof rec.issue_description === "string" ? rec.issue_description : "";
-    if (OFF_MODEL_PROSE.test(desc)) return void rejected.push({ index, reason: "description is framed as another/related model" });
+    if (!srcModel) return reject("source_model_name missing");
+    if (!matchesTargetModel(srcModel, target)) return reject(`source is about "${srcModel}", not ${targetLabel}`);
+    if (OFF_MODEL_PROSE.test(descRaw)) return reject("description is framed as another/related model");
+
     const stripped = { ...rec };
     for (const k of ISSUE_ATTESTATION_KEYS) delete stripped[k];
+    if (gen === "not_stated") {
+      stripped.confidence = "unconfirmed";
+      warnings.push(`Source does not state the model year/generation — kept as unconfirmed, verify before relying on it: "${summary}"`);
+    }
     kept.push(stripped);
   });
-  return { kept, rejected };
+  return { kept, rejected, warnings };
 }
+
+/** Same hard filter, named for non-issue callers (recalls). The raw item needs `issue_description` for the prose backstop; the attestation contract is identical. */
+export const filterItemsToTargetModel = filterIssuesToTargetModel;

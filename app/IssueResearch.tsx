@@ -24,7 +24,7 @@ export default function IssueResearch({ modelId, compact }: Props) {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [items, setItems] = useState<IssueItem[]>([]);
   const [selections, setSelections] = useState<boolean[]>([]);
-  const [meta, setMeta] = useState<{ sourceCount: number; hasGrounding: boolean; dropped: { index: number; errors: string[] }[] } | null>(null);
+  const [meta, setMeta] = useState<{ sourceCount: number; hasGrounding: boolean; dropped: { index: number; errors: string[] }[]; warnings: string[] } | null>(null);
 
   async function handleResearch() {
     setPhase("loading");
@@ -38,7 +38,7 @@ export default function IssueResearch({ modelId, compact }: Props) {
       const found = (result.known_issues ?? []) as IssueItem[];
       if (result.status !== "found" || found.length === 0) {
         setErrorMessage(result.status === "found" ? "No known issues found in Chinese sources for this model." : result.errorMessage ?? "Research failed.");
-        setMeta({ sourceCount: result.sourceUrls?.length ?? 0, hasGrounding: !!result.hasGrounding, dropped: result.dropped ?? [] });
+        setMeta({ sourceCount: result.sourceUrls?.length ?? 0, hasGrounding: !!result.hasGrounding, dropped: result.dropped ?? [], warnings: result.warnings ?? [] });
         setItems([]);
         setPhase("review");
         return;
@@ -46,7 +46,7 @@ export default function IssueResearch({ modelId, compact }: Props) {
 
       setItems(found);
       setSelections(found.map(() => true));
-      setMeta({ sourceCount: result.sourceUrls?.length ?? 0, hasGrounding: !!result.hasGrounding, dropped: result.dropped ?? [] });
+      setMeta({ sourceCount: result.sourceUrls?.length ?? 0, hasGrounding: !!result.hasGrounding, dropped: result.dropped ?? [], warnings: result.warnings ?? [] });
       setPhase("review");
     } catch (err) {
       setErrorMessage((err as Error).message);
@@ -135,6 +135,11 @@ export default function IssueResearch({ modelId, compact }: Props) {
               </p>
             )}
 
+            {meta && meta.warnings.length > 0 && (
+              <ul className="text-xs text-amber-700 dark:text-amber-400 mb-2 list-disc pl-4">
+                {meta.warnings.map((w, i) => <li key={i}>{w}</li>)}
+              </ul>
+            )}
             {meta && meta.dropped.length > 0 && (
               <p className="text-xs text-red-600 dark:text-red-400 mb-2">
                 {meta.dropped.length} item{meta.dropped.length === 1 ? "" : "s"} rejected as not about this exact model: {meta.dropped.map((d) => d.errors.join(", ")).join(" | ")}

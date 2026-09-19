@@ -45,7 +45,7 @@ ${JSON.stringify({ known_issues: [{ ...GLOBAL_ISSUE_ITEM_TEMPLATE, ...ISSUE_ATTE
 
 ${commonFormatRules([
   "Every issue must come from a non-Chinese-market source you actually found in the search results provided (grounding is enabled) — do not invent an issue or use general knowledge.",
-  'EXACT MODEL ONLY: include an item only if the source is about the exact target model and generation. Never write "related variant"/"similar model" items — leave them out. "source_model_name" must be copied from the source; if it is not the target model\'s own name, the item is dropped by code.',
+  'EXACT MODEL ONLY: include an item only if the source is about the exact target model. Never write "related variant"/"similar model" items — leave clearly off-model reports out. "source_model_name" must be copied from the source; if it is not the target model\'s own name, the item is dropped by code. "same_generation": use "not_stated" when the source names the right model but no year/generation — do NOT omit the item for that reason.',
   `"affected_systems" must be an array containing only values from: ${AFFECTED_SYSTEMS.join(", ")}.`,
   '"confidence" is "confirmed" only if the specific issue was directly stated in a fetched source and "source_url" is that page.',
 ])}`;
