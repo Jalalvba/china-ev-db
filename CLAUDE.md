@@ -434,6 +434,16 @@ the pptx document properties) — the brand chart is a PROXY for market share (c
 volume), swap it if a real `sales_volume_by_year` field is added. **No reliability/known-issues slide type exists (not even a stub) until
 reviewed known-issues data has been applied to the DB.**
 
+## Excel export (`/export`, `/api/export`)
+
+Multi-sheet .xlsx (exceljs): README, Models, Trims, Brands. Column mapping/formats/widths live in `lib/export/columns.ts` (missing values are
+truly EMPTY cells, prices/power are numbers, kW and hp both exported, a confidence column per block, brand prefix stripped from Model
+names). `/export?<Tech Search query string>` scopes the export to that result set (`lib/export/techSearchParams.ts` translates the page's URL
+keys the same way `runSearch` in `app/search/specs/page.tsx` does — that page keeps its own inline copy of the mapping, so a new filter must be added
+in both); no filters = full database. The Mongo filter is shared with `/api/powertrains` via `lib/powertrainFilter.ts`. **Known-issues,
+warranty, market-trend, recalls and bulletins sheets are deliberately NOT exported** until that research has been reviewed and applied — the
+README sheet says so.
+
 ## Schema/prompt drift guard
 
 `types/canonicalPowertrain.ts`'s `CANONICAL_POWERTRAIN_FIELD_TEMPLATE` is the single

@@ -65,6 +65,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             <a href="/presentations/phev-market" className="text-sm text-zinc-300 hover:text-white">
               PHEV Market Deck
             </a>
+            <a href="/export" className="text-sm text-zinc-300 hover:text-white">
+              Export
+            </a>
             <div className="ml-auto">
               <ThemeToggle />
             </div>
