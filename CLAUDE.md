@@ -529,6 +529,52 @@ now AI-Gateway — batch research, the manual DeepSeek/Kimi round-trip, and
   genuinely unfound after searching, still return the block with
   `thermal_evidence: "UNKNOWN"` and `morocco_suitable: false` rather than omitting it.
 
+## Automated research calls removed for model spec/issues/market-trend/bulletins/recalls (2026-09-21)
+
+The app must never call an AI/search provider (DeepSeek, Brave, AI Gateway) directly from a
+button/route — the only way research data now enters the DB for these categories is the
+existing manual round-trip: export a prompt → paste it into an external AI chat (Kimi, Gemini,
+DeepSeek chat) → paste the JSON response back into the import panel → validate → review diff →
+apply. Removed in this pass (each already had a working manual export/import path, so nothing
+new had to be built): model spec (`update-specs`), known issues China/Global, market trend,
+technical bulletins, recalls.
+
+- Deleted routes: `app/api/models/[id]/{update-specs,research-issues,research-global-issues,
+  research-market-trend,research-bulletins,research-recalls}`.
+- Deleted pure-automated components (no manual UI inside them — the manual path lived
+  elsewhere on the same page): `app/TechSpecUpdater.tsx`, `app/IssueResearch.tsx`,
+  `app/CategoryResearch.tsx`. Their usages on `app/models/[id]/page.tsx`,
+  `app/brands/[id]/page.tsx`, and `app/known-issues/KnownIssuesList.tsx` were removed (the last
+  one now just links to the model page, where the manual importer lives).
+- Deleted now-dead automated-call libs: `lib/issueResearch.ts`, `lib/globalIssueResearch.ts`,
+  `lib/categoryRoute.ts` (the shared dispatcher those routes used).
+- `lib/marketTrendResearch.ts`, `lib/bulletinResearch.ts`, `lib/recallResearch.ts` were NOT
+  deleted outright — each still exports a template constant (`MARKET_TREND_TEMPLATE`,
+  `BULLETIN_ITEM_TEMPLATE`, `RECALL_ITEM_TEMPLATE`) that `lib/researchCategoriesImport.ts` (the
+  manual path) imports directly. Only each file's `researchX()` live-call function (the
+  `runCategoryResearch` orchestration) was stripped; the prompt-template/prose-prompt exports
+  stay, since the export-prompt feature and the schema shape both still need them.
+- `lib/techSpecResearch.ts` was deliberately left intact, including `researchModel` — it's
+  still called by three legitimate batch scripts outside this pass's scope
+  (`scripts/fill-missing-mandatory-fields.ts`, `scripts/backfill-trim-price.ts`,
+  `scripts/tech-spec-agent.ts`). Gutting it here would have broken those for no reason; only the
+  UI-triggered `update-specs` route was removed.
+- **Not yet done (separate stage)**: brand research, warranty research, and workshop research
+  (`app/api/brands/[id]/{research-brand,research-warranty,research-workshop}` +
+  `BrandResearch.tsx`/`WarrantyResearch.tsx`/`WorkshopResearch.tsx`) are still automated —
+  no manual export/import panel exists yet for those three categories, so cutting them first
+  would remove functionality with nothing to replace it. Positioning research
+  (`PositioningResearch.tsx`, `research-positioning`) is likewise untouched pending the same
+  decision. `scripts/tech-spec-agent.ts` and `scripts/research-issues-bulletins-batch.ts` now
+  call dead/changed exports (`researchIssues`, `researchGlobalIssues` no longer exist;
+  `researchBulletins` was removed from `bulletinResearch.ts`) and are broken until repurposed
+  into prompt-batch generators (writing export-prompt text to `raw-data/` instead of calling
+  the AI directly) — intentional, not an oversight; `scripts/fill-missing-mandatory-fields.ts`
+  and `scripts/backfill-trim-price.ts` still work (they only use `researchModel`, untouched).
+  Price-scraping scripts (`fetch-all-prices.ts`, `sync-morocco-prices.ts`,
+  `MoroccoPriceFetcher.tsx`) are out of scope for this ban — they scrape moteur.ma directly,
+  not an AI/search provider.
+
 ## Write safety
 
 Every AI-researched write path (`lib/applySpecUpdates.ts`, the manual-import apply

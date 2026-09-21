@@ -1,7 +1,6 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import IssueResearch from "@/app/IssueResearch";
 
 interface IssueRow {
   modelId: string;
@@ -166,7 +165,9 @@ export default function KnownIssuesList({
                 <a href={`/models/${m.modelId}`} className="text-sm hover:underline">
                   {m.brandName} {m.modelName}
                 </a>
-                <IssueResearch modelId={m.modelId} compact />
+                <a href={`/models/${m.modelId}`} className="text-xs text-zinc-500 dark:text-zinc-400 hover:underline shrink-0">
+                  Research manually →
+                </a>
               </div>
             ))}
           </div>

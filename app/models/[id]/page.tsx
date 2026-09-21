@@ -11,10 +11,7 @@ import MoroccoListing from "@/models/MoroccoListing";
 import type { IBrand, IModel, IMoroccoListing, IPowertrain } from "@/types";
 import { kwToHp } from "@/lib/units";
 import { formatRelativeTime } from "@/lib/relativeTime";
-import TechSpecUpdater from "@/app/TechSpecUpdater";
 import PositioningResearch from "@/app/PositioningResearch";
-import IssueResearch from "@/app/IssueResearch";
-import CategoryResearch from "@/app/CategoryResearch";
 import ManualResearchImporter from "@/app/ManualResearchImporter";
 import ManualCategoryImporter from "@/app/ManualCategoryImporter";
 import ManualCategoryExportButton from "@/app/ManualCategoryExportButton";
@@ -134,13 +131,7 @@ export default async function ModelPage({ params }: { params: Promise<{ id: stri
       )}
 
       <div className="flex items-center gap-2 flex-wrap">
-        <TechSpecUpdater scope="model" id={model._id as string} />
         <PositioningResearch modelId={model._id as string} />
-        <IssueResearch modelId={model._id as string} />
-        <CategoryResearch modelId={model._id as string} category="known_issues_global" />
-        <CategoryResearch modelId={model._id as string} category="market_trend" />
-        <CategoryResearch modelId={model._id as string} category="technical_bulletins" />
-        <CategoryResearch modelId={model._id as string} category="recalls" />
         <MoroccoPriceFetcher id={model._id as string} />
         <ExportForManualResearchButton modelDbId={model._id as string} />
         <ManualCategoryExportButton modelDbId={model._id as string} />

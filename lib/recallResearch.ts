@@ -1,22 +1,22 @@
-// Model-level recall research — deliberately NOT source-restricted, unlike every other
-// research category here. Recalls are published by regulators (China's SAMR 缺陷产品
+// Model-level recall prompt/template — deliberately NOT source-restricted, unlike every
+// other research category here. Recalls are published by regulators (China's SAMR 缺陷产品
 // 召回 database, NHTSA and equivalents), by manufacturer press releases, and by
 // international coverage; restricting to Chinese sources would miss real recall data
-// for export markets. Grounding is therefore "any real search result", not an
-// allowlist — the confidence gate still forces "unconfirmed" when the search returned
-// nothing at all, and a source_url is required on every item.
+// for export markets.
 //
 // required_tools is a LINK to existing workshop data, not a tools schema (see
-// IRecallRequiredTools). Research only sets uses_brand_diagnostic_interface / an
-// extra_tool_note where the remedy text itself indicates it; special_tool_names is
-// left for manual entry/import, since matching names against the model's resolved
-// workshop tool list needs that list, which this research pass does not see.
+// IRecallRequiredTools). special_tool_names is left for manual entry/import, since
+// matching names against the model's resolved workshop tool list needs that list.
+//
+// The live automated-call path (researchRecalls, which used to call runCategoryResearch
+// here) was removed 2026-09-21 — see CLAUDE.md's "Automated research calls removed" entry.
+// RECALL_ITEM_TEMPLATE is still shared with the manual export/import round-trip
+// (lib/researchCategoriesImport.ts), which is now the only way this category's data enters
+// the DB — keep it in sync with that shape.
 
-import { filterItemsToTargetModel, normalizeRecall } from "@/lib/categoryValidators";
-import { commonFormatRules, exactModelRulePrompt, ISSUE_ATTESTATION_TEMPLATE, POWERTRAIN_FORMAT_RULE, runCategoryResearch, targetOf } from "@/lib/categoryResearch";
-import type { CategoryResearchInput, CategoryResearchResult } from "@/lib/categoryResearch";
+import { exactModelRulePrompt, ISSUE_ATTESTATION_TEMPLATE, POWERTRAIN_FORMAT_RULE, commonFormatRules } from "@/lib/categoryResearch";
+import type { CategoryResearchInput } from "@/lib/categoryResearch";
 import { AFFECTED_SYSTEMS } from "@/types/researchCategories";
-import type { IRecall } from "@/types/researchCategories";
 
 export const RECALL_ITEM_TEMPLATE = {
   recall_id: "string | null (regulator/manufacturer recall or campaign number if shown)",
@@ -63,26 +63,4 @@ ${commonFormatRules([
   `"affected_component" must be exactly one of: ${AFFECTED_SYSTEMS.join(", ")}.`,
   '"source_url" and "remedy_description" are required on every item; drop an item you cannot cite. "confidence" is "confirmed" only if the recall was directly stated at that URL.',
 ])}`;
-}
-
-export async function researchRecalls(model: string, input: CategoryResearchInput): Promise<CategoryResearchResult<IRecall>> {
-  const name = `${input.brandName} ${input.modelName}`;
-  const cn = input.modelNameCn ?? (input.brandNameCn ? `${input.brandNameCn} ${input.modelName}` : name);
-  return runCategoryResearch<IRecall>({
-    model,
-    label: "research-recalls",
-    input,
-    kickoffPrompt: buildRecallKickoffPrompt(input),
-    formatPrompt: buildRecallFormatPrompt(),
-    searchQueries: [`${name} recall`, `${cn} 召回`, `${cn} 召回 市场监管总局 缺陷产品`, `${name} recall NHTSA OR safety campaign`],
-    responseKey: "recalls",
-    shape: "array",
-    verify: true,
-    groundingFilter: (urls) => urls,
-    preFilter: (raw) => filterItemsToTargetModel(raw, targetOf(input)),
-    normalize: (raw) => normalizeRecall(raw),
-    forceUnconfirmed: (item) => {
-      item.confidence = "unconfirmed";
-    },
-  });
 }

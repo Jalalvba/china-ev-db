@@ -5,7 +5,6 @@ import Brand from "@/models/Brand";
 import ModelSchema from "@/models/Model";
 import MoroccoListing from "@/models/MoroccoListing";
 import type { IBrand, IModel } from "@/types";
-import TechSpecUpdater from "@/app/TechSpecUpdater";
 import MoroccoPriceFetcher from "@/app/MoroccoPriceFetcher";
 import MoroccoPriceChipLink from "@/app/MoroccoPriceChipLink";
 import { SegmentLabel } from "@/lib/segmentDisplay";
@@ -176,7 +175,6 @@ export default async function BrandPage({
               )}
             </Link>
             <div className="flex items-center gap-2 flex-wrap">
-              <TechSpecUpdater scope="model" id={m._id as string} label="🔄" />
               <MoroccoPriceFetcher id={m._id as string} label="💰" />
             </div>
           </div>

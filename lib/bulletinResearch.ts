@@ -1,17 +1,19 @@
-// Model-level technical service bulletin (TSB) research — Chinese sources plus
+// Model-level technical service bulletin (TSB) prompt/template — Chinese sources plus
 // manufacturer official service sites (chineseSourceGuard's `includeManufacturer`
 // option). TSBs are published on the maker's own after-sales portals and often
 // mirrored on Chinese auto-media forums; without the manufacturer domains this
 // category would almost always come back empty. Even WITH them it is expected to
 // return sparse/empty results often — most bulletins are dealer-portal-only and
 // never publicly indexed. An empty result is the correct outcome then, not an error.
+//
+// The live automated-call path (researchBulletins, which used to call runCategoryResearch
+// here) was removed 2026-09-21 — see CLAUDE.md's "Automated research calls removed" entry.
+// BULLETIN_ITEM_TEMPLATE is still shared with the manual export/import round-trip
+// (lib/researchCategoriesImport.ts), which is now the only way this category's data enters
+// the DB — keep it in sync with that shape.
 
-import { filterToChineseSources } from "@/lib/chineseSourceGuard";
-import { filterByPowertrainText, normalizeBulletin } from "@/lib/categoryValidators";
-import { commonFormatRules, runCategoryResearch, searchName } from "@/lib/categoryResearch";
-import type { CategoryResearchInput, CategoryResearchResult } from "@/lib/categoryResearch";
+import type { CategoryResearchInput } from "@/lib/categoryResearch";
 import { AFFECTED_SYSTEMS } from "@/types/researchCategories";
-import type { ITechnicalBulletin } from "@/types/researchCategories";
 
 export const BULLETIN_ITEM_TEMPLATE = {
   bulletin_id: "string | null (the manufacturer's TSB/技术通告 reference number if one is shown; null if unnumbered)",
@@ -43,31 +45,7 @@ export function buildBulletinFormatPrompt(): string {
   return `Convert your findings above into ONLY a JSON object (no markdown fencing, no prose before or after) in exactly this shape ("technical_bulletins" is an array — each element describes the type each field must have, not a literal example value; return an empty array if no genuine bulletin was found):
 ${JSON.stringify({ technical_bulletins: [BULLETIN_ITEM_TEMPLATE] }, null, 2)}
 
-${commonFormatRules([
-  "Every bulletin must come from a Chinese-language or official-manufacturer source you actually found in the search results provided — do not invent one.",
-  `"affected_component" must be exactly one of: ${AFFECTED_SYSTEMS.join(", ")}.`,
-  '"source_url" is required on every item; drop an item you cannot cite. "confidence" is "confirmed" only if the bulletin itself was directly seen at that URL.',
-])}`;
-}
-
-export async function researchBulletins(model: string, input: CategoryResearchInput): Promise<CategoryResearchResult<ITechnicalBulletin>> {
-  const cn = searchName(input);
-  return runCategoryResearch<ITechnicalBulletin>({
-    model,
-    label: "research-bulletins",
-    input,
-    kickoffPrompt: buildBulletinKickoffPrompt(input),
-    formatPrompt: buildBulletinFormatPrompt(),
-    searchQueries: [`${cn} 技术通告`, `${cn} 技术服务通报 TSB`, `${cn} 服务通知 售后 维修`, `${input.brandName} ${input.modelName} 技术通告 官方`],
-    responseKey: "technical_bulletins",
-    shape: "array",
-    verify: true,
-    groundingFilter: (urls) => filterToChineseSources(urls, { includeManufacturer: true }),
-    // No LLM attestation for bulletins yet — only the deterministic powertrain text check applies.
-    preFilter: (raw) => filterByPowertrainText(raw, input.powertrain),
-    normalize: (raw) => normalizeBulletin(raw, { checkChineseSource: true }),
-    forceUnconfirmed: (item) => {
-      item.confidence = "unconfirmed";
-    },
-  });
+Every bulletin must come from a Chinese-language or official-manufacturer source you actually found — do not invent one.
+"affected_component" must be exactly one of: ${AFFECTED_SYSTEMS.join(", ")}.
+"source_url" is required on every item; drop an item you cannot cite. "confidence" is "confirmed" only if the bulletin itself was directly seen at that URL.`;
 }
