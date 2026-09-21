@@ -1,7 +1,7 @@
 import { connectToDatabase } from "@/lib/db";
 import ModelSchema from "@/models/Model";
 
-/** Brand _id (as string) -> cheapest confirmed Morocco price (DH) among its models. Shared by the homepage and the presentations queries so "confirmed price" can't be defined two ways. See CLAUDE.md "Listing conventions". */
+/** Brand _id (as string) -> cheapest confirmed Morocco price (DH) among its models. Shared so "confirmed price" can't be defined two ways. See CLAUDE.md "Listing conventions". */
 export async function getCheapestMoroccoPriceByBrandId(): Promise<Record<string, number>> {
   await connectToDatabase();
   const models = await ModelSchema.find(

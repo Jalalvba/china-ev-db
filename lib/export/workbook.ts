@@ -1,7 +1,7 @@
 import ExcelJS from "exceljs";
 import { FLAT_COLUMNS } from "@/lib/export/flatColumns";
 import type { ExportData } from "@/lib/export/load";
-import { COLORS } from "@/lib/presentations/tokens";
+import { COLORS } from "@/lib/export/colors";
 
 const WRAP_HEADERS = new Set(["Source", "Battery supplier", "Unverified reason", "Motor type"]);
 

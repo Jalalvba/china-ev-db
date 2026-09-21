@@ -395,8 +395,7 @@ filter inputs take hp and convert to kW client-side before hitting the API (the 
 itself stores/queries kW only). Reuse these two functions rather than hand-rolling
 the conversion factor again.
 
-**Two search surfaces, deliberately different axes**: `/search` filters `Model`
-documents (brand, segment, production status, price); `/search/specs` ("Tech Search")
+**Search surface**: `/search/specs` ("Tech Search") is the only search page (the simple `/search` Model-filter page was deleted 2026-09-21 by explicit decision — git history has it) and
 filters `Powertrain` documents (energy type, engine/motor power, battery, transmission
 — the API matches individual trims, but the page groups them into ONE CARD PER MODEL with
 each matching trim as a nested row and the count reads "X models, Y trims match"), reusing
@@ -497,17 +496,6 @@ drift between them. Research modules: `lib/marketTrendResearch.ts`, `lib/globalI
 
 Status as of 2026-09-19: built and build/parser-tested, but live research and the review modals have
 **not yet been exercised** — first real runs are still to do.
-
-## Presentations (decks generated from live data)
-
-`/presentations/[deck]` (browser preview) and `/api/presentations/[deck]/pptx` (**the primary deliverable**: a real, editable .pptx with
-native charts/tables) render one JSON-like spec: `lib/presentations/decks.ts` -> `resolve.ts` -> React (`components/presentations/`) and
-`pptxExport.ts`. A slide names a `source` in `lib/presentations/queries.ts` (never a value); the resolver rejects an unknown source or a
-source/type mismatch. Shared tokens: `tokens.ts` (bare hex for pptxgenjs; `css()` adds `#`). Slide types so far: `chart`, `table`;
-section/callout/process/PLAN still to build. A query that stands in for a metric the DB lacks sets `proxy` (shown on the slide and in
-the pptx document properties) — the brand chart is a PROXY for market share (cheapest confirmed Morocco price; the DB has no sales
-volume), swap it if a real `sales_volume_by_year` field is added. **No reliability/known-issues slide type exists (not even a stub) until
-reviewed known-issues data has been applied to the DB.**
 
 ## Excel export (`/export`, `/api/export`)
 

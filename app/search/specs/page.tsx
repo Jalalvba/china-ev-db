@@ -47,8 +47,7 @@ const HYBRID_ARCHITECTURES = ["parallel", "power_split", "series_erev"];
 // proof — see CLAUDE.md's known-gaps note). 1.8L and 2.0L are both dead now —
 // verified zero trims for either before removing their buttons, not assumed.
 const DISPLACEMENT_BUCKETS: { label: string; values: number[] }[] = [{ label: "1.5L", values: [1.498, 1.499, 1.5] }];
-// Same client-safe local copy pattern as app/search/page.tsx and
-// app/compare/page.tsx — models/Model.ts pulls in mongoose, which must
+// Client-safe local copy — models/Model.ts pulls in mongoose, which must
 // never end up in a client bundle.
 // DB is scoped to PHEV SUVs only (2026-09-18) — only SUV segments have live data.
 const SEGMENTS: Segment[] = ["SUV-compact", "SUV-mid", "SUV-full"];
