@@ -700,6 +700,41 @@ of export prompts to `raw-data/` for manual processing", never deleted outright.
      unmentioned. Not touched in this pass; worth a decision if the ban is meant to extend to
      every AI-calling script rather than just research buttons.
 
+### Backfill/QA exception removed — "no automated API calls anywhere in the app" (2026-09-21)
+
+The exception carved out above for `scripts/fill-missing-mandatory-fields.ts`, `scripts/backfill-segment.ts`,
+and `scripts/morocco-agent.ts` ("backfill/QA tooling, not a research button") was explicitly overturned by
+the user: an automated AI-provider call is in scope regardless of whether it's reached by a UI button or a
+CLI script. All three are now pure export-prompt generators, same pattern as every other script converted
+above — they connect to Mongo, run their existing target-selection query, and write one prompt per
+target to a timestamped file under `raw-data/`, calling neither `lib/aiProvider.ts` nor `lib/webSearch.ts`.
+- **`fill-missing-mandatory-fields.ts`** → `raw-data/mandatory-fields-batch-prompts-<ts>.md`. Reuses
+  `buildExportDocument`/`buildCombinedExportText` from `lib/manualResearchImport.ts` (same as
+  `tech-spec-agent.ts`) — one prompt implementation for canonical-powertrain-v2, not two that could drift.
+  Its per-model write step (`applySpecUpdates`) is gone entirely; output is paste-into-manual-import only.
+- **`backfill-segment.ts`** → `raw-data/segment-backfill-batch-prompts-<ts>.md`. No manual-import panel
+  exists for this one field (it was never part of `research-categories-v1` or `canonical-powertrain-v2`),
+  so the prompt tells the human to apply the answer via the model's own edit UI or a plain
+  `PUT /api/models/<id>` with `{ "segment": "<answer>", "segment_confidence": "inferred" }` — that route
+  already does `runValidators: true`, so an invalid segment enum is rejected at the DB layer.
+- **`morocco-agent.ts`** → `raw-data/morocco-agent-batch-prompts-<ts>.md`. This one previously called
+  `lib/webSearch.ts` (Brave) directly in addition to the AI provider — both are gone. The direct,
+  non-AI `lib/moteurMaScraper.ts` fetch (real HTTP + JSON-LD parse of moteur.ma's own pages, not a
+  search/AI call) is kept and still folded into each brand's prompt as pre-verified context, same as
+  before. The prompt now asks the person's external AI chat to do its own web search/browsing rather
+  than being handed pre-fetched Brave results; output still funnels into the existing
+  `npm run import-morocco -- <file>` review pipeline.
+
+**Final state, confirmed by a repo-wide grep**: the 3 scripts named in this decision (`fill-missing-mandatory-
+fields.ts`, `backfill-segment.ts`, `morocco-agent.ts`) no longer call `lib/aiProvider.ts` or `lib/webSearch.ts`.
+Two automated callers remain **outside the scope of this specific instruction** (it named exactly these 3
+scripts) and were deliberately left untouched — flagging rather than silently leaving them, per the standing
+rule in this doc: `lib/techSpecResearch.ts`'s `researchModel`, still called by `scripts/backfill-trim-price.ts`
+(a fourth backfill script in the same family, not named in this pass), and `app/api/brands/[id]/discover-models/route.ts`
+(model *discovery*, a distinct feature). If the "no automated API calls anywhere" rule is meant to be
+exhaustive rather than scoped to the named scripts, both are the next things to convert. Full-repo
+`npx tsc --noEmit` is clean.
+
 ## Write safety
 
 Every AI-researched write path (`lib/applySpecUpdates.ts`, the manual-import apply

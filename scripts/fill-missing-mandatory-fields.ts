@@ -1,23 +1,19 @@
-// Mandatory-field backfill: finds every Model whose Powertrain record(s) are
-// missing one of a small, explicitly-named set of "mandatory" canonical
-// fields (engine.displacement_l, engine.torque_nm, motor.torque_nm — see
-// MANDATORY note below), researches it via the direct-provider AI stack (DeepSeek by default) +
-// grounding + validation + confidence-gate pipeline (lib/techSpecResearch.ts),
-// and writes the result straight to MongoDB via the existing
-// lib/applySpecUpdates.ts (with its write-verification check) — one model at
-// a time, strictly sequential: model N's write must be confirmed before
-// model N+1 is even researched. No batching, no parallel work, no JSON
-// review file.
+// Batch EXPORT-PROMPT generator for the mandatory-field backfill. As of 2026-09-21
+// this script no longer calls any AI/search provider directly (see CLAUDE.md's
+// "no automated API calls anywhere in the app" entry) — it finds every Model whose
+// Powertrain record(s) are missing one of a small, explicitly-named set of
+// "mandatory" canonical fields (engine.displacement_l, engine.torque_nm,
+// motor.torque_nm, thermal_management — see MANDATORY note below) and writes one
+// manual-import export prompt per model to a single batch file under raw-data/,
+// reusing the exact same buildExportDocument/buildCombinedExportText functions as
+// the per-model "Export for Kimi/DeepSeek" button and scripts/tech-spec-agent.ts,
+// so there is exactly one prompt implementation, not several that can drift.
 //
-// This is deliberately different from scripts/tech-spec-agent.ts, which
-// writes a JSON file for manual review before any DB write. That review step
-// is skipped here on purpose: this script only targets records that already
-// exist and have already been reviewed once — it is filling a small,
-// specific gap (a handful of mandatory numeric fields), not populating a
-// brand-new record from scratch. The full researchModel() pipeline (schema
-// validation + zero-citation "force unconfirmed" gate) still runs on every
-// result, so a schema-mismatched or unconfirmed response still can't produce
-// silently-wrong data — it's rejected/flagged, not skipped past.
+// This script NEVER writes to MongoDB and never calls lib/aiProvider.ts or
+// lib/webSearch.ts. Paste each prompt into an external AI chat (Kimi/Gemini/
+// DeepSeek), then paste its JSON response into the target model's "Manual research
+// import" panel (or POST to /api/models/[id]/manual-import/validate) to validate and
+// apply — same reviewed round trip as every other manual import in this project.
 //
 // types/canonicalPowertrain.ts does NOT mark any field below the top level
 // (trim_name/energy_type) as TS-required — everything in engine/motor/
@@ -32,17 +28,14 @@
 // checks apply, same fallback lib/techSpecResearch.ts's describeTrimGaps()
 // already uses for that case.
 //
-// thermal_management was added after the first mandatory-field run (schema
-// migration, see AGENTS.md-adjacent conversation) — every pre-existing
-// Powertrain record, including ones this script already backfilled for
-// displacement/torque, is missing it and will be picked up by a second run.
-//
 // Usage:
-//   npm run fill-missing-mandatory-fields -- --limit 3   (test batch)
-//   npm run fill-missing-mandatory-fields                (full unattended run)
+//   npm run fill-missing-mandatory-fields                (full run)
+//   npm run fill-missing-mandatory-fields -- --limit 3   (only the first 3 models)
 
 import dotenv from "dotenv";
 dotenv.config({ path: [".env.local", ".env"], quiet: true });
+import fs from "fs";
+import path from "path";
 import mongoose from "mongoose";
 // Side-effect import only: registers the "Brand" model so ModelSchema.find().populate("brand_id")
 // below can resolve it — see the identical comment in scripts/tech-spec-agent.ts.
@@ -50,39 +43,24 @@ import "../models/Brand";
 import ModelSchema from "../models/Model";
 import Powertrain from "../models/Powertrain";
 import type { IBrand } from "../types";
-import { getDefaultModel, DEFAULT_DELAY_MS, ModelNotFoundError, SearchProviderError, sleep, researchModel, type PowertrainLean } from "../lib/techSpecResearch";
-import { applySpecUpdates } from "../lib/applySpecUpdates";
-import { lookupMoteurMa, renderMoteurMaContext } from "../lib/moteurMaScraper";
+import type { PowertrainLean } from "../lib/techSpecResearch";
+import { buildCombinedExportText, buildExportDocument, exportFileBase } from "../lib/manualResearchImport";
 
 const MONGODB_URI = process.env.MONGODB_URI;
 if (!MONGODB_URI) {
   throw new Error("Missing MONGODB_URI. Copy .env.example to .env and set it.");
 }
 
-// A real function call (not a module-level const — see the comment on
-// getActiveProvider() in lib/aiProvider.ts for why that matters: import
-// hoisting vs. this script's own dotenv.config() call above) that surfaces a
-// missing <PROVIDER>_API_KEY / bad AI_PROVIDER value immediately, before any
-// Mongo connection or research work starts.
-import { getActiveProvider } from "../lib/aiProvider";
-console.log(`AI provider: ${getActiveProvider()}`);
-if (!process.env.SEARCH_API_KEY) {
-  throw new Error("Missing SEARCH_API_KEY. Get a free Brave Search API key at https://api.search.brave.com/app/keys and set it in .env.");
-}
-
 interface CliOptions {
   limit?: number;
-  model: string;
 }
 
 function parseArgs(): CliOptions {
   const args = process.argv.slice(2);
-  const options: CliOptions = { model: getDefaultModel() };
+  const options: CliOptions = {};
   for (let i = 0; i < args.length; i++) {
     if (args[i] === "--limit") {
       options.limit = Number(args[++i]);
-    } else if (args[i] === "--model") {
-      options.model = args[++i];
     }
   }
   return options;
@@ -113,16 +91,23 @@ function missingMandatoryField(pt: PowertrainLean): boolean {
 }
 
 async function run() {
-  const { limit, model } = parseArgs();
-  const delayMs = Number(process.env.AI_AGENT_DELAY_MS ?? DEFAULT_DELAY_MS);
+  const { limit } = parseArgs();
 
   await mongoose.connect(MONGODB_URI as string);
-  console.log(`Connected to MongoDB. Using model: ${model}, delay: ${delayMs}ms between models.`);
+  console.log(`Connected to MongoDB.`);
 
   const allPowertrains = (await Powertrain.find(
     {},
-    { model_id: 1, trim_name: 1, energy_type: 1, engine: 1, motor: 1, thermal_management: 1 }
+    { model_id: 1, trim_name: 1, energy_type: 1, engine: 1, motor: 1, battery: 1, transmission: 1, performance: 1, thermal_management: 1, confidence: 1, unverified: 1 }
   ).lean()) as unknown as PowertrainLean[];
+
+  const powertrainsByModel = new Map<string, PowertrainLean[]>();
+  for (const pt of allPowertrains) {
+    const key = String(pt.model_id);
+    const list = powertrainsByModel.get(key);
+    if (list) list.push(pt);
+    else powertrainsByModel.set(key, [pt]);
+  }
 
   const modelIdsNeedingBackfill = new Set<string>();
   for (const pt of allPowertrains) {
@@ -143,160 +128,40 @@ async function run() {
     }.\n`
   );
 
-  let modelsProcessed = 0;
-  let modelsWriteSucceeded = 0;
-  let modelsWriteFailed = 0;
-  let modelsResearchNotFound = 0;
-  let modelsResearchError = 0;
-  let variantsApplied = 0;
-  let variantsRejected = 0;
+  const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+  const outPath = path.resolve(`raw-data/mandatory-fields-batch-prompts-${timestamp}.md`);
+  fs.mkdirSync(path.dirname(outPath), { recursive: true });
 
+  const sections: string[] = [];
   for (let i = 0; i < targets.length; i++) {
     const m = targets[i];
     const brand = m.brand_id as unknown as IBrand | null;
     const brandName = brand?.name_en ?? brand?.name ?? "Unknown";
-    const modelName = m.name_en ?? m.name;
     const progress = `[${i + 1}/${targets.length}]`;
-    modelsProcessed++;
 
-    const existingPowertrains = allPowertrains.filter((pt) => String(pt.model_id) === String(m._id));
-    const existingTrimNames = existingPowertrains.map((pt) => pt.trim_name).filter((t): t is string => Boolean(t));
+    const powertrainDocs = powertrainsByModel.get(String(m._id)) ?? [];
+    const exportDoc = buildExportDocument(
+      m as unknown as Record<string, unknown> & { _id: unknown },
+      brand as unknown as (IBrand & { _id: unknown }) | null,
+      powertrainDocs as unknown as (PowertrainLean & Record<string, unknown>)[]
+    );
+    const combinedText = buildCombinedExportText(exportDoc);
 
-    try {
-      // --- a. research this ONE model (existing pipeline, unchanged) ---
-      const moteurLookup = await lookupMoteurMa(brandName, modelName);
-      const moteurMaContext = renderMoteurMaContext(moteurLookup);
-
-      const result = await researchModel(model, {
-        modelDbId: String(m._id),
-        brandName,
-        brandNameCn: brand?.name_cn,
-        modelName,
-        modelNameCn: m.name_cn,
-        generation: m.generation,
-        segment: m.segment,
-        bodyType: m.body_type,
-        existingTrimNames: existingTrimNames.length ? existingTrimNames : undefined,
-        brandContext: brand
-          ? {
-              parentGroup: brand.parent_group,
-              relationshipType: brand.relationship_type,
-              stakePercentage: brand.stake_percentage,
-              techPartner: brand.tech_partner,
-              status: brand.status,
-            }
-          : undefined,
-        moteurMaContext,
-      });
-
-      if (result.status === "error") {
-        console.log(`${progress} ${brandName} ${modelName}: RESEARCH FAILED — ${result.errorMessage} — skipping.`);
-        modelsResearchError++;
-        continue;
-      }
-      if (result.variants.length === 0) {
-        console.log(
-          `${progress} ${brandName} ${modelName}: research returned zero variants${
-            result.errorMessage ? ` (${result.errorMessage})` : ""
-          } — skipping.`
-        );
-        modelsResearchNotFound++;
-        continue;
-      }
-
-      const validVariants = result.variants.filter((v) => v.valid);
-      const invalidVariants = result.variants.filter((v) => !v.valid);
-      variantsRejected += invalidVariants.length;
-      for (const iv of invalidVariants) {
-        console.log(`${progress} ${brandName} ${modelName}: REJECTED variant (schema mismatch) — ${iv.errors.join("; ")}`);
-      }
-
-      if (validVariants.length === 0) {
-        console.log(`${progress} ${brandName} ${modelName}: all variants rejected — nothing to write, skipping.`);
-        modelsResearchNotFound++;
-        continue;
-      }
-
-      for (const v of validVariants) {
-        const trimName = (v.variant.trim_name as string) ?? "?";
-        const confidence = (v.variant.confidence as string) ?? "?";
-        console.log(
-          `${progress} ${brandName} ${modelName} — trim "${trimName}": researched (confidence=${confidence}, grounding=${
-            result.hasGrounding ? `yes, ${result.sourceUrls.length} source(s)` : "NO — forced unconfirmed"
-          })`
-        );
-      }
-
-      // --- b/c. write THIS model's results to MongoDB immediately, then
-      // verify, before moving to the next model. applySpecUpdates() already
-      // re-fetches and field-verifies every write (see lib/applySpecUpdates.ts). ---
-      const applyResult = await applySpecUpdates({
-        updates: validVariants.map((v) => ({ modelDbId: String(m._id), variant: v.variant })),
-        modelFilter: { _id: m._id },
-      });
-
-      variantsApplied += applyResult.applied;
-      if (applyResult.errors.length > 0) {
-        modelsWriteFailed++;
-        for (const e of applyResult.errors) {
-          console.log(`${progress} ${brandName} ${modelName}: WRITE FAILED — ${e.message}`);
-        }
-      }
-      if (applyResult.applied > 0) {
-        modelsWriteSucceeded++;
-        console.log(
-          `${progress} ${brandName} ${modelName}: WRITE CONFIRMED — ${applyResult.applied} variant(s) verified on re-fetch. Moving to next model.`
-        );
-      } else if (applyResult.errors.length === 0) {
-        // Shouldn't happen (validVariants.length > 0 implies at least one
-        // update was attempted) but log explicitly rather than silently
-        // treating "0 applied, 0 errors" as success.
-        console.log(`${progress} ${brandName} ${modelName}: no variants applied and no errors reported — treating as failed.`);
-        modelsWriteFailed++;
-      }
-    } catch (err) {
-      if (err instanceof ModelNotFoundError || err instanceof SearchProviderError) {
-        // Same model name would 404 for every remaining model, and a search-
-        // provider failure (rate limit, exhausted credit) won't clear itself
-        // mid-run either — both are fatal for the whole run, not a per-model
-        // issue, so abort loudly here instead of grinding through the rest
-        // of the batch producing zero-grounding "forced unconfirmed" results.
-        const remaining = targets.length - i;
-        const reason =
-          err instanceof SearchProviderError
-            ? `Brave Search credit exhausted (HTTP ${err.status}) — ${i} model(s) processed successfully before failure, ${remaining} model(s) remain unprocessed.`
-            : err.message;
-        console.error(`\n${progress} ${brandName} ${modelName}: FATAL — ${reason}`);
-        console.error(
-          `\n=== PARTIAL SUMMARY (aborted early) ===\n` +
-            `Models processed before abort: ${i} / ${targets.length}\n` +
-            `  - writes confirmed:      ${modelsWriteSucceeded}\n` +
-            `  - writes failed:         ${modelsWriteFailed}\n` +
-            `  - research not found:    ${modelsResearchNotFound}\n` +
-            `  - research errored:      ${modelsResearchError}\n` +
-            `Variants applied:  ${variantsApplied}\n` +
-            `Variants rejected: ${variantsRejected}\n`
-        );
-        await mongoose.disconnect();
-        process.exit(1);
-      }
-      console.error(`${progress} ${brandName} ${modelName}: unexpected error — ${(err as Error).message} — skipping.`);
-      modelsResearchError++;
-    }
-
-    if (i < targets.length - 1) await sleep(delayMs);
+    console.log(`${progress} ${brandName} ${m.name}: prompt built`);
+    sections.push(
+      `## ${brandName} ${m.name}\n\n- Model DB id: \`${String(m._id)}\`\n- File base (if exporting individually): \`${exportFileBase(m)}\`\n- Ask specifically for: engine.displacement_l, engine.torque_nm, motor.torque_nm, thermal_management (whichever apply per energy_type) — this model was selected because at least one of these mandatory fields is missing on an existing trim.\n- Paste the response back into this model's "Manual research import" panel, or POST to \`/api/models/${String(m._id)}/manual-import/validate\`.\n\n\`\`\`\n${combinedText}\n\`\`\`\n`
+    );
   }
 
-  console.log(
-    `\n=== SUMMARY ===\n` +
-      `Models processed:     ${modelsProcessed}\n` +
-      `  - writes confirmed: ${modelsWriteSucceeded}\n` +
-      `  - writes failed:    ${modelsWriteFailed}\n` +
-      `  - research not found: ${modelsResearchNotFound}\n` +
-      `  - research errored:   ${modelsResearchError}\n` +
-      `Variants applied:  ${variantsApplied}\n` +
-      `Variants rejected (schema mismatch): ${variantsRejected}\n`
+  fs.writeFileSync(
+    outPath,
+    `# Mandatory-field backfill export prompts — ${timestamp}\n\n${targets.length} model(s) have a Powertrain record missing a mandatory field (engine.displacement_l / engine.torque_nm / motor.torque_nm / thermal_management). Generated by scripts/fill-missing-mandatory-fields.ts. No AI/search provider was called — paste each prompt below into an external AI chat (Kimi/Gemini/DeepSeek), then paste its JSON response into the target model's manual-import panel to validate and apply.\n\n${sections.join(
+      "\n---\n\n"
+    )}`
   );
+
+  console.log(`\nWrote ${targets.length} export prompt(s) to ${outPath}`);
+  console.log(`This file was NOT written to MongoDB and no AI provider was called.`);
 
   await mongoose.disconnect();
 }
