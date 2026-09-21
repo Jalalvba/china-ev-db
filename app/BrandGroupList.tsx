@@ -5,6 +5,8 @@ import Link from "next/link";
 import type { BrandGroup } from "@/lib/brandGrouping";
 import type { IBrand } from "@/types";
 import BrandResearch from "@/app/BrandResearch";
+import BrandGroupExport from "@/app/BrandGroupExport";
+import BrandDiscoveryExport from "@/app/BrandDiscoveryExport";
 
 const STATUS_STYLES: Record<string, string> = {
   discontinued: "bg-zinc-200 text-zinc-600 dark:bg-zinc-700 dark:text-zinc-300",
@@ -83,13 +85,18 @@ function GroupSection({
     <section className="rounded-xl border border-zinc-200 bg-zinc-50/60 dark:border-zinc-800 dark:bg-zinc-900/40">
       <button
         onClick={() => setOpen((v) => !v)}
-        className="w-full flex items-center justify-between gap-3 px-4 py-3 text-left"
+        className="w-full flex items-center justify-between gap-3 px-4 py-3 text-left flex-wrap"
       >
-        <div className="flex items-baseline gap-2 min-w-0">
+        <div className="flex items-baseline gap-2 min-w-0 flex-wrap">
           <h2 className="text-lg font-bold truncate text-zinc-900 dark:text-zinc-100">{group.label}</h2>
           <span className="shrink-0 text-xs font-medium text-zinc-500 dark:text-zinc-400 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-full px-2 py-0.5">
             {group.brands.length} brands
           </span>
+          <BrandGroupExport
+            groupKey={group.key}
+            brandNamesById={Object.fromEntries(group.brands.map((b) => [String(b._id), b.name]))}
+          />
+          <BrandDiscoveryExport groupKey={group.key} />
         </div>
         <svg
           className={`shrink-0 w-5 h-5 text-zinc-400 transition-transform ${open ? "rotate-180" : ""}`}

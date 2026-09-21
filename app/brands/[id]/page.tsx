@@ -103,7 +103,7 @@ export default async function BrandPage({
       <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-1">
         {brand.last_researched_at
           ? `Brand identity researched ${formatRelativeTime(brand.last_researched_at)}`
-          : `Brand identity not yet researched${brand.createdAt ? ` (original import data, ${formatRelativeTime(brand.createdAt)})` : ""} — consider using "Research this brand" before discovering models, for more targeted results`}
+          : `Brand identity not yet researched${brand.createdAt ? ` (original import data, ${formatRelativeTime(brand.createdAt)})` : ""} — consider using "Brand identity: export/import" before discovering models, for more targeted results`}
       </p>
 
       <div className="flex flex-wrap items-start gap-4 mt-3">
@@ -132,7 +132,7 @@ export default async function BrandPage({
         <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-4">
           {allModels.length > 0
             ? "No models with a confirmed Morocco price yet — use the link above to see all models on file."
-            : 'No models on file yet for this brand — use "🔎 Research brand" above to find its lineup.'}
+            : 'No models on file yet for this brand — use "📋 Export prompt for model discovery" above to find its lineup.'}
         </p>
       )}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">

@@ -28,9 +28,9 @@ export default function BrandResearch({ brandId, compact }: Props) {
       applySegment="apply-brand-research"
       dataKey="brand"
       applyBodyKey="fields"
-      title="Brand identity research"
-      triggerLabel="Research this brand"
-      triggerEmoji="🔎"
+      title="Export/import brand identity research"
+      triggerLabel="Brand identity: export/import"
+      triggerEmoji="📋"
       compact={compact}
       renderPreview={(brand) => (
         <>

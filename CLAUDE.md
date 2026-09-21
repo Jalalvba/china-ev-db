@@ -832,6 +832,132 @@ brand-card icon relabel were built earlier the same session but deliberately hel
 committed) pending their own review — see the working tree's stashed changes, not reflected in the
 commits this entry describes.
 
+### Manufacturer-group export/import + BrandResearch icon clarity fix (2026-09-21)
+
+Two small follow-ups to the Brands list page (the grouped-by-manufacturer view, e.g. homepage `/`):
+
+- **Cosmetic fix**: the compact 🔎 icon on each `BrandCard` (`app/BrandGroupList.tsx`) was already
+  the manual export/import panel (`app/BrandResearch.tsx` → `SingleObjectManualPanel`, correctly
+  `stopPropagation`-wrapped so it never triggers the card's own navigation link) — not a leftover
+  automated call. But its emoji (🔎) and title ("Brand identity research") read as "runs a search
+  action," which is exactly the pattern this whole effort was removing. Changed to 📋 / "Export/import
+  brand identity research" / trigger label "Brand identity: export/import" — same component, same
+  behavior, just no longer emoji-coded as automated. Also fixed two stale hint strings on
+  `app/brands/[id]/page.tsx` that still referenced the old "🔎 Research this brand" / "🔎 Research
+  brand" labels from before the Tier-1/Tier-2 conversions.
+- **New: `brand-group-manual-v1`** (`lib/brandGroupResearch.ts`) — an export/import round trip
+  covering an ENTIRE manufacturer group (e.g. "Chery Automobile Co., Ltd." with all of Soueast/
+  Chery/Exeed/Lepas) in one prompt/paste, rather than one brand at a time. Envelope: `schema_version`,
+  `group_key` (from `groupBrands()`'s own `BrandGroup.key` — group membership is always resolved
+  server-side via the same function the homepage/Brands list uses, never trusted from the paste),
+  `brands[]` (routed by `brand_id`, validated per-item with the existing `validateResearchedBrand`
+  from `lib/brandResearch.ts`), `models[]` (routed by `brand_id`, validated per-item with the existing
+  `validateDiscoveredModel`/duplicate-detection from `lib/modelDiscovery.ts`, scoped per sub-brand not
+  one shared pool), `group_relationships[]` (new — cross-brand facts like shared platforms/badge-
+  engineering, each `brands_involved` id checked against the group's real membership), and
+  `group_positioning` (new — a group-wide summary).
+  - Every `brand_id`/`brands_involved` id is checked against the group's real membership
+    (`groupBrands()` re-run server-side in the validate route) — an id outside the group is rejected
+    at the item level, not trusted from the paste.
+  - A `models[]` item with a non-null `model_id` (i.e. proposing to correct an existing model, not
+    just add a new one) is explicitly rejected as "not supported via group import — use the per-model
+    spec page" — this path only creates new models, updating existing ones stays on its own page.
+  - **`group_relationships`/`group_positioning` are DISPLAY-ONLY, not persisted** — no field on
+    `Brand`/`Model` is a good fit for either (`Brand.status_note` is a single free-text slot already
+    meaning "why this brand's own status is what it is," not a slot for cross-brand facts or a
+    positioning essay), so rather than inventing a new schema field/migration unprompted, the review
+    UI just shows both sections read-only with a "not saved, review manually" note.
+  - Routes: `app/api/brand-groups/{export,validate}/route.ts` — `group_key` is a POST body field, not
+    a URL param, since a group key can contain spaces/punctuation (e.g. the Chery example above) that
+    would need careful round-trip encoding as a dynamic route segment; simpler to sidestep it entirely.
+  - Apply reuses the EXISTING per-brand `apply-brand-research` and per-brand `create-models` routes —
+    called once per selected brand/once per brand with selected new models — no new write path.
+  - UI: `app/BrandGroupExport.tsx`, rendered in `app/BrandGroupList.tsx`'s `GroupSection` header next
+    to the "N brands" badge. Same nested-clickable problem `SingleObjectManualPanel` already solved
+    (the header itself is a `<button onClick={toggle expand/collapse}>`) — every click in this
+    component calls `stopPropagation`/`preventDefault`. Review table is sectioned by brand changes,
+    discovered models (per-row checkbox, duplicates default-unchecked, same pattern as
+    `BrandAndModelDiscovery.tsx`), relationships, and positioning.
+- Full-repo `npx tsc --noEmit` and `eslint` both clean on this change.
+
+### Manufacturer-level BRAND discovery — `brand-discovery-v1` (2026-09-21)
+
+A third group-level feature, sitting alongside `BrandGroupExport` in the same `GroupSection` header —
+distinct from it in kind, not just a variant: `BrandGroupExport`/`brand-group-manual-v1` only manages
+brands and models ALREADY in the DB under a group (identity corrections, model gaps scoped to existing
+sub-brands). This one finds sub-brands that don't exist in the DB **at all** yet (e.g. for "Chery
+Automobile Co., Ltd." with Soueast/Chery/Exeed on file, checking specifically for Lepas/Omoda/Jaecoo/
+etc.) — a materially different question (whole-brand existence, not field corrections), so it gets its
+own schema/prompt/component rather than being folded into the existing one as another array.
+
+- **New file `lib/brandDiscoveryResearch.ts`** — `BRAND_DISCOVERY_SCHEMA_VERSION = "brand-discovery-v1"`:
+  `{ schema_version, group_key, discovered_brands: [{ name, name_cn, relationship_type,
+  stake_percentage, tech_partner, country_origin, founded_year, status, status_note, confidence }],
+  notes }`. Reuses `RELATIONSHIP_TYPES`/`BRAND_STATUSES` from `models/Brand.ts` and, for per-item
+  validation, `validateResearchedBrand`/`applyBrandGroundingGate` from `lib/brandResearch.ts` directly
+  (same canonical brand-identity shape as `brand-manual-v1`, just validated against a brand that
+  doesn't have a `brand_id` yet — `name` is stripped before validating, same as `brand-group-manual-v1`
+  already does for its own `brands[]`).
+- **Export prompt** (`buildBrandDiscoveryExportPrompt`) lists every brand already in the DB under the
+  group (by name, resolved server-side via `groupBrands()` — never trusted from the client) and asks
+  explicitly for brands NOT in that list, restating the full envelope at the end. Route:
+  `app/api/brand-groups/discover/export/route.ts` (POST, `group_key` in the body — same
+  punctuation-safe reasoning as the sibling `brand-groups/export` route). No AI call.
+- **Duplicate detection is two-tiered**, the one genuinely new piece of validation logic here: a
+  discovered brand matching a name/name_cn already in THIS group is a plain `duplicate` (deselected by
+  default, same as every other discovery-review pattern in this app); a match against a brand
+  ANYWHERE ELSE in the DB under a **different** `parent_group` is flagged separately as
+  `duplicateInDifferentGroup` (also deselected by default) — worth calling out distinctly since it
+  usually means a misattribution (the AI proposing a brand as part of this group when it's actually
+  filed under a different one already), not a simple re-suggestion. Route:
+  `app/api/brand-groups/discover/validate/route.ts`, re-resolving both the in-group and whole-DB brand
+  lists server-side.
+- **Apply reuses the existing generic `POST /api/brands` route** (`Brand.create(body)` — already
+  supports arbitrary fields, no new create-route needed). The client sets `parent_group: groupKey`
+  on every selected brand before posting — verified against `lib/brandGrouping.ts`'s `keyFor()` that
+  this is always correct regardless of whether the group's key is a literal conglomerate string (e.g.
+  "Chery Automobile Co., Ltd.", matching what Soueast/Chery/Exeed already carry verbatim in their own
+  `parent_group` field) or an anchor-brand label (e.g. "Geely Holding Group", which existing sub-brands
+  reach via `parent_group: "Geely"` pointing at the sibling anchor brand by name) — in the anchor case,
+  `keyFor()` for the NEW brand can't find a Brand named "Geely Holding Group" to walk further, so it
+  falls through to returning that literal string as its own terminal key, landing in the exact same
+  group via a different but equally valid path through the same function. No brand-model-specific
+  parent_group-resolution logic was needed beyond setting it to `group.key` directly.
+- **UI**: new `app/BrandDiscoveryExport.tsx`, rendered in `app/BrandGroupList.tsx`'s `GroupSection`
+  header next to `BrandGroupExport` (both visible on every group card, not just Chery) — same
+  two-button pattern (📦 Export / 📥 Import), same `stopPropagation`/`preventDefault` handling against
+  the header's own expand/collapse click, same per-row-checkbox review table pattern as
+  `BrandAndModelDiscovery.tsx` (valid+non-duplicate rows default-checked, anything flagged
+  default-unchecked, inline validation errors, "Apply selected" only posts checked rows).
+- Full-repo `npx tsc --noEmit` and `eslint` both clean on this change.
+
+**Verification and a flagged data bug found while testing (2026-09-21)**: manually tested the review
+table with a synthetic paste containing one genuinely-new brand, one in-group duplicate, and one
+cross-group case — all three were caught correctly, including a REAL pre-existing case the test didn't
+engineer: pasting "Jaecoo" (a name only, no `parent_group` — the schema never asks for one) surfaced
+`duplicateInDifferentGroup` because the dev DB's actual `Jaecoo` document has `parent_group: "Chery
+Automobile (Chery Group)"` while its real siblings (`Chery`, `Soueast`) carry `parent_group: "Chery
+Automobile Co., Ltd."` verbatim. Confirms the detection is **robust to `parent_group` spelling
+variance** specifically, because same-group-vs-different-group is decided by `groupBrands()`'s real
+ownership-chain walk (matching a `parent_group` string against sibling brands' own `name` field), never
+by comparing `parent_group` strings literally — a differently-spelled `parent_group` on the existing
+record didn't cause a false negative. The one limitation that IS real: name-matching itself
+(`namesMatch()`) is case/whitespace-insensitive exact match on `name`/`name_cn`, not fuzzy — a
+genuinely different spelling of the same real-world BRAND's own name would not be caught as a
+duplicate, same known limitation as `lib/modelDiscovery.ts`'s existing dedup elsewhere in this app.
+
+- **Flagged data bug, NOT fixed here (own follow-up, per standing backup-first-then-fix discipline)**:
+  `Jaecoo`'s `parent_group` (`"Chery Automobile (Chery Group)"`) doesn't match any other brand's `name`
+  field, so `groupBrands()` can't walk it back to the real "Chery Automobile Co., Ltd." group — it
+  falls out as its own orphaned 1-brand group, which the grouping logic then collapses into
+  "Independent brands" on the homepage instead of showing under Chery where it actually belongs. This
+  predates tonight's work entirely (confirmed via a direct DB query, not caused by anything built
+  tonight) and was found only as a side effect of testing this feature. Needs the correct value
+  (`"Chery Automobile Co., Ltd."`, matching `Chery`/`Soueast` verbatim, or `"Chery"` like `Exeed` uses
+  to reach the same group via the chain) — a one-field fix, but per the backup-first convention this
+  session has followed all night, do it as its own small change with a snapshot first, not bundled into
+  this feature commit.
+
 ## Write safety
 
 Every AI-researched write path (`lib/applySpecUpdates.ts`, the manual-import apply
