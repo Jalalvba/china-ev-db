@@ -111,6 +111,12 @@ const PowertrainSchema = new Schema<PowertrainDoc>(
   {
     model_id: { type: Schema.Types.ObjectId, ref: "Model", required: true },
     trim_name: { type: String, required: true },
+    /** The name this trim is actually marketed under in Morocco, if different from `trim_name` — manual direct-entry only (see app/api/powertrains/[id]/morocco-info/route.ts), never part of AI research. Optional; falls back to `trim_name` when unset. */
+    morocco_name: { type: String, trim: true },
+    /** Trim-level Morocco price — distinct from trim_price_min/max above (the China-domestic canonical price) and from the Model doc's own morocco_price_dh (that model's headline/cheapest-trim price). Manual direct-entry only, same "manual" source convention as Model.morocco_price_source. Undefined means this trim has no Morocco-specific price on file. */
+    morocco_price_dh: { type: Number },
+    morocco_price_source: { type: String, enum: ["manual"] },
+    morocco_price_confirmed: { type: Boolean, default: false },
     energy_type: { type: String, enum: ENERGY_TYPES, required: true },
     engine: { type: EngineDetailsSchema },
     motor: { type: ElectricMotorDetailsSchema },

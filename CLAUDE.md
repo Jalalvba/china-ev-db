@@ -993,6 +993,41 @@ duplicate, same known limitation as `lib/modelDiscovery.ts`'s existing dedup els
   session has followed all night, do it as its own small change with a snapshot first, not bundled into
   this feature commit.
 
+### Direct manual editing of Morocco name/price — NOT the research flow (2026-09-21)
+
+A new, deliberately separate write path from every export-prompt/paste-response panel documented
+above: a plain edit form for two Morocco-market facts the user already knows themselves and wants
+to enter or correct immediately, no Kimi round-trip. Bypasses every research guard on purpose
+(identity check, PHEV-only scope guard, source verification) — the person editing is asserting a
+fact directly, not submitting an AI response for review.
+
+- **Fields, confirmed split**: `morocco_name` (optional string, falls back to the entity's own
+  `name`/`trim_name` when unset) added at all three levels — Brand, Model, Powertrain (Trim).
+  Morocco **price** only exists at Model (already did: `morocco_price_dh`/`source`/`url`/
+  `confirmed`) and Trim (brand-new — Trim had NO Morocco price field at all before this, only the
+  China-domestic canonical `trim_price_min/max`) — Brand has no single price, only Models/Trims do.
+- `morocco_price_source` enum extended to include `"manual"` (Model: `"moteur.ma" | "wandaloo.com"
+  | "manual"`; Trim: `"manual"` only, since no scraper populates Morocco price at trim level yet).
+- **Confidence decision**: a manual entry sets `morocco_price_confirmed: true` immediately, no
+  `source_url` required — deliberately, not an inconsistency. Confidence elsewhere in this app
+  tracks "is this trustworthy enough to show by default," and this app already lets a *less*
+  trustworthy case (AI-fallback price reconciliation, before it was removed — see the "no automated
+  API calls" entries above) write an unconfirmed price. A human directly asserting a fact about
+  their own market is more trustworthy than that, so immediate confirmation is consistent, not a
+  special case.
+- **Built so far (Model level only, staged rollout per explicit user request)**: `PATCH
+  /api/models/[id]/morocco-info` (`{morocco_name?, morocco_price_dh?}`, `null` explicitly clears a
+  field — distinct from `0`/empty; clearing price also clears `source`/`url`/`confirmed` together;
+  re-fetch-verifies per this file's Write safety convention below) and `app/MoroccoInfoEditor.tsx`
+  (a small modal: text input + Clear, number input + Clear, Save/Cancel), wired onto the model
+  detail page next to the existing research-flow buttons. Brand-level and Trim-level UI/routes are
+  NOT built yet — same pattern, pending rollout.
+- **Real incident hit while testing, not a code defect**: an old dev-server process from earlier in
+  the session had a stale cached Mongoose schema (pre-dating the `morocco_price_source` enum
+  change) — writing `"manual"` 500'd with a Mongoose `ValidationError` until the dev server was
+  restarted. This is exactly the scenario this file's own Write safety section already warns about;
+  confirms it's a real, recurring gotcha worth restating rather than a one-off.
+
 ## Write safety
 
 Every AI-researched write path (`lib/applySpecUpdates.ts`, the manual-import apply

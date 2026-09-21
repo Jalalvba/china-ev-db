@@ -47,6 +47,8 @@ const ModelSchema = new Schema<ModelDoc>(
     name: { type: String, required: true, trim: true },
     name_cn: { type: String, trim: true },
     name_en: { type: String, trim: true },
+    /** The name this model is actually marketed under in Morocco, if different from `name` — manual direct-entry only (see app/api/models/[id]/morocco-info/route.ts), never part of AI research. Optional; falls back to `name` when unset. */
+    morocco_name: { type: String, trim: true },
     generation: { type: String },
     year: { type: Number },
     segment: { type: String, enum: SEGMENTS, required: true },
@@ -157,13 +159,16 @@ const ModelSchema = new Schema<ModelDoc>(
       },
     ],
     recalls_last_researched_at: { type: Date },
-    // Written only by app/api/models/[id]/fetch-morocco-price/route.ts — a
-    // deterministic scrape of moteur.ma/wandaloo.com, never the AI. Kept
-    // separate from MoroccoListing (which is keyed by brand/model name and
-    // predates Model having its own brand_id-scoped Morocco fields) so the
-    // UI can show a price chip straight off the Model doc without a join.
+    // Written by app/api/models/[id]/fetch-morocco-price/route.ts (a
+    // deterministic scrape of moteur.ma/wandaloo.com) OR by
+    // app/api/models/[id]/morocco-info/route.ts (direct manual entry,
+    // source "manual" — see that route's own comment for why a manual
+    // entry is marked confirmed without a source_url). Kept separate from
+    // MoroccoListing (which is keyed by brand/model name and predates Model
+    // having its own brand_id-scoped Morocco fields) so the UI can show a
+    // price chip straight off the Model doc without a join.
     morocco_price_dh: { type: Number },
-    morocco_price_source: { type: String, enum: ["moteur.ma", "wandaloo.com"] },
+    morocco_price_source: { type: String, enum: ["moteur.ma", "wandaloo.com", "manual"] },
     morocco_price_url: { type: String },
     morocco_price_confirmed: { type: Boolean, default: false },
     morocco_to_china_price_ratio: { type: Number },

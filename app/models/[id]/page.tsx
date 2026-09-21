@@ -19,6 +19,7 @@ import ResearchCategoriesPanel from "@/app/ResearchCategoriesPanel";
 import BrandPhevSuvWorkshopProfile from "@/models/BrandPhevSuvWorkshopProfile";
 import ExportForManualResearchButton from "@/app/ExportForManualResearchButton";
 import MoroccoPriceFetcher from "@/app/MoroccoPriceFetcher";
+import MoroccoInfoEditor from "@/app/MoroccoInfoEditor";
 import { formatChinaPriceUsd, formatTrimPrice } from "@/lib/priceDisplay";
 import { SegmentLabel } from "@/lib/segmentDisplay";
 import { hasFields, groupBySpec } from "@/lib/specGrouping";
@@ -86,17 +87,29 @@ export default async function ModelPage({ params }: { params: Promise<{ id: stri
         {brand.name} {model.name}
         {model.generation ? ` (${model.generation})` : ""}
         {model.morocco_price_confirmed && model.morocco_price_dh && (
-          <a
-            href={model.morocco_price_url}
-            target="_blank"
-            rel="noopener noreferrer"
-            title={model.morocco_price_source}
-            className="text-sm font-normal px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400 hover:underline"
-          >
-            💰 {model.morocco_price_dh.toLocaleString()} DH
-          </a>
+          model.morocco_price_url ? (
+            <a
+              href={model.morocco_price_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              title={model.morocco_price_source}
+              className="text-sm font-normal px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400 hover:underline"
+            >
+              💰 {model.morocco_price_dh.toLocaleString()} DH
+            </a>
+          ) : (
+            <span
+              title={model.morocco_price_source === "manual" ? "Entered manually" : model.morocco_price_source}
+              className="text-sm font-normal px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400"
+            >
+              💰 {model.morocco_price_dh.toLocaleString()} DH
+            </span>
+          )
         )}
       </h1>
+      {model.morocco_name && model.morocco_name !== model.name && (
+        <p className="text-sm text-zinc-500 dark:text-zinc-400">🇲🇦 Marketed in Morocco as: {model.morocco_name}</p>
+      )}
       <div className="text-sm text-zinc-600 dark:text-zinc-400 flex flex-wrap items-center gap-x-4 gap-y-1 mt-1">
         <span className="px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300 text-xs font-medium">
           <SegmentLabel model={model} />
@@ -133,6 +146,12 @@ export default async function ModelPage({ params }: { params: Promise<{ id: stri
       <div className="flex items-center gap-2 flex-wrap">
         <PositioningResearch modelId={model._id as string} />
         <MoroccoPriceFetcher id={model._id as string} />
+        <MoroccoInfoEditor
+          basePath={`/api/models/${model._id}`}
+          currentMoroccoName={model.morocco_name}
+          currentMoroccoPriceDh={model.morocco_price_dh}
+          fallbackName={model.name}
+        />
         <ExportForManualResearchButton modelDbId={model._id as string} />
         <ManualCategoryExportButton modelDbId={model._id as string} />
       </div>

@@ -26,6 +26,8 @@ const BrandSchema = new Schema<IBrand>(
     name: { type: String, required: true, unique: true, trim: true },
     name_cn: { type: String, trim: true },
     name_en: { type: String, trim: true },
+    /** The name this brand is actually marketed under in Morocco, if different from `name` — manual direct-entry only (see app/api/brands/[id]/morocco-info/route.ts), never part of AI research. Optional; falls back to `name` when unset. Brands have no single Morocco price (only Models/Trims do), so this is the only Morocco-specific field at brand level. */
+    morocco_name: { type: String, trim: true },
     logo_url: { type: String },
     parent_group: { type: String, trim: true },
     /** Nature of the parent_group relationship (ownership/control), not the tech_partner relationship. */

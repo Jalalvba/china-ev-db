@@ -98,6 +98,8 @@ export interface IBrand {
   name_cn?: string;
   /** English name — usually identical to `name`, kept as an explicit canonical field per the DeepSeek schema. */
   name_en?: string;
+  /** The name this brand is actually marketed under in Morocco, if different from `name` — manual direct-entry only, never part of AI research. Falls back to `name` when unset. Brands have no single Morocco price (only Models/Trims do). */
+  morocco_name?: string;
   logo_url?: string;
   parent_group?: string;
   /** Nature of the parent_group relationship (ownership/control), not the tech_partner relationship. */
@@ -183,6 +185,8 @@ export interface IModel {
   name_cn?: string;
   /** English model name — usually identical to `name`. */
   name_en?: string;
+  /** The name this model is actually marketed under in Morocco, if different from `name` — manual direct-entry only, never part of AI research. Falls back to `name` when unset. */
+  morocco_name?: string;
   generation?: string;
   year?: number;
   segment: Segment;
@@ -223,7 +227,8 @@ export interface IModel {
   recalls_last_researched_at?: string;
   /** Set only by app/api/models/[id]/fetch-morocco-price/route.ts — a deterministic HTTP scrape of moteur.ma/wandaloo.com (see lib/moteurMaScraper.ts, lib/wandalooScraper.ts), never AI research. Undefined/false means this model has never been checked, or was checked and isn't listed on either site — the UI should omit the price chip in that case, not show an empty one. */
   morocco_price_dh?: number;
-  morocco_price_source?: "moteur.ma" | "wandaloo.com";
+  /** "manual" = direct human entry via app/api/models/[id]/morocco-info/route.ts, bypassing the scraper/research pipeline entirely — see that route's comment for why a manual entry is marked confirmed without a source_url. */
+  morocco_price_source?: "moteur.ma" | "wandaloo.com" | "manual";
   morocco_price_url?: string;
   morocco_price_confirmed?: boolean;
   /** morocco_price_dh / price_range.min, only ever computed for models where price_range.unverified is not true — see scripts/backfill-morocco-china-ratio.ts. Undefined means never computed (missing inputs, or excluded by the unverified guard). */
@@ -368,6 +373,12 @@ import type { ICanonicalPowertrain } from "./canonicalPowertrain";
 export type IPowertrain = ICanonicalPowertrain & {
   /** Set by lib/applySpecUpdates.ts only when a write to this document is verified as actually applied (re-fetched and confirmed) — distinct from `updatedAt`, which changes on any write attempt regardless of whether it succeeded. Undefined means this document has never been touched by the research pipeline (still original seed/import data). */
   last_researched_at?: string;
+  /** The name this trim is actually marketed under in Morocco, if different from `trim_name` — manual direct-entry only, never part of AI research. Falls back to `trim_name` when unset. */
+  morocco_name?: string;
+  /** Trim-level Morocco price — distinct from trim_price_min/max (the China-domestic canonical price) and from the parent Model's own morocco_price_dh (that model's headline/cheapest-trim price). Manual direct-entry only; "manual" is currently the only source value since no scraper populates this at trim level. */
+  morocco_price_dh?: number;
+  morocco_price_source?: "manual";
+  morocco_price_confirmed?: boolean;
   /**
    * USD conversion of trim_price_min/trim_price_max — computed server-side
    * at write time (lib/applySpecUpdates.ts, same lib/deepseekNormalize.ts
