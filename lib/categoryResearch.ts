@@ -1,17 +1,16 @@
-// Shared plumbing for the four newer Model-level research categories
-// (market_trend, global known_issues, technical_bulletins, recalls) — the same
-// search → grounded-extraction → confidence-gate pattern as lib/issueResearch.ts /
-// lib/positioningResearch.ts (runGroundedResearch does the search + two-turn LLM
-// call), with the retry loop, JSON extraction, and gate factored out once instead of
-// copied four more times. Each category module supplies only its own prompts, search
-// queries, source-guard rule, and item normalizer.
+// Shared prompt/parsing plumbing for the four Model-level research categories
+// (market_trend, global known_issues, technical_bulletins, recalls) — prompt-building
+// helpers, JSON extraction, and format-rule text reused by both each category's manual
+// export-prompt builder and lib/researchCategoriesImport.ts's import validation.
+//
+// 2026-09-21: the automated live-call orchestrator that used to live here
+// (runCategoryResearch, which called lib/groundedResearch.ts's runGroundedResearch) was
+// removed — each category's own researchX() automated function was already stripped in
+// an earlier pass (see CLAUDE.md), which left this file's orchestrator with zero real
+// callers. Only the prompt/parsing helpers below survive, since the manual export/import
+// path still needs them.
 
-import { ModelNotFoundError, SearchProviderError, sleep } from "@/lib/techSpecResearch";
-import { runGroundedResearch } from "@/lib/groundedResearch";
-import { normalizeArray } from "@/lib/categoryValidators";
-import type { ItemResult, TargetModel, TargetPowertrain } from "@/lib/categoryValidators";
-import { verifyItemSources } from "@/lib/sourceVerification";
-import type { SourceCheck } from "@/lib/sourceVerification";
+import type { TargetModel, TargetPowertrain } from "@/lib/categoryValidators";
 
 export interface CategoryResearchInput {
   brandName: string;
@@ -105,130 +104,6 @@ export function extractJsonObject(text: string): Record<string, unknown> | null 
     return typeof parsed === "object" && parsed !== null && !Array.isArray(parsed) ? (parsed as Record<string, unknown>) : null;
   } catch {
     return null;
-  }
-}
-
-export interface CategoryResearchResult<T> {
-  status: "found" | "not_found" | "error";
-  errorMessage?: string;
-  /** Source URLs that counted as grounding for this category (after that category's source guard). */
-  sourceUrls: string[];
-  hasGrounding: boolean;
-  /** Normalized, gate-applied items (market_trend returns a one-element array). */
-  items: T[];
-  /** Items the normalizer rejected, with why. */
-  dropped: { index: number; errors: string[] }[];
-  /** Non-fatal normalization notes (aliases resolved, downgrades, dropped optional fields). */
-  warnings: string[];
-  /** One entry per distinct cited URL when source verification ran (lib/sourceVerification.ts). */
-  verification?: SourceCheck[];
-}
-
-function emptyResult<T>(status: "not_found" | "error", errorMessage?: string): CategoryResearchResult<T> {
-  return { status, errorMessage, sourceUrls: [], hasGrounding: false, items: [], dropped: [], warnings: [] };
-}
-
-interface RunOpts<T extends { confidence?: string }> {
-  model: string;
-  label: string;
-  input: CategoryResearchInput;
-  kickoffPrompt: string;
-  formatPrompt: string;
-  searchQueries: string[];
-  /** Key in the parsed JSON holding this category's payload. */
-  responseKey: string;
-  /** "array" → payload is an array of items; "object" → payload is a single object (or null) wrapped into a one-element array. */
-  shape: "array" | "object";
-  /** Filters raw Brave URLs down to what counts as grounding for THIS category (Chinese allowlist, manufacturer allowlist, non-Chinese-only, or everything). */
-  groundingFilter: (urls: string[]) => string[];
-  normalize: (raw: unknown) => ItemResult<T>;
-  /** Optional hard filter on the RAW array payload, applied before normalization (array shape only). Rejections are reported in `dropped` as off-model, never silently lost. */
-  preFilter?: (raw: unknown) => { kept: unknown[]; rejected: { index: number; reason: string; summary?: string }[]; warnings?: string[] };
-  /** Fetch each kept item's cited page and check it exists and names the target (skipped when input.verifySources === false). */
-  verify?: boolean;
-  /** Called once per item when there is zero grounding, to force it to "unconfirmed" (the confidence field name differs: `confidence` vs market_trend's `_confidence`). */
-  forceUnconfirmed: (item: T) => void;
-}
-
-export async function runCategoryResearch<T extends { confidence?: string }>(opts: RunOpts<T>): Promise<CategoryResearchResult<T>> {
-  const { model, label, input } = opts;
-  try {
-    const maxAttempts = 3;
-    let lastErr: unknown;
-    let formattedText = "";
-    let rawUrls: string[] = [];
-    let ok = false;
-    for (let attempt = 1; attempt <= maxAttempts && !ok; attempt++) {
-      try {
-        const r = await runGroundedResearch({
-          kickoffPrompt: opts.kickoffPrompt,
-          formatPrompt: opts.formatPrompt,
-          searchQueries: opts.searchQueries,
-          model,
-        });
-        formattedText = r.formattedText;
-        rawUrls = r.sourceUrls;
-        ok = true;
-      } catch (err) {
-        if (err instanceof ModelNotFoundError || err instanceof SearchProviderError) throw err;
-        lastErr = err;
-        const backoffMs = 2000 * attempt;
-        console.error(`  [retry ${attempt}/${maxAttempts}] ${label} ${input.brandName} ${input.modelName}: ${(err as Error).message} — waiting ${backoffMs}ms`);
-        await sleep(backoffMs);
-      }
-    }
-    if (!ok) throw lastErr;
-
-    const parsed = extractJsonObject(formattedText);
-    if (!parsed || !(opts.responseKey in parsed)) {
-      return emptyResult("error", `Could not parse a "${opts.responseKey}" payload from response (first 300 chars): ${formattedText.slice(0, 300)}`);
-    }
-
-    const sourceUrls = opts.groundingFilter(rawUrls);
-    const hasGrounding = sourceUrls.length > 0;
-    const payload = parsed[opts.responseKey];
-
-    let items: T[] = [];
-    let dropped: { index: number; errors: string[] }[] = [];
-    let warnings: string[] = [];
-    if (opts.shape === "object") {
-      if (payload !== null && payload !== undefined) {
-        const res = opts.normalize(payload);
-        if (res.item) items = [res.item];
-        else dropped = [{ index: 0, errors: res.errors }];
-        warnings = res.warnings;
-      }
-    } else {
-      const pre = opts.preFilter ? opts.preFilter(payload) : null;
-      const res = normalizeArray(pre ? pre.kept : payload, opts.normalize);
-      items = res.items;
-      // Indices of `dropped` from normalizeArray refer to the filtered array; the off-model rejections carry the ORIGINAL index.
-      dropped = [...(pre ? pre.rejected.map((r) => ({ index: r.index, errors: [`${r.reason.startsWith("too generic:") ? "" : "off-model: "}${r.reason}${r.summary ? ` — "${r.summary}"` : ""}`] })) : []), ...res.dropped];
-      warnings = [...(pre?.warnings ?? []), ...res.warnings];
-    }
-
-    if (!hasGrounding) items.forEach(opts.forceUnconfirmed);
-
-    let verification: SourceCheck[] | undefined;
-    if (opts.verify && input.verifySources !== false && items.length > 0) {
-      const v = await verifyItemSources(items as object[], targetOf(input));
-      items = v.items as T[];
-      warnings = [...warnings, ...v.warnings];
-      dropped = [...dropped, ...v.removed.map((r) => ({ index: -1, errors: [r.reason] }))];
-      verification = v.checks;
-    }
-    return {
-      status: items.length > 0 ? "found" : "not_found",
-      sourceUrls,
-      hasGrounding,
-      items,
-      dropped,
-      warnings,
-      verification,
-    };
-  } catch (err) {
-    if (err instanceof ModelNotFoundError || err instanceof SearchProviderError) throw err;
-    return emptyResult("error", (err as Error).message);
   }
 }
 

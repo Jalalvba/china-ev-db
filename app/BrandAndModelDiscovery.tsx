@@ -1,13 +1,17 @@
 "use client";
 
-// Tier-2 model-discovery trigger for the brand detail page (2026-09-21: the
+// Tier-2 model-discovery panel for the brand detail page (2026-09-21: the
 // Tier-1 automated brand-identity call this used to chain in front of model
-// discovery was removed — brand identity now goes through the manual
-// export/import panel, app/BrandResearch.tsx. This still calls
-// /api/brands/[id]/discover-models directly, which is a separate automated
-// AI feature out of scope for that removal pass; see CLAUDE.md's 2026-09-21
-// entry). Review screen shows discovered models; "Apply all" creates them
-// via create-models.
+// discovery was removed earlier — brand identity now goes through the manual
+// export/import panel, app/BrandResearch.tsx. This component itself used to
+// call /api/brands/[id]/discover-models directly — it was the LAST remaining
+// automated-AI-call button anywhere in the app; see CLAUDE.md's 2026-09-21
+// entries. Now: "Export prompt" builds a model-discovery-manual-v1 prompt,
+// "Import response" validates a pasted reply (flagging likely duplicates
+// against models already on file) into the same per-row review table this
+// component already had — "Apply selected" creates only the checked rows via
+// the existing create-models route, which re-checks the exact name and
+// re-verifies on write.
 //
 // This intentionally does NOT cover per-model spec research ("🔄 Update
 // technical info") — that stays its own explicit, one-model-at-a-time
@@ -15,13 +19,13 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import type { ModelDiscoveryResult } from "@/lib/modelDiscovery";
+import type { ModelDiscoveryManualImportResult } from "@/lib/modelDiscovery";
 
 interface Props {
   brandId: string;
 }
 
-type Phase = "idle" | "discovering" | "review" | "applying" | "done" | "error";
+type Phase = "idle" | "exporting" | "pasting" | "validating" | "review" | "applying" | "done" | "error";
 
 interface EditableModel {
   key: string;
@@ -37,6 +41,10 @@ interface EditableModel {
   price_max: string;
   confidence: string;
   selected: boolean;
+  duplicate: boolean;
+  existingModelId: string | null;
+  invalid: boolean;
+  itemErrors: string[];
 }
 
 const SEGMENTS = [
@@ -65,7 +73,11 @@ export default function BrandAndModelDiscovery({ brandId }: Props) {
   const [phase, setPhase] = useState<Phase>("idle");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const [modelResult, setModelResult] = useState<ModelDiscoveryResult | null>(null);
+  const [exportText, setExportText] = useState("");
+  const [pasteText, setPasteText] = useState("");
+  const [copied, setCopied] = useState(false);
+  const [hasGrounding, setHasGrounding] = useState(true);
+
   const [modelRows, setModelRows] = useState<EditableModel[]>([]);
 
   const [applySummary, setApplySummary] = useState<{
@@ -73,54 +85,82 @@ export default function BrandAndModelDiscovery({ brandId }: Props) {
     modelErrors: number;
   } | null>(null);
 
-  async function handleRun() {
-    setPhase("discovering");
+  async function handleExport() {
+    setPhase("exporting");
     setErrorMessage(null);
-    setModelResult(null);
-    setModelRows([]);
-
     try {
-      const res = await fetch(`/api/brands/${brandId}/discover-models`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ brandContext: {} }),
-      });
+      const res = await fetch(`/api/brands/${brandId}/manual-discover-models/export`, { method: "POST" });
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error ?? `Request failed with status ${res.status}`);
+      setExportText(data.text);
+      setCopied(false);
+      setPhase("pasting");
+    } catch (err) {
+      setErrorMessage(`Building export prompt failed: ${(err as Error).message}`);
+      setPhase("error");
+    }
+  }
 
-      const r: ModelDiscoveryResult = data.result;
-      setModelResult(r);
-      const editable: EditableModel[] = r.discovered
-        .filter((d) => d.valid)
-        .map((d, idx) => {
-          const m = d.model;
-          const segment = str(m.segment);
-          const bodyType = str(m.body_type);
-          const priceRange = (m.price_range && typeof m.price_range === "object" ? m.price_range : {}) as Record<
-            string,
-            unknown
-          >;
-          return {
-            key: `${idx}`,
-            name: str(m.name),
-            name_cn: str(m.name_cn),
-            name_en: str(m.name_en),
-            regional_name_note: str(m.regional_name_note),
-            generation: str(m.generation),
-            segment,
-            body_type: bodyType,
-            production_status: str(m.production_status) || "in production",
-            price_min: num(priceRange.min),
-            price_max: num(priceRange.max),
-            confidence: str(m.confidence) || "unconfirmed",
-            selected: !!(segment && bodyType),
-          };
-        });
+  async function handleCopy() {
+    try {
+      await navigator.clipboard.writeText(exportText);
+      setCopied(true);
+    } catch {
+      setErrorMessage("Could not copy automatically — select and copy the text manually.");
+    }
+  }
+
+  async function handleValidate() {
+    setPhase("validating");
+    setErrorMessage(null);
+    try {
+      const res = await fetch(`/api/brands/${brandId}/manual-discover-models/validate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ json: pasteText }),
+      });
+      const data: ModelDiscoveryManualImportResult & { error?: string } = await res.json();
+      if (!res.ok) throw new Error(data?.error ?? `Request failed with status ${res.status}`);
+      if (!data.valid) throw new Error(data.errors.join(" — "));
+
+      // Manual paste carries no separate citation list — "grounding" here just means the
+      // response cited at least one confirmed item; each row's own confidence is authoritative.
+      const anyConfirmed = data.items.some((it) => it.valid && it.model.confidence === "confirmed");
+      setHasGrounding(anyConfirmed);
+
+      const editable: EditableModel[] = data.items.map((it, idx) => {
+        const m = it.model;
+        const segment = str(m.segment);
+        const bodyType = str(m.body_type);
+        const priceRange = (m.price_range && typeof m.price_range === "object" ? m.price_range : {}) as Record<
+          string,
+          unknown
+        >;
+        return {
+          key: `${idx}`,
+          name: str(m.name),
+          name_cn: str(m.name_cn),
+          name_en: str(m.name_en),
+          regional_name_note: str(m.regional_name_note),
+          generation: str(m.generation),
+          segment,
+          body_type: bodyType,
+          production_status: str(m.production_status) || "in production",
+          price_min: num(priceRange.min),
+          price_max: num(priceRange.max),
+          confidence: str(m.confidence) || "unconfirmed",
+          selected: it.valid && !it.duplicate && !!(segment && bodyType),
+          duplicate: it.duplicate,
+          existingModelId: it.existingModelId,
+          invalid: !it.valid,
+          itemErrors: it.errors,
+        };
+      });
       setModelRows(editable);
       setPhase("review");
     } catch (err) {
-      setErrorMessage(`Model discovery failed: ${(err as Error).message}`);
-      setPhase("error");
+      setErrorMessage(`Import failed: ${(err as Error).message}`);
+      setPhase("pasting");
     }
   }
 
@@ -186,7 +226,9 @@ export default function BrandAndModelDiscovery({ brandId }: Props) {
   function reset() {
     setPhase("idle");
     setErrorMessage(null);
-    setModelResult(null);
+    setExportText("");
+    setPasteText("");
+    setCopied(false);
     setModelRows([]);
     setApplySummary(null);
   }
@@ -194,27 +236,81 @@ export default function BrandAndModelDiscovery({ brandId }: Props) {
   return (
     <div className="mt-6">
       {phase === "idle" && (
-        <button
-          onClick={handleRun}
-          className="px-3 py-1.5 rounded-md bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 transition"
-        >
-          🔎 Discover models
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={handleExport}
+            className="px-3 py-1.5 rounded-md bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 transition"
+          >
+            📋 Export prompt for model discovery
+          </button>
+          <button
+            onClick={() => setPhase("pasting")}
+            className="px-3 py-1.5 rounded-md border border-zinc-300 dark:border-zinc-700 text-sm font-medium hover:bg-zinc-50 dark:hover:bg-zinc-800 transition"
+          >
+            📥 Import response
+          </button>
+        </div>
       )}
 
-      {phase === "discovering" && (
+      {phase === "exporting" && (
         <button
           disabled
           className="px-3 py-1.5 rounded-md bg-indigo-600/60 text-white text-sm font-medium cursor-wait inline-flex items-center gap-2"
         >
           <Spinner />
-          Discovering models…
+          Building prompt…
         </button>
+      )}
+
+      {(phase === "pasting" || phase === "validating") && (
+        <div className="mt-2 border border-zinc-200 dark:border-zinc-800 rounded-lg p-4 bg-white dark:bg-zinc-900 max-w-xl">
+          {exportText && (
+            <div className="mb-3">
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400">
+                  Export prompt — paste into Kimi/Gemini/DeepSeek chat
+                </span>
+                <button onClick={handleCopy} className="text-xs underline">
+                  {copied ? "Copied!" : "Copy"}
+                </button>
+              </div>
+              <textarea
+                readOnly
+                value={exportText}
+                rows={6}
+                className="w-full text-xs font-mono border border-zinc-300 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 rounded p-2"
+              />
+            </div>
+          )}
+          <label className="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1">
+            Paste the AI&apos;s JSON response here
+          </label>
+          <textarea
+            value={pasteText}
+            onChange={(e) => setPasteText(e.target.value)}
+            rows={8}
+            placeholder="Paste the model-discovery-manual-v1 JSON response…"
+            className="w-full text-xs font-mono border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 rounded p-2"
+          />
+          {errorMessage && <p className="text-sm text-red-600 dark:text-red-400 mt-2">{errorMessage}</p>}
+          <div className="flex gap-2 mt-3">
+            <button
+              onClick={handleValidate}
+              disabled={phase === "validating" || pasteText.trim() === ""}
+              className="px-3 py-1.5 rounded-md bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700 disabled:opacity-60 transition"
+            >
+              {phase === "validating" ? "Validating…" : "Validate"}
+            </button>
+            <button onClick={reset} className="px-3 py-1.5 rounded-md border border-zinc-300 dark:border-zinc-700 text-sm">
+              Cancel
+            </button>
+          </div>
+        </div>
       )}
 
       {phase === "error" && (
         <div className="rounded-md border border-red-300 dark:border-red-800 bg-red-50 dark:bg-red-950/40 p-3 text-sm text-red-700 dark:text-red-400 max-w-xl">
-          <p className="font-medium">Research failed</p>
+          <p className="font-medium">Something went wrong</p>
           <p className="mt-1">{errorMessage}</p>
           <button onClick={reset} className="mt-2 text-xs underline">
             Try again
@@ -233,7 +329,7 @@ export default function BrandAndModelDiscovery({ brandId }: Props) {
             Use &quot;🔄&quot; on each new model to fill in its powertrain specs.
           </p>
           <button onClick={reset} className="mt-2 text-xs underline">
-            Run again
+            Start over
           </button>
         </div>
       )}
@@ -255,7 +351,7 @@ export default function BrandAndModelDiscovery({ brandId }: Props) {
                 disabled={phase === "applying"}
                 className="px-3 py-1.5 rounded-md bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700 disabled:opacity-60 transition"
               >
-                {phase === "applying" ? "Applying…" : "Apply all"}
+                {phase === "applying" ? "Applying…" : `Apply selected (${modelRows.filter((r) => r.selected).length})`}
               </button>
             </div>
           </div>
@@ -266,23 +362,31 @@ export default function BrandAndModelDiscovery({ brandId }: Props) {
               <h4 className="text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1.5">
                 Discovered models
                 <span className="ml-2 text-xs font-normal text-zinc-500 dark:text-zinc-400">
-                  {modelRows.length} found, {modelResult?.sourceUrls.length ?? 0} source
-                  {modelResult?.sourceUrls.length === 1 ? "" : "s"}
+                  {modelRows.length} in response, {modelRows.filter((r) => r.duplicate).length} look like duplicates
                 </span>
               </h4>
-              {modelResult && !modelResult.hasGrounding && (
+              {!hasGrounding && (
                 <p className="text-xs text-zinc-500 dark:text-zinc-400 mb-2">
-                  No search citations were found for this run — every model below is marked unconfirmed.
+                  No confirmed items in this response — every model below is marked unconfirmed.
                 </p>
               )}
               <div className="space-y-2">
                 {modelRows.length === 0 && (
-                  <p className="text-xs text-zinc-500 dark:text-zinc-400">No new models found (or none passed schema validation).</p>
+                  <p className="text-xs text-zinc-500 dark:text-zinc-400">No models in the pasted response (or none passed schema validation).</p>
                 )}
                 {modelRows.map((r) => {
-                  const ready = !!(r.segment && r.body_type);
+                  const ready = !!(r.segment && r.body_type) && !r.invalid;
                   return (
-                    <div key={r.key} className="border border-zinc-200 dark:border-zinc-800 rounded-md p-2">
+                    <div
+                      key={r.key}
+                      className={`border rounded-md p-2 ${
+                        r.invalid
+                          ? "border-red-300 dark:border-red-800"
+                          : r.duplicate
+                          ? "border-amber-300 dark:border-amber-800"
+                          : "border-zinc-200 dark:border-zinc-800"
+                      }`}
+                    >
                       <div className="flex items-start gap-2">
                         <input
                           type="checkbox"
@@ -304,12 +408,20 @@ export default function BrandAndModelDiscovery({ brandId }: Props) {
                             >
                               {r.confidence === "confirmed" ? "confirmed" : "unconfirmed"}
                             </span>
-                            {!ready && (
+                            {r.duplicate && (
+                              <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400">
+                                already exists — deselected by default
+                              </span>
+                            )}
+                            {!r.invalid && !ready && (
                               <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400">
                                 needs segment + body type to include
                               </span>
                             )}
                           </div>
+                          {r.invalid && r.itemErrors.length > 0 && (
+                            <p className="mt-1 text-xs text-red-600 dark:text-red-400">{r.itemErrors.join(" — ")}</p>
+                          )}
                           {(r.name_cn || r.regional_name_note) && (
                             <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
                               {r.name_cn && <>Domestic name: {r.name_cn}</>}

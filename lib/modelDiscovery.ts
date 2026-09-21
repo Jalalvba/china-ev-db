@@ -1,7 +1,8 @@
 // Brand-level "discover models" research: for a brand with zero (or
-// incomplete) Model documents, asks the configured AI provider (lib/aiProvider.ts) to find its current model
-// lineup and returns candidate Model records for review — never writes to
-// MongoDB itself (see app/api/brands/[id]/create-models/route.ts for that).
+// incomplete) Model documents, builds a prompt asking an external AI chat to
+// find its current model lineup, and validates the pasted-back JSON into
+// candidate Model records for review — never writes to MongoDB itself (see
+// app/api/brands/[id]/create-models/route.ts for that).
 //
 // This is deliberately a separate step from lib/techSpecResearch.ts's
 // per-model spec research: that pipeline researches POWERTRAIN variants for
@@ -9,15 +10,18 @@
 // 115 of this project's 147 brands (as of this writing) have zero Model
 // docs — mostly brand-only metadata from the delta-report import shape (see
 // scripts/import-deepseek.ts's Shape 2) — so model discovery is the common
-// case that needs solving, not a one-off. Reuses the exact same "prose
-// research turn triggers real grounding, JSON-format turn reformats it"
-// pattern and the same zero-citation confidence gate as lib/techSpecResearch.ts,
-// for the same reasons (see the comments there).
+// case that needs solving, not a one-off.
+//
+// 2026-09-21: this used to also call the AI provider directly
+// (runGroundedResearch) via an automated "Discover models" button — the last
+// remaining automated-AI-call trigger in the app. That live-call path
+// (queryDiscovery/discoverModels) was removed; see the manual export/import
+// functions near the bottom of this file (buildModelDiscoveryManualExportPrompt/
+// parseModelDiscoveryManualImport), which reuse the same prompt builders and
+// validator.
 
 import { SEGMENTS, PRODUCTION_STATUSES } from "@/models/Model";
-import { ModelNotFoundError, SearchProviderError, sleep } from "@/lib/techSpecResearch";
 import { buildBrandContextBlock, type BrandContext } from "@/lib/brandContext";
-import { runGroundedResearch } from "@/lib/groundedResearch";
 
 const SEGMENT_SET = new Set<string>(SEGMENTS);
 const PRODUCTION_STATUS_SET = new Set<string>(PRODUCTION_STATUSES);
@@ -187,88 +191,110 @@ function extractJson(text: string): DiscoveryAgentResponse | null {
   }
 }
 
-async function queryDiscovery(
-  model: string,
-  input: ModelDiscoveryInput
-): Promise<{ parsed: DiscoveryAgentResponse | null; sourceUrls: string[]; rawText: string }> {
-  const kickoffPrompt = buildModelDiscoveryKickoffPrompt(input);
-  const formatPrompt = buildModelDiscoveryFormatPrompt();
-  const searchQueries = [
-    `${input.brandName} 车型 全系列`,
-    `${input.brandName} models lineup`,
-    input.brandNameCn ? `${input.brandNameCn} 车型` : `${input.brandName} SUV sedan lineup`,
-  ];
+// ---------- manual export/import (2026-09-21: replaces the automated discoverModels() call below, ----------
+// which was the last remaining button in the app that hit the AI provider directly. Same
+// kickoff/format prompts, same validateDiscoveredModel, same zero-grounding confidence-downgrade
+// intent — but "grounding" here just means "did the paste include a source-bearing notes field",
+// same convention lib/brandResearch.ts's parseBrandManualImport uses for a manual paste with no
+// citation list of its own.
 
-  const maxAttempts = 3;
-  let lastErr: unknown;
-  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-    try {
-      const { formattedText, sourceUrls } = await runGroundedResearch({ kickoffPrompt, formatPrompt, searchQueries, model });
-      return { parsed: extractJson(formattedText), sourceUrls, rawText: formattedText };
-    } catch (err) {
-      if (err instanceof ModelNotFoundError) throw err;
-      // Same fail-fast reasoning as lib/techSpecResearch.ts's queryModel —
-      // a search-provider failure won't clear within this retry loop.
-      if (err instanceof SearchProviderError) throw err;
-      lastErr = err;
-      const backoffMs = 2000 * attempt;
-      console.error(`  [retry ${attempt}/${maxAttempts}] discover-models ${input.brandName}: ${(err as Error).message} — waiting ${backoffMs}ms`);
-      await sleep(backoffMs);
-    }
-  }
-  throw lastErr;
+export const MODEL_DISCOVERY_MANUAL_SCHEMA_VERSION = "model-discovery-manual-v1";
+
+export interface ModelDiscoveryManualExportContext extends ModelDiscoveryInput {
+  brandId: string;
 }
 
-export interface DiscoveredModelEntry {
+export function buildModelDiscoveryManualExportPrompt(ctx: ModelDiscoveryManualExportContext): string {
+  const envelope = {
+    schema_version: MODEL_DISCOVERY_MANUAL_SCHEMA_VERSION,
+    brand_id: ctx.brandId,
+    models: [DISCOVERY_FIELD_TEMPLATE],
+    notes: "string",
+  };
+  // Reuses the format prompt's own "CRITICAL RULES:" block verbatim (everything from that
+  // heading onward) rather than restating the rules, so the two prompt paths can't drift apart.
+  const formatPrompt = buildModelDiscoveryFormatPrompt();
+  const rulesIdx = formatPrompt.indexOf("CRITICAL RULES:");
+  const rulesBlock = rulesIdx >= 0 ? formatPrompt.slice(rulesIdx) : formatPrompt;
+
+  return `${buildModelDiscoveryKickoffPrompt(ctx)}
+
+Respond with ONLY a JSON object (no markdown fencing, no prose before or after) in exactly this envelope. The "models" array's inner object is a field-by-field description of the type each field must have, not a literal example value — one object per model you found.
+${JSON.stringify(envelope, null, 2)}
+
+${rulesBlock}
+- Keep "schema_version" and "brand_id" exactly as shown.`;
+}
+
+export interface ModelDiscoveryImportItem {
   model: Record<string, unknown>;
   valid: boolean;
   errors: string[];
+  duplicate: boolean;
+  existingModelId: string | null;
 }
 
-export interface ModelDiscoveryResult {
-  status: "found" | "not_found" | "error";
-  errorMessage?: string;
-  sourceUrls: string[];
-  hasGrounding: boolean;
-  discovered: DiscoveredModelEntry[];
+export interface ModelDiscoveryManualImportResult {
+  valid: boolean;
+  errors: string[];
+  items: ModelDiscoveryImportItem[];
 }
 
-/** Runs the full discovery + validation + grounding-gate pipeline for one brand. Throws ModelNotFoundError on a 404 (fatal, same as researchModel); any other failure is captured in the returned result's status. */
-export async function discoverModels(model: string, input: ModelDiscoveryInput): Promise<ModelDiscoveryResult> {
-  try {
-    const { parsed, sourceUrls, rawText } = await queryDiscovery(model, input);
+/** Case-insensitive name match against an existing model's name/name_cn/name_en — same "match either the export or domestic name" spirit as lib/categoryValidators.ts's modelNameAlternatives, applied here to flag likely re-discoveries rather than reject them outright (the reviewer decides). */
+function namesMatch(a: string, existing: { name?: string; name_cn?: string; name_en?: string }): boolean {
+  const norm = (s: string) => s.trim().toLowerCase();
+  const target = norm(a);
+  if (!target) return false;
+  return [existing.name, existing.name_cn, existing.name_en].some((n) => typeof n === "string" && norm(n) === target);
+}
 
-    if (!parsed || !Array.isArray(parsed.models)) {
-      return {
-        status: "error",
-        errorMessage: `Could not parse models array from response (first 300 chars): ${rawText.slice(0, 300)}`,
-        sourceUrls: [],
-        hasGrounding: false,
-        discovered: [],
-      };
-    }
+/**
+ * Parses + validates a pasted model-discovery-manual-v1 reply. Unlike the single-object brand/
+ * warranty/workshop manual imports, this is an array of candidate NEW Model documents — each item
+ * gets its own valid/duplicate verdict so the review UI can offer per-row accept/reject instead of
+ * all-or-nothing (existing models are looked up here; the actual write still goes through
+ * app/api/brands/[id]/create-models, which re-checks the exact-name case and re-verifies on write).
+ */
+export function parseModelDiscoveryManualImport(
+  rawText: string,
+  brandId: string,
+  existingModels: { _id: string; name?: string; name_cn?: string; name_en?: string }[]
+): ModelDiscoveryManualImportResult {
+  const obj = extractJson(rawText) as (DiscoveryAgentResponse & { schema_version?: string; brand_id?: string }) | null;
+  if (!obj) return { valid: false, errors: ["Could not find a JSON object in the pasted text."], items: [] };
 
-    const hasGrounding = sourceUrls.length > 0;
+  const errors: string[] = [];
+  if (obj.schema_version !== MODEL_DISCOVERY_MANUAL_SCHEMA_VERSION) {
+    errors.push(`schema_version must be "${MODEL_DISCOVERY_MANUAL_SCHEMA_VERSION}" (got ${JSON.stringify(obj.schema_version)}).`);
+  }
+  if (obj.brand_id !== brandId) {
+    errors.push(`brand_id ${JSON.stringify(obj.brand_id)} does not match this brand (${brandId}) — pasted into the wrong brand's page?`);
+  }
+  if (errors.length > 0) return { valid: false, errors, items: [] };
 
-    if (parsed.models.length === 0) {
-      return { status: "not_found", errorMessage: parsed.notes, sourceUrls, hasGrounding, discovered: [] };
-    }
+  if (!Array.isArray(obj.models)) {
+    return { valid: false, errors: ['"models" must be an array.'], items: [] };
+  }
 
-    const discovered: DiscoveredModelEntry[] = parsed.models.map((raw) => {
-      const { valid, errors } = validateDiscoveredModel(raw);
-      if (!valid) return { model: raw as Record<string, unknown>, valid: false, errors };
-      const gated = applyDiscoveryGroundingGate({ ...(raw as Record<string, unknown>) }, hasGrounding);
-      return { model: gated, valid: true, errors: [] };
-    });
+  const hasEvidence = typeof obj.notes === "string" && obj.notes.trim() !== "";
+
+  const items: ModelDiscoveryImportItem[] = obj.models.map((raw) => {
+    const { valid, errors: itemErrors } = validateDiscoveredModel(raw);
+    if (!valid) return { model: raw as Record<string, unknown>, valid: false, errors: itemErrors, duplicate: false, existingModelId: null };
+
+    const gated = applyDiscoveryGroundingGate({ ...(raw as Record<string, unknown>) }, hasEvidence);
+    const name = typeof gated.name === "string" ? gated.name : "";
+    const match = existingModels.find((m) => namesMatch(name, m));
 
     return {
-      status: discovered.some((d) => d.valid) ? "found" : "not_found",
-      sourceUrls,
-      hasGrounding,
-      discovered,
+      model: gated,
+      valid: true,
+      errors: [],
+      duplicate: !!match,
+      existingModelId: match?._id ?? null,
     };
-  } catch (err) {
-    if (err instanceof ModelNotFoundError || err instanceof SearchProviderError) throw err;
-    return { status: "error", errorMessage: (err as Error).message, sourceUrls: [], hasGrounding: false, discovered: [] };
-  }
+  });
+
+  return { valid: true, errors: [], items };
 }
+

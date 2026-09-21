@@ -735,6 +735,55 @@ rule in this doc: `lib/techSpecResearch.ts`'s `researchModel`, still called by `
 exhaustive rather than scoped to the named scripts, both are the next things to convert. Full-repo
 `npx tsc --noEmit` is clean.
 
+### "Discover models" converted — last remaining automated-AI-call button (2026-09-21)
+
+`app/BrandAndModelDiscovery.tsx`'s "🔎 Discover models" button (flagged repeatedly above as
+explicitly out of scope for earlier passes) was the last button anywhere in the app that hit
+`lib/aiProvider.ts` directly. Per the user's "no automated API calls anywhere in the app" rule,
+it's now converted to the same export-prompt/import-response pattern as everything else, with a
+new envelope: `model-discovery-manual-v1` (`{ schema_version, brand_id, models: [...], notes }`,
+reusing `DISCOVERY_FIELD_TEMPLATE`'s shape from `lib/modelDiscovery.ts`).
+
+- `app/api/brands/[id]/discover-models/route.ts` (the automated call) deleted. Its live-call
+  helpers in `lib/modelDiscovery.ts` (`discoverModels`, `queryDiscovery`, `DiscoveredModelEntry`,
+  `ModelDiscoveryResult`) deleted along with their now-unused `runGroundedResearch`/
+  `ModelNotFoundError`/`SearchProviderError`/`sleep` imports. Kept: `buildModelDiscoveryKickoffPrompt`,
+  `buildModelDiscoveryFormatPrompt`, `DISCOVERY_FIELD_TEMPLATE`, `validateDiscoveredModel` — the
+  manual path reuses all four so prompt text and validation don't drift from what the automated
+  version used to produce.
+- New: `app/api/brands/[id]/manual-discover-models/{export,validate}/route.ts` (same file-layout
+  convention as `manual-brand`/`manual-warranty`/`manual-workshop`). The export route still does
+  the real, non-AI moteur.ma pre-fetch (`lookupMoteurMa`) and folds it into the prompt as context,
+  exactly as the automated route used to.
+- New in `lib/modelDiscovery.ts`: `buildModelDiscoveryManualExportPrompt` (wraps the kickoff prompt
+  in the envelope, reusing the format prompt's own "CRITICAL RULES:" block verbatim rather than
+  restating it) and `parseModelDiscoveryManualImport`, which — unlike every other manual-import
+  parser in this app, which validates a single object — validates an ARRAY of candidate new
+  models, giving each one its own `{ valid, errors, duplicate, existingModelId }` verdict. A model
+  is flagged `duplicate: true` (case-insensitive match against the brand's existing `name`/
+  `name_cn`/`name_en`) but not dropped — the reviewer decides. The PHEV-only scope guard
+  (`lib/powertrainScope.ts`) does NOT apply here: it's a Powertrain-level guard (checks
+  `energy_type`/`engine`), and discovered items are Model-level records with no powertrain fields
+  yet — scope gets enforced later, when someone runs spec research on the new Model.
+- `app/BrandAndModelDiscovery.tsx` kept its existing per-row checkbox review table (it already had
+  one, pre-dating this change) but replaced the single automated `handleRun` fetch with
+  `handleExport` (copy-paste prompt) + `handleValidate` (paste-and-check) — default-selected rows
+  are valid + non-duplicate + have segment/body_type; a flagged duplicate is shown with an amber
+  border and starts unchecked. "Apply selected" still posts only the checked rows to the unchanged
+  `create-models` route, which does its own exact-name dedup check and re-fetch-verifies the write.
+- `lib/categoryResearch.ts`'s `runCategoryResearch` (the shared automated-call orchestrator the 4
+  category researchers used to call, before stage 1 stripped each one's own `researchX()`
+  wrapper) had zero real callers left — deleted along with its now-dead `CategoryResearchResult`/
+  `RunOpts`/`emptyResult` and the `runGroundedResearch`/`ModelNotFoundError`/`SearchProviderError`/
+  `sleep`/`verifyItemSources`/`SourceCheck`/`normalizeArray`/`ItemResult` imports it alone needed.
+  Kept: the prompt-building/parsing helpers (`targetOf`, `exactModelRulePrompt`, `commonFormatRules`,
+  etc.) still imported by `marketTrendResearch.ts`/`bulletinResearch.ts`/`recallResearch.ts`/
+  `researchCategoriesImport.ts` for the manual path.
+- **Confirmed by repo-wide grep: zero remaining importers of `lib/aiProvider.ts`, `lib/groundedResearch.ts`,
+  or `lib/webSearch.ts` anywhere in `app/`, `lib/`, or `scripts/`.** The rule is now fully enforced,
+  not just documented — no automated AI/search-provider call exists anywhere in the app or its
+  scripts. Full-repo `npx tsc --noEmit` is clean.
+
 ## Write safety
 
 Every AI-researched write path (`lib/applySpecUpdates.ts`, the manual-import apply
