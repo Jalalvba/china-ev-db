@@ -7,7 +7,7 @@
 
 import type { IModel } from "@/types";
 
-/** Plain-text form for contexts that can't carry styling (a Compare <option>, a search-results table cell) — "~" is the visual cue the request itself suggested for a text-only spot. */
+/** Plain-text form for contexts that can't carry styling (an <option>, a search-results table cell) — "~" is the visual cue the request itself suggested for a text-only spot. */
 export function segmentText(model: Pick<IModel, "segment" | "segment_confidence">): string {
   return model.segment_confidence === "inferred" ? `~${model.segment}` : model.segment;
 }

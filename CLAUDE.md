@@ -389,7 +389,7 @@ dropped there, so the param was removed entirely rather than kept alive for a sm
 purpose — the two pages are intentionally NOT symmetric on this point.
 
 **Power always displays in hp, never bare kW** — `lib/units.ts`'s `kwToHp()`/`hpToKw()`.
-Model detail + Compare page's table show both (`"150 kW (201 hp)"`); the trim picker
+Model detail page's table shows both (`"150 kW (201 hp)"`); the trim picker
 and search result cards (width-constrained) show hp-only; the spec-search power
 filter inputs take hp and convert to kW client-side before hitting the API (the DB
 itself stores/queries kW only). Reuse these two functions rather than hand-rolling
@@ -400,7 +400,7 @@ filters `Powertrain` documents (energy type, engine/motor power, battery, transm
 — the API matches individual trims, but the page groups them into ONE CARD PER MODEL with
 each matching trim as a nested row and the count reads "X models, Y trims match"), reusing
 `compactSpecLabel()` from `lib/specGrouping.ts` for the same trim-summary format the
-Compare page's trim picker uses. Ordering lives in `lib/specSearchGrouping.ts`: models rank
+model page uses. Ordering lives in `lib/specSearchGrouping.ts`: models rank
 by their LOWEST matching trim on the chosen metric (price/HP/range/battery, ascending as
 before) or by their best-scoring trim for Best Match; trims inside a card use the same
 metric; a model whose matching trims include any without their own price also counts its own
@@ -409,7 +409,7 @@ with an identical HARDWARE fingerprint (`hardwareSpecKey()` in `lib/specGrouping
 engine + motor + battery pack + gearbox — the same fields the row label shows) collapse into ONE
 row with a "N trims" chip (names on hover); a single-trim row keeps its trim name, and the card
 header reads "V spec variants · T trims" when anything collapsed. The fingerprint is deliberately
-narrower than `specGroupKey` (model detail/Compare): it ignores rating/charging fields
+narrower than `specGroupKey` (model detail): it ignores rating/charging fields
 (`ev_range_km`, dc/ac kW, supplier…) that vary by trim marketing or are null from research gaps,
 and it never collapses trims with no engine/motor/battery/gearbox data (unresearched ≠ identical).
 Each model card shows ONE row by default — the first spec variant in the active sort order (highest
@@ -421,10 +421,7 @@ sort (same assumption that ranks the card), so the default row never contradicts
 `app/api/powertrains/route.ts`'s `GET` refuses an entirely unfiltered request (400) —
 every real caller always has at least one criterion.
 
-**Compare page**: `?pmin=`/`?pmax=` in the URL is a single shared Morocco-price-range
-filter applied to both sides at once, narrowing the model list before it reaches
-either picker; a selection that falls outside a newly-narrowed range is cleared
-automatically. Same "state lives in the URL" pattern as every other Compare control.
+(The Compare page — `/compare`, with its shared `?pmin=`/`?pmax=` Morocco-price filter — was deleted 2026-09-21 by explicit decision; git history has it.)
 
 ## Model-level research categories: market_trend, known_issues regions, technical_bulletins, recalls
 

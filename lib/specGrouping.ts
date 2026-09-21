@@ -4,8 +4,8 @@
 // noise into "N trims share this exact spec."
 //
 // Originally built for the model detail page's summary panel
-// (app/models/[id]/page.tsx); the Compare page's trim picker reuses the same
-// grouping so the two pages can't drift on what counts as "the same trim" —
+// (app/models/[id]/page.tsx); it was shared with the since-deleted Compare page's
+// trim picker so pages couldn't drift on what counts as "the same trim" —
 // see the price-formatting drift (lib/priceDisplay.ts) this project already
 // hit once for the same reason (duplicated per-page logic silently diverging).
 
@@ -54,7 +54,7 @@ export function specGroupKey(p: SpecFields): string {
   });
 }
 
-/** kW with hp in parens, e.g. "150 kW (201 hp)" — same dual-unit convention already used on the model detail and Compare pages (lib/units.ts's kwToHp), so power never displays as a bare, unfamiliar kW figure on its own. */
+/** kW with hp in parens, e.g. "150 kW (201 hp)" — same dual-unit convention already used on the model detail page (lib/units.ts's kwToHp), so power never displays as a bare, unfamiliar kW figure on its own. */
 function powerWithHp(kw: number | null | undefined): string {
   if (kw == null) return "?";
   const hp = kwToHp(kw);
@@ -168,7 +168,7 @@ export function groupBySpec<T extends SpecFields>(powertrains: T[]): SpecGroup<T
  * compact row label shows, so two trims with the same key always render the same label (checked
  * against every live trim in scripts' verification, not assumed).
  *
- * Deliberately NARROWER than specGroupKey (model detail + Compare pages): it leaves out rating
+ * Deliberately NARROWER than specGroupKey (model detail page): it leaves out rating
  * and charging fields — ev_range_km / ev_range_standard, dc/ac charge kW, usable capacity,
  * supplier. Those either differ by trim marketing without any hardware change (Galaxy Starship
  * 7 EM-i: the same 19.09 kWh LFP pack is rated 130 km on one trim and 135 km on the others) or

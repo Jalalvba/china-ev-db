@@ -17,7 +17,7 @@ export async function GET(req: NextRequest) {
   const filter = await buildPowertrainFilter(searchParams);
 
   // Refuse an unfiltered full-collection dump — every real caller (the
-  // Compare page's per-model trim fetch, this new technical search) always
+  // model page's per-model trim fetch, Tech Search) always
   // has at least one criterion. An empty filter used to mean "return every
   // powertrain in the DB, double-populated" on every page load before
   // a87acf5 fixed the one caller that did that; this closes the door on any

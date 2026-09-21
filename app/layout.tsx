@@ -40,9 +40,6 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             <a href="/search/specs" className="text-sm text-zinc-300 hover:text-white">
               Tech Search
             </a>
-            <a href="/compare" className="text-sm text-zinc-300 hover:text-white">
-              Compare
-            </a>
             <a href="/warranty" className="text-sm text-zinc-300 hover:text-white">
               Warranty
             </a>

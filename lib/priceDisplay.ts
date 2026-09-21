@@ -1,7 +1,7 @@
 // Shared China price-range formatting — used by both the model detail page
-// (app/models/[id]/page.tsx) and the Compare page (app/compare/page.tsx) so
-// the two don't drift the way they did before this file existed: the Compare
-// page's price row was hand-rolling its own "min ?? '?'" formatting
+// (app/models/[id]/page.tsx) and Tech Search cards so pages don't drift the
+// way they did before this file existed: a page's price row (the since-deleted
+// Compare page's) was hand-rolling its own "min ?? '?'" formatting
 // independently of the model page's row-rendering conventions, which is how
 // a literal "? – ? CNY" made it to the UI when min/max were null.
 
@@ -21,8 +21,8 @@ type TrimPriceFields = Pick<IPowertrain, "trim_price_min_usd" | "trim_price_max_
  * This trim's own price, e.g. "$18,000 – $24,000" (or a single figure when
  * min===max), or undefined if neither USD bound is set. Appends "⚠" when
  * unconfirmed — same gating convention as every other researched field.
- * Shared by the model detail page, Tech Search cards, and the Compare page
- * so all three render a trim's price identically.
+ * Shared by the model detail page and Tech Search cards so both render a
+ * trim's price identically.
  *
  * Deliberately reads ONLY the _usd fields, never the raw
  * trim_price_min/max/currency (always CNY as researched) — those must never

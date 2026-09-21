@@ -179,12 +179,11 @@ type FilterKey = (typeof FILTER_KEYS)[number];
  * matches individual trims, but results are GROUPED into one card per model
  * with each matching trim as a nested row (model name/segment/price shown
  * once) — see lib/specSearchGrouping.ts for how models and trims are
- * ordered. Each trim row is labeled the same compact way as the Compare
- * page's trim picker, so the same spec summary means the same thing
- * everywhere in the app.
+ * ordered. Each trim row is labeled with compactSpecLabel()
+ * (lib/specGrouping.ts), the same compact spec summary the model page uses.
  *
  * Every filter lives in the URL query string (not local component state) —
- * same "state lives in the URL" pattern as the Compare page — so browser
+ * the app's "state lives in the URL" pattern — so browser
  * back/forward restores the exact filtered view instead of resetting to
  * empty, and the filtered view is bookmarkable/shareable as a side benefit.
  */
