@@ -3,7 +3,8 @@
 // (that endpoint is untouched — it stays for manual one-off re-checks).
 //
 // Fetch/reconcile logic (moteur.ma -> wandaloo.com -> suffix-strip ->
-// brand-prefix-strip -> AI-on-disagreement) lives in
+// brand-prefix-strip -> flag-for-manual-review-on-disagreement, no longer
+// AI-reconciled as of 2026-09-21) lives in
 // lib/priceFetchCore.ts, shared with scripts/fetch-all-prices.ts (the
 // review-first, three-stage alternative to this script — see
 // scripts/analyze-price-fetch.ts and scripts/import-price-fetch.ts). This
@@ -15,7 +16,7 @@
 //   pnpm sync-prices                          (all models missing a confirmed Morocco price)
 //   pnpm sync-prices -- --force               (re-check every model, including already-confirmed ones)
 //   pnpm sync-prices -- --brand=Dongfeng       (scope to one brand, for testing)
-//   pnpm sync-prices -- --dry-run              (scrape + log only, write nothing, never call the AI)
+//   pnpm sync-prices -- --dry-run              (scrape + log only, write nothing)
 //   pnpm sync-prices -- --concurrency=3 --delay=1500
 
 import dotenv from "dotenv";
@@ -93,7 +94,7 @@ async function run() {
   console.log(`${targets.length} model(s) to process.\n`);
 
   const results: ModelResult[] = [];
-  const aiCallCounter = { count: 0 };
+  const disagreementCounter = { count: 0 };
   let httpCalls = 0; // rough count: 2 scraper lookups per model, each internally does more, but this tracks top-level calls
 
   let idx = 0;
@@ -103,7 +104,7 @@ async function run() {
       const brand = brandById.get(String(model.brand_id));
       if (!brand) continue;
 
-      const result = await processModel(brand.name, model.name, model.name_en, opts.dryRun, aiCallCounter);
+      const result = await processModel(brand.name, model.name, model.name_en, opts.dryRun, disagreementCounter);
       httpCalls += 2;
       results.push(result);
 
@@ -123,22 +124,15 @@ async function run() {
             morocco_price_confirmed: true,
           },
         });
-      } else if (!opts.dryRun && result.outcome === "ai-fallback") {
-        await ModelSchema.findByIdAndUpdate(model._id, {
-          $set: {
-            morocco_price_dh: result.finalPriceDh,
-            morocco_price_source: "ai-fallback",
-            morocco_price_url: result.finalUrl,
-            morocco_price_confirmed: false,
-          },
-        });
       }
-      // "not-found" and "non-exact-match" both write nothing — leave
-      // whatever was in the DB untouched and surface it in the review file
-      // instead. A failed/uncertain lookup this run is never grounds to
-      // clear a price that may have been confirmed some other way (manual
-      // verification, a prior run, etc.) — only a fresh successful match
-      // (moteur.ma / wandaloo.com / ai-fallback, handled above) writes.
+      // "not-found", "non-exact-match", and "ai-fallback" (sources disagree —
+      // see lib/priceFetchCore.ts, no longer AI-reconciled as of 2026-09-21)
+      // all write nothing — leave whatever was in the DB untouched and
+      // surface it in the review file instead. A failed/uncertain/disagreeing
+      // lookup this run is never grounds to clear a price that may have been
+      // confirmed some other way (manual verification, a prior run, etc.) —
+      // only a fresh successful exact-source match (moteur.ma / wandaloo.com,
+      // handled above) writes.
 
       if (idx < targets.length) await sleep(opts.delayMs);
     }
@@ -164,13 +158,13 @@ async function run() {
   console.log(`Scanned:               ${results.length}`);
   console.log(`Updated via moteur.ma:  ${counts["moteur.ma"]}`);
   console.log(`Updated via wandaloo:   ${counts["wandaloo.com"]}`);
-  console.log(`AI-fallback (review): ${counts["ai-fallback"]}`);
+  console.log(`Source disagreement (review): ${counts["ai-fallback"]}`);
   console.log(`Non-exact match (review): ${counts["non-exact-match"]}`);
   console.log(`Ambiguous, multiple candidates (review): ${counts["ambiguous-multiple-candidates"]}`);
   console.log(`Failed both / no data:  ${counts["not-found"]}`);
   console.log(`Errors:                 ${counts.error}`);
   console.log(`Total scraper HTTP calls (top-level): ~${httpCalls}`);
-  console.log(`Total AI calls: ${aiCallCounter.count}${opts.dryRun ? " (dry-run — not actually called)" : ""}`);
+  console.log(`Source disagreements needing manual review: ${disagreementCounter.count}`);
   console.log(`Elapsed: ${elapsedSec}s`);
 
   const reviewNeeded = results.filter(

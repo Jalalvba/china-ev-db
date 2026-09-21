@@ -784,6 +784,54 @@ reusing `DISCOVERY_FIELD_TEMPLATE`'s shape from `lib/modelDiscovery.ts`).
   not just documented — no automated AI/search-provider call exists anywhere in the app or its
   scripts. Full-repo `npx tsc --noEmit` is clean.
 
+### Production incident + final re-audit closed the last 2 real gaps, no exceptions left (2026-09-21)
+
+The "zero remaining importers" grep above was run against the local working tree only — it never
+claimed anything about what was actually deployed. All the work above (5 commits, `f03cf42` through
+`e5ce535`) sat local/unpushed while a live user session continued using production, and production's
+`/api/brands/[id]/research-brand` route (the pre-ban code, still deployed) hit a real Brave Search 402
+("Prepaid credit balance is insufficient") on the Soueast brand page. **Root cause: a push/deploy gap,
+not a missed code path** — the route in question was the exact one `f03cf42` had already deleted
+locally; grep passing locally was true but was never sufficient proof of production state, and
+reporting it as "done" without that caveat was a mistake. Lesson applied going forward: "confirmed by
+grep" means confirmed in the working tree, not confirmed live — those are different claims and must be
+labeled as such.
+
+A full blanket re-audit ("no exceptions, ever — CLI scripts included") after this incident found the
+grep genuinely had missed two real gaps, both CLI-only (no UI button), both previously mischaracterized:
+- **`scripts/backfill-trim-price.ts`** was still calling `researchModel()` live — the one script in the
+  "backfill/QA tooling" family the earlier pass had explicitly left as a deliberate exception. That
+  exception is now void; the script is converted to the same export-prompt pattern as
+  `fill-missing-mandatory-fields.ts`, writing to `raw-data/trim-price-batch-prompts-<ts>.md` with an
+  appended PRICE FOCUS instruction block (mirroring what `researchModel()`'s `priceFocus: true` option
+  used to inject server-side) since it targets trims missing `trim_price_min` specifically.
+- **`lib/priceFetchCore.ts`** was earlier told to the user as "pure scraping, no AI involved" — that
+  was **wrong**, caught only by this re-audit: `processModel()` called `aiReconcile()` (→
+  `lib/aiProvider.ts`'s `complete()`) whenever moteur.ma and wandaloo.com's scraped prices disagreed
+  beyond `AGREEMENT_TOLERANCE`, used by `scripts/fetch-all-prices.ts` and
+  `scripts/sync-morocco-prices.ts`. `aiReconcile()` is deleted; a source disagreement now returns the
+  same `"ai-fallback"`-tagged outcome as before (name kept for review-file/log compatibility) but never
+  auto-picks a price — it's a manual-review-needed result now, same posture as the existing
+  `"non-exact-match"` outcome, and `sync-morocco-prices.ts` no longer writes anything for it. Both
+  scripts' `aiCallCounter` was renamed `disagreementCounter` and their summary lines relabeled to match
+  (it now counts "needs manual review," not "AI calls made"). Confirmed via `lib/priceFetchCore.ts`'s
+  own header comment, which had said "Nothing in this file touches Mongo... `processModel` does call
+  the configured AI provider" — a correct statement that this session simply didn't read closely enough
+  the first time it characterized this file to the user.
+
+**Final state, re-verified after both fixes**: grepping for actual functional call sites (not comments)
+of `complete(`, `getActiveProvider(`, `getMissingConfigError(` (`lib/aiProvider.ts`), and every importer
+of `lib/webSearch.ts`/`lib/groundedResearch.ts`, across `app/`, `lib/`, `scripts/` — the only chain left
+is `lib/techSpecResearch.ts`'s `researchModel` → `lib/groundedResearch.ts` → `lib/webSearch.ts`/
+`lib/aiProvider.ts`, and `researchModel` itself now has **zero callers anywhere** (every remaining
+mention of it repo-wide is a comment). Full-repo `npx tsc --noEmit` is clean. This closes the "no
+automated API calls anywhere in the app" rule with no named or unnamed exceptions remaining.
+
+**Separately, not part of this fix**: a manufacturer-group export/import feature and a cosmetic
+brand-card icon relabel were built earlier the same session but deliberately held out of this push (not
+committed) pending their own review — see the working tree's stashed changes, not reflected in the
+commits this entry describes.
+
 ## Write safety
 
 Every AI-researched write path (`lib/applySpecUpdates.ts`, the manual-import apply

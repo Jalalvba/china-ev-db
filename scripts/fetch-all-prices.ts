@@ -4,8 +4,12 @@
 // Mongo for context (current stored price, so stage 2 can spot a changed
 // price on an already-confirmed model) but NEVER writes to Mongo. Uses the
 // exact same moteur.ma -> wandaloo.com -> suffix-strip -> brand-prefix-strip
-// -> AI-on-disagreement logic as scripts/sync-morocco-prices.ts, via the
-// shared lib/priceFetchCore.ts — no separate/drifting scraper-calling code.
+// -> flag-for-manual-review-on-disagreement logic as
+// scripts/sync-morocco-prices.ts, via the shared lib/priceFetchCore.ts — no
+// separate/drifting scraper-calling code. As of 2026-09-21 neither script
+// calls an AI provider at all: disagreements are flagged for manual review
+// instead of AI-reconciled (see CLAUDE.md's "no automated API calls anywhere
+// in the app" entry).
 //
 // Safe to run alongside a live `next dev` server / other Mongo writers: this
 // script only ever reads from Mongo (a single find() at startup) and writes
@@ -103,7 +107,7 @@ async function run() {
   await mongoose.disconnect();
 
   const results: FetchRecord[] = [];
-  const aiCallCounter = { count: 0 };
+  const disagreementCounter = { count: 0 };
   let httpCalls = 0;
 
   let idx = 0;
@@ -113,10 +117,10 @@ async function run() {
       const brand = brandById.get(String(model.brand_id));
       if (!brand) continue;
 
-      // dryRun=false: we still want processModel's AI reconciliation on
-      // disagreement (a genuine fetch, not a Mongo write) so stage 2 sees the
-      // same outcome sync-morocco-prices.ts would have produced.
-      const result = await processModel(brand.name, model.name, model.name_en, false, aiCallCounter);
+      // dryRun=false: processModel no longer makes an AI call on disagreement
+      // (see lib/priceFetchCore.ts) — this just keeps the same call shape as
+      // sync-morocco-prices.ts so stage 2 sees the same outcome it would.
+      const result = await processModel(brand.name, model.name, model.name_en, false, disagreementCounter);
       httpCalls += 2;
 
       const record: FetchRecord = {
@@ -159,13 +163,13 @@ async function run() {
   console.log(`Scanned:                 ${results.length}`);
   console.log(`moteur.ma matches:       ${counts["moteur.ma"]}`);
   console.log(`wandaloo.com matches:    ${counts["wandaloo.com"]}`);
-  console.log(`ai-fallback:         ${counts["ai-fallback"]}`);
+  console.log(`source disagreement: ${counts["ai-fallback"]}`);
   console.log(`non-exact-match:         ${counts["non-exact-match"]}`);
   console.log(`ambiguous-multiple-candidates: ${counts["ambiguous-multiple-candidates"]}`);
   console.log(`not-found:               ${counts["not-found"]}`);
   console.log(`errors:                  ${counts.error}`);
   console.log(`Total scraper HTTP calls (top-level): ~${httpCalls}`);
-  console.log(`Total AI calls: ${aiCallCounter.count}`);
+  console.log(`Source disagreements needing manual review: ${disagreementCounter.count}`);
   console.log(`Elapsed: ${elapsedSec}s`);
 
   const timestamp = new Date().toISOString().replace(/[:.]/g, "-");

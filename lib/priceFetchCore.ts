@@ -10,7 +10,7 @@
 // reconciliation behavior, but it never writes anything itself; callers
 // decide what to do with the result.
 
-import { complete, ModelNotFoundError } from "./aiProvider";
+import { ModelNotFoundError } from "./aiProvider";
 import { lookupMoteurMa, type MoteurMaLookupResult } from "./moteurMaScraper";
 import { lookupWandaloo, type WandalooLookupResult } from "./wandalooScraper";
 
@@ -26,6 +26,10 @@ export const AGREEMENT_TOLERANCE = 0.02;
 export type Outcome =
   | "moteur.ma"
   | "wandaloo.com"
+  // Sources disagree beyond tolerance. Name kept as "ai-fallback" for
+  // call-site/review-file compatibility even though, as of 2026-09-21, this
+  // never triggers an AI call anymore — it's a manual-review-needed outcome
+  // now, same posture as "non-exact-match" below (never auto-writes a price).
   | "ai-fallback"
   | "non-exact-match"
   | "ambiguous-multiple-candidates"
@@ -59,45 +63,6 @@ export function extractJson(text: string): { price_dh: number | null; url: strin
   } catch {
     return null;
   }
-}
-
-/**
- * Last-resort reconciliation for the (rare, per the tolerance check) case
- * where moteur.ma and wandaloo.com both returned a price for the same model
- * but disagree beyond normal rounding. Not a raw-HTML re-parse: the two
- * scrapers already return trim-level structured data (name, price, fuel
- * type per trim), which is a cleaner and cheaper input than re-feeding raw
- * markup — this asks the configured AI provider to judge which of the
- * two already-extracted numbers is the real "starting price," not to
- * re-scrape from scratch. Never called in --dry-run; never trusted enough to
- * set morocco_price_confirmed: true (see caller).
- */
-export async function aiReconcile(context: {
-  brandName: string;
-  modelName: string;
-  moteurResult: MoteurMaLookupResult;
-  wandalooResult: WandalooLookupResult;
-}): Promise<{ priceDh: number; url?: string } | null> {
-  const moteurModel = context.moteurResult.models.find((m) => typeof m.cheapestPriceDh === "number");
-
-  const prompt = `Two Moroccan car-listing sites disagree on the starting price for the "${context.brandName} ${context.modelName}".
-
-moteur.ma (structured JSON-LD data, fetched directly):
-${moteurModel ? JSON.stringify({ url: moteurModel.url, trims: moteurModel.trims }, null, 2) : "no matching model found"}
-
-wandaloo.com (fetched directly):
-${context.wandalooResult.modelFound ? JSON.stringify({ url: context.wandalooResult.modelUrl, cheapestPriceDh: context.wandalooResult.cheapestPriceDh }, null, 2) : "no matching model found"}
-
-Both were fetched moments ago by this pipeline — do not search the web, only judge from the data given above. Decide which single price (in Moroccan Dirhams) is the more plausible current starting price for this exact model in Morocco, or null if neither looks trustworthy (e.g. clearly a different model/trim, or an implausible value like a date or a NaN).
-
-Respond with ONLY a single JSON object, no markdown fencing, no prose:
-{ "price_dh": number | null, "url": string | null, "reasoning": string }`;
-
-  // complete() defaults to the active provider's own model (lib/aiProvider.ts's getDefaultModel()) when no model option is given.
-  const responseText = await complete(prompt);
-  const parsed = extractJson(responseText);
-  if (!parsed || typeof parsed.price_dh !== "number") return null;
-  return { priceDh: parsed.price_dh, url: parsed.url ?? undefined };
 }
 
 // Some DB records duplicate the brand name inside `name`/`name_en` (e.g.
@@ -148,16 +113,18 @@ export function hasExactMatch(attempt: LookupAttempt): boolean {
 
 /**
  * Pure fetch + reconcile for one model: two scraper lookups, optional
- * suffix-stripping retry, optional AI reconciliation on disagreement.
+ * suffix-stripping retry, flags a source disagreement for manual review.
  * Never touches Mongo — callers decide what (if anything) to write based on
- * the returned outcome.
+ * the returned outcome. `dryRun` is accepted for call-site backward
+ * compatibility (scripts pass it) but no longer changes behavior here — it
+ * used to gate the now-removed AI reconciliation call.
  */
 export async function processModel(
   brandName: string,
   rawModelName: string,
   rawModelNameEn: string | undefined,
-  dryRun: boolean,
-  aiCallCounter: { count: number }
+  _dryRun: boolean,
+  disagreementCounter: { count: number }
 ): Promise<ModelResult> {
   const modelName = stripLeadingBrandName(brandName, rawModelName);
   const modelNameEn = rawModelNameEn ? stripLeadingBrandName(brandName, rawModelNameEn) : undefined;
@@ -266,37 +233,25 @@ export async function processModel(
         finalUrl: moteurUrl,
       };
     }
-    // Disagreement beyond tolerance — AI reconciliation.
-    aiCallCounter.count++;
-    if (dryRun) {
-      return {
-        ...base,
-        outcome: "ai-fallback",
-        moteurPriceDh,
-        wandalooPriceDh,
-        diffPct: diff,
-        note: "DRY RUN — would call AI to reconcile (not called)",
-      };
-    }
-    try {
-      const reconciled = await aiReconcile({ brandName, modelName, moteurResult, wandalooResult });
-      return {
-        ...base,
-        outcome: "ai-fallback",
-        moteurPriceDh,
-        wandalooPriceDh,
-        diffPct: diff,
-        finalPriceDh: reconciled?.priceDh,
-        finalUrl: reconciled?.url,
-      };
-    } catch (err) {
-      // A 404 means the model name itself is wrong/retired — every remaining
-      // AI call would hit the same error, so bubble this up to abort the
-      // whole run rather than burning through it logging the same cause
-      // repeatedly (mirrors scripts/morocco-agent.ts's ModelNotFoundError).
-      if (err instanceof ModelNotFoundError) throw err;
-      return { ...base, outcome: "error", moteurPriceDh, wandalooPriceDh, diffPct: diff, note: (err as Error).message };
-    }
+    // Disagreement beyond tolerance. As of 2026-09-21 this no longer calls the AI
+    // provider to auto-reconcile (see CLAUDE.md's "no automated API calls anywhere
+    // in the app" entry — this was the last live call left in the codebase, found
+    // via a full re-audit after a production incident). Routes to manual review
+    // instead, same as every other uncertain case in this function
+    // (non-exact-match, ambiguous-multiple-candidates) — never writes a price.
+    // `disagreementCounter` (renamed from aiCallCounter; kept as the same
+    // by-reference counter object so existing callers' summary logging doesn't
+    // need restructuring) still counts how often this branch is hit, now just to
+    // report how many models need a human to pick between the two sources.
+    disagreementCounter.count++;
+    return {
+      ...base,
+      outcome: "ai-fallback",
+      moteurPriceDh,
+      wandalooPriceDh,
+      diffPct: diff,
+      note: "moteur.ma and wandaloo.com disagree beyond tolerance — needs manual reconciliation (AI auto-reconciliation removed, no automated calls).",
+    };
   }
 
   // Neither scraper parsed a price. If either fetch reached the brand/model
