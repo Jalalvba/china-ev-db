@@ -13,7 +13,7 @@
 // kickoff+format prompt pair per qualifying brand (lib/phevSuvWorkshopResearch.ts's
 // buildPhevSuvWorkshopKickoffPrompt/buildPhevSuvWorkshopFormatPrompt) to a single
 // batch file under raw-data/. This feature has no UI button anywhere in the app
-// (app/workshop-phev-suv/page.tsx is display-only), so paste each prompt into an
+// (app/technical/PhevWorkshopProfiles.tsx is display-only), so paste each prompt into an
 // external AI chat by hand, then paste the resulting JSON profile straight into
 // `npm run apply-phev-suv-workshop-batch` (which still validates via
 // validatePhevSuvWorkshopProfile before any DB write).

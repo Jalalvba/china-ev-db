@@ -280,7 +280,7 @@ export interface NormalizedPhevSuvWorkshopProfile {
 }
 
 /**
- * Strips nulls (the schema stores absent, not null — app/workshop-phev-suv/page.tsx tests
+ * Strips nulls (the schema stores absent, not null — app/WorkshopProfileFields.tsx tests
  * `requires_dealer_account !== undefined`, so a stored null would render as "No dealer account
  * required") and applies the source rule: "confirmed" survives only if EVERY filled fact carries
  * its own http(s) source_url. Input must already have passed validatePhevSuvWorkshopProfile.

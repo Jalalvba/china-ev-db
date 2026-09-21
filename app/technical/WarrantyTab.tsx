@@ -12,7 +12,7 @@ async function getBrands(): Promise<IBrand[]> {
   return JSON.parse(JSON.stringify(brands));
 }
 
-/** Warranty tab of /technical — derived from the old /warranty page; `brandId` narrows to one brand. */
+/** Warranty tab of /technical — formerly the /warranty page; `brandId` narrows to one brand. */
 export default async function WarrantyTab({ brandId }: { brandId?: string }) {
   const brands = (await getBrands()).filter((b) => !brandId || b._id === brandId);
   const researched = brands.filter((b) => b.warranty_terms);

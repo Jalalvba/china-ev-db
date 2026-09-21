@@ -99,7 +99,7 @@ export function resolveWorkshopRequirements(
 
 /**
  * Model-facing entry point: looks up the matching workshop_standards doc (from an
- * already-fetched map, see app/workshop/page.tsx) for `powertrain_category` +
+ * already-fetched map, see app/technical/GenericWorkshopReference.tsx) for `powertrain_category` +
  * `service_tier` and merges the matching override on top — or returns the explicit
  * `{ classified: false }` state when `powertrain_category` is null/undefined
  * (per review question 3a: never default to ICE or any other category).

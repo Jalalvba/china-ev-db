@@ -2,7 +2,7 @@ import { connectToDatabase } from "@/lib/db";
 import Brand from "@/models/Brand";
 import ModelSchema from "@/models/Model";
 import type { IBrand, IModel } from "@/types";
-import KnownIssuesList from "@/app/known-issues/KnownIssuesList";
+import KnownIssuesList from "./KnownIssuesList";
 
 async function getData(brandId?: string): Promise<{ models: IModel[]; brandNameById: Record<string, string> }> {
   await connectToDatabase();

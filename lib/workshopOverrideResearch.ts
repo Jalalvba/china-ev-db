@@ -1,6 +1,6 @@
 // Brand-specific workshop-override research — replaces the old per-brand,
 // single-query, free-text lib/workshopResearch.ts pipeline (still present but no
-// longer wired into any UI, see app/workshop/page.tsx). Two real differences:
+// longer wired into any UI, see app/technical/GenericWorkshopReference.tsx). Two real differences:
 //
 // 1. Output shape matches IBrandWorkshopOverride.overrides (technician_certification/
 //    lift_requirements/special_tools — the same structured shape as

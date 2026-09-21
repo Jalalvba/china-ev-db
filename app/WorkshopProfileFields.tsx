@@ -1,7 +1,7 @@
 import type { IBrandPhevSuvWorkshopProfile } from "@/types";
 import SourceRef from "@/app/SourceRef";
 
-// Shared by /workshop-phev-suv (one card per brand) and /brands/[id] (the brand's own card).
+// Shared by the /technical Workshop tab (one card per brand) and /brands/[id] (the brand's own card).
 // Rendering copied verbatim from the original page — including its `requires_dealer_account !== undefined`
 // test, which is only safe because apply-workshop-profile strips nulls (see CLAUDE.md, "known landmine").
 

@@ -1,7 +1,7 @@
 import type { IWarrantyTerms } from "@/types";
 import { formatTierPeriod, WARRANTY_TIER_KINDS, type IWarrantyTier } from "@/types/warrantyTiers";
 
-// One rendering of warranty_terms for every page (/warranty, brand page, import review). Tiers win when present; the
+// One rendering of warranty_terms for every page (/technical Warranty tab, brand page, import review). Tiers win when present; the
 // legacy flat six-number block is shown only when there are no tiers, or — clearly labelled — beneath them while it
 // is still on file awaiting manual clearing (CLAUDE.md, tiered-warranty entry).
 

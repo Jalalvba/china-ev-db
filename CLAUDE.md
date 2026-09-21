@@ -441,7 +441,7 @@ drift between them. Research modules: `lib/marketTrendResearch.ts`, `lib/globalI
   Chinese-market complaint data (车质网/汽车投诉网) and international/export-market complaints
   are different populations and are never silently merged: dedupe is per
   `(region, issue_description)`, each button writes only its own region, and
-  `/known-issues` + the model page label/group by region. An item with **no `region`** predates
+  the `/technical` Known-issues tab + the model page label/group by region. An item with **no `region`** predates
   the field and is treated as `"china"` on read (every such item came from the Chinese-source-only
   pipeline); `scripts/backfill-known-issue-region.ts` (dry-run by default, `--apply` to write)
   tags them explicitly — as of 2026-09-19 the DB had zero known_issues, so it is a no-op.
@@ -1151,6 +1151,17 @@ blocks the others: `warranty_terms` -> `Brand.warranty_terms` (`apply-warranty`)
 - Chery's full commitment letter (clauses 9.1-9.7) maps to 10-11 tiers; 9.1's "household/commercial" wording is ambiguous in translation (household+
   official 3 yr vs commercial/operating 1 yr) — the prompt tells the researcher to pick a side and say so in `conditions`.
 - **Restart needed** after these schema changes (`Brand.warranty_terms.tiers`, `BrandPhevSuvWorkshopProfile`, new `BrandAfterSalesProcess`).
+
+### `/technical` merges four pages (2026-09-21)
+
+`/warranty`, `/workshop`, `/workshop-phev-suv` and `/known-issues` are now ONE page, `/technical`, with three independent tabs
+(`?tab=warranty|workshop|issues`) and a shared brand picker (`?brand=<id>`; a malformed/unknown value is ignored -> all brands).
+Two units live there and are deliberately NOT mixed: Warranty/Workshop are BRAND-level, Known issues is MODEL-level — the picker
+narrows brand tabs to that brand and the issues tab to that brand's models. Workshop tab = brand-specific PHEV SUV profiles
+(`PhevWorkshopProfiles`) first, generic baseline (`GenericWorkshopReference`, `workshop_standards`) collapsed beneath. Code:
+`app/technical/`. The old paths are TEMPORARY 307 redirects in `next.config.ts` — flip to `permanent: true` only once stable (browsers
+cache 308s). Older entries in this file that mention the four old routes/pages refer to these tabs. Single-brand deep view stays
+`/brands/[id]`. Also deleted the same day: `/search` (Tech Search `/search/specs` stays), `/compare`, and the PHEV Market Deck.
 
 ## Write safety
 

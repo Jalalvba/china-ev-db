@@ -7,7 +7,7 @@ interface Props {
   compact?: boolean;
 }
 
-/** Manual export/import panel for the brand's PHEV SUV workshop profile (BrandPhevSuvWorkshopProfile, shown on /workshop-phev-suv) — see SingleObjectManualPanel for the shared mechanics. */
+/** Manual export/import panel for the brand's PHEV SUV workshop profile (BrandPhevSuvWorkshopProfile, shown on the /technical Workshop tab) — see SingleObjectManualPanel for the shared mechanics. */
 export default function WorkshopResearch({ brandId, compact }: Props) {
   return (
     <SingleObjectManualPanel
