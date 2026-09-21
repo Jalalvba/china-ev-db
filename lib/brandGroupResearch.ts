@@ -1,13 +1,33 @@
 // Manufacturer-group manual export/import: the same Tier-1 brand-identity +
 // model-discovery research as lib/brandResearch.ts / lib/modelDiscovery.ts,
 // but covering an ENTIRE ownership group (e.g. "Chery Automobile Co., Ltd."
-// with Soueast/Chery/Exeed/Lepas) in one prompt/paste round trip, plus two
-// group-only questions neither single-brand path asks: cross-brand
-// relationships (shared platforms, badge-engineering) and a group-wide
-// positioning summary. Reuses lib/brandResearch.ts's BRAND_FIELD_TEMPLATE/
-// validateResearchedBrand and lib/modelDiscovery.ts's DISCOVERY_FIELD_TEMPLATE/
-// validateDiscoveredModel per-item — this file only adds the group envelope,
-// per-brand/per-model routing validation, and the two new group-only sections.
+// with Soueast/Chery/Exeed/Lepas) in one prompt/paste round trip, plus three
+// group-only questions no single-brand path asks: cross-brand relationships
+// (shared platforms, badge-engineering), a group-wide positioning summary,
+// and — as of v2 — brands/sub-brands belonging to this group that AREN'T IN
+// THE DB AT ALL YET. Reuses lib/brandResearch.ts's BRAND_FIELD_TEMPLATE/
+// validateResearchedBrand, lib/modelDiscovery.ts's DISCOVERY_FIELD_TEMPLATE/
+// validateDiscoveredModel, and lib/brandDiscoveryResearch.ts's
+// DISCOVERED_BRAND_FIELD_TEMPLATE/validateDiscoveredBrandItems per-item —
+// this file only adds the group envelope, per-brand/per-model routing
+// validation, and composes the three group-only sections into one prompt.
+//
+// 2026-09-21 — bumped v1 -> v2: v1 had `brands`/`models`/`group_relationships`/
+// `group_positioning` all at the top level, covering only brands ALREADY in
+// the DB under the group; a SEPARATE feature (brand-discovery-v1, its own
+// button pair) covered brands NOT yet in the DB. Per explicit user request,
+// those two button-pairs on each manufacturer-group card were collapsed into
+// ONE — one export prompt asking Kimi to do both jobs in one pass, one paste
+// box whose importer handles whichever parts are present. The v1 fields moved
+// under a new `existing` key (still optional — a response needn't touch
+// existing brands/models at all) and a new top-level optional `discovered_brands`
+// array covers the brand-discovery job. Nesting rather than flattening was a
+// deliberate choice: the two jobs have genuinely different per-item validation
+// (existing-brand/model routing+correction vs. new-brand two-tiered dedup) that
+// should stay separable in code, even though they now share one schema/prompt/
+// paste box in the UI. `lib/brandDiscoveryResearch.ts` (the former standalone
+// feature) still owns that validation, just reused here instead of behind its
+// own route/button.
 //
 // group_relationships/group_positioning are DISPLAY-ONLY in this first pass —
 // no Brand/Model field is a good fit for either (Brand.status_note is a
@@ -15,14 +35,22 @@
 // it is," not a place for cross-brand facts or a positioning essay), so
 // nothing here writes them to Mongo. The review UI shows them for the person
 // to record manually (e.g. into status_note by hand, or elsewhere) if useful.
-// See CLAUDE.md's 2026-09-21 entry for this decision.
+// See CLAUDE.md's 2026-09-21 entries for this decision and the v2 merge.
 
 import { RELATIONSHIP_TYPES, BRAND_STATUSES } from "@/models/Brand";
 import { SEGMENTS, PRODUCTION_STATUSES } from "@/models/Model";
 import { validateResearchedBrand } from "@/lib/brandResearch";
 import { validateDiscoveredModel, applyDiscoveryGroundingGate } from "@/lib/modelDiscovery";
+import {
+  DISCOVERED_BRAND_FIELD_TEMPLATE,
+  BRAND_DISCOVERY_PROMPT_BLOCK,
+  BRAND_DISCOVERY_RULES_BLOCK,
+  validateDiscoveredBrandItems,
+  type DiscoveredBrandItem,
+  type ExistingBrandForDedup,
+} from "@/lib/brandDiscoveryResearch";
 
-export const BRAND_GROUP_MANUAL_SCHEMA_VERSION = "brand-group-manual-v1";
+export const BRAND_GROUP_MANUAL_SCHEMA_VERSION = "brand-group-manual-v2";
 
 const CONFIDENCE_SET = new Set(["confirmed", "unconfirmed"]);
 
@@ -63,7 +91,8 @@ export interface BrandGroupExportContext {
   members: BrandGroupMember[];
 }
 
-/** Builds ONE combined prompt covering every sub-brand in the group. */
+/** Builds ONE combined prompt covering every sub-brand in the group, PLUS the brand-discovery
+ * question (any sub-brand not yet in the DB at all) — one prompt, one envelope, both jobs. */
 export function buildBrandGroupManualExportPrompt(ctx: BrandGroupExportContext): string {
   const { groupKey, members } = ctx;
 
@@ -78,25 +107,29 @@ export function buildBrandGroupManualExportPrompt(ctx: BrandGroupExportContext):
       }`
     )
     .join("\n");
+  const existingBrandNames = members.map((m) => m.brandName);
 
   const brandsEnvelope = members.map((m) => ({ brand_id: m.brandId, name: m.brandName, ...BRAND_FIELD_TEMPLATE }));
   const envelope = {
     schema_version: BRAND_GROUP_MANUAL_SCHEMA_VERSION,
     group_key: groupKey,
-    brands: brandsEnvelope,
-    models: [{ model_id: "string | null (null = a NEW model you're proposing; never invent an id for an existing model)", brand_id: "string (must be one of the brand_id values above)", ...DISCOVERY_FIELD_TEMPLATE }],
-    group_relationships: [
-      {
-        description: "string (e.g. shared platform, badge-engineering, shared factory)",
-        brands_involved: ["string (brand_id, must be one of the brand_id values above)"],
+    existing: {
+      brands: brandsEnvelope,
+      models: [{ model_id: "string | null (null = a NEW model you're proposing; never invent an id for an existing model)", brand_id: "string (must be one of the brand_id values above)", ...DISCOVERY_FIELD_TEMPLATE }],
+      group_relationships: [
+        {
+          description: "string (e.g. shared platform, badge-engineering, shared factory)",
+          brands_involved: ["string (brand_id, must be one of the brand_id values above)"],
+          confidence: [...CONFIDENCE_SET].join(" | "),
+          source_url: "string | null",
+        },
+      ],
+      group_positioning: {
+        summary: "string (how this manufacturer group positions its brands relative to each other and the market)",
         confidence: [...CONFIDENCE_SET].join(" | "),
-        source_url: "string | null",
       },
-    ],
-    group_positioning: {
-      summary: "string (how this manufacturer group positions its brands relative to each other and the market)",
-      confidence: [...CONFIDENCE_SET].join(" | "),
     },
+    discovered_brands: [DISCOVERED_BRAND_FIELD_TEMPLATE],
     notes: "string",
   };
 
@@ -112,20 +145,22 @@ Then research questions that only make sense at the GROUP level:
 1. MODEL GAPS: for each sub-brand, find any current-production, exported (any export market, not just Morocco) model NOT already listed as "on file" above. Only include export-relevant models (sold outside mainland China currently or historically) — exclude domestic-only models. Route each discovered model to the correct sub-brand via its "brand_id".
 2. CROSS-BRAND RELATIONSHIPS: shared platforms, badge-engineering (the same underlying vehicle sold under two of this group's brands), shared factories, or other structural links between these specific sub-brands — not generic industry facts.
 3. GROUP-WIDE POSITIONING: how does this manufacturer group position its sub-brands relative to each other (e.g. one brand for budget, one for premium, one for exports)?
+4. NEW/MISSING SUB-BRANDS: brands ALREADY in our database under this group are listed above (do NOT re-report these) — ${existingBrandNames.join(", ")}. ${BRAND_DISCOVERY_PROMPT_BLOCK}
 
-Respond with ONLY a JSON object (no markdown fencing, no prose before or after) in exactly this envelope. Each value below describes the type the field must have, not a literal example value.
+Respond with ONLY a JSON object (no markdown fencing, no prose before or after) in exactly this envelope. Each value below describes the type the field must have, not a literal example value. "existing" and "discovered_brands" are both optional in principle, but fill in whatever you found for either — leave an empty array/omit only the parts you genuinely have nothing for.
 ${JSON.stringify(envelope, null, 2)}
 
 CRITICAL RULES:
 - Keep "schema_version" and "group_key" exactly as shown.
-- Every "brand_id" you use (in "brands", "models", and "group_relationships.brands_involved") MUST be one of the brand_id values listed above — never invent one or use a brand outside this group.
+- Every "brand_id" you use (in "existing.brands", "existing.models", and "existing.group_relationships.brands_involved") MUST be one of the brand_id values listed above — never invent one or use a brand outside this group.
 - OUTPUT LANGUAGE: every string value must be English, except "name_cn" (kept in its original script). Translate any Chinese source text before writing it elsewhere.
 - Every fact must come from a source you actually opened — do not estimate or infer from similar brands/models, except "segment" on a discovered model, which is mandatory even when unsourced (use "segment_confidence": "inferred" in that case).
 - Use null for anything you cannot find a sourced value for. Do NOT guess.
-- "relationship_type" must be exactly one of: ${RELATIONSHIP_TYPES.join(", ")} — or null.
-- "status" must be exactly one of: ${BRAND_STATUSES.join(", ")} — or null.
+- "existing.brands[].relationship_type" must be exactly one of: ${RELATIONSHIP_TYPES.join(", ")} — or null.
+- "existing.brands[].status" must be exactly one of: ${BRAND_STATUSES.join(", ")} — or null.
 - Do NOT add, rename, or omit any field from the shape above.
-- Do not re-report a model already listed as "on file" for its brand unless you have new/corrected details.`;
+- Do not re-report a model already listed as "on file" for its brand unless you have new/corrected details.
+${BRAND_DISCOVERY_RULES_BLOCK}`;
 }
 
 // ---------- parse + validate ----------
@@ -181,6 +216,7 @@ export interface BrandGroupManualImportResult {
   models: BrandGroupModelItem[];
   relationships: BrandGroupRelationshipItem[];
   positioning: BrandGroupPositioning | null;
+  discoveredBrands: DiscoveredBrandItem[];
   notes: string;
 }
 
@@ -192,19 +228,24 @@ function namesMatch(a: string, existing: { name?: string; name_cn?: string; name
 }
 
 /**
- * Parses + validates a pasted brand-group-manual-v1 reply. `validBrandIds` is the group's real
- * membership (from groupBrands() server-side, not trusted from the paste) — any brand_id outside
- * this set is rejected at the item level rather than failing the whole import.
- * `existingModelsByBrandId` keys by brand_id so duplicate detection is scoped per sub-brand, not
- * one shared pool across the group.
+ * Parses + validates a pasted brand-group-manual-v2 reply. `existing` (brands/models/
+ * group_relationships/group_positioning) and top-level `discovered_brands` are both optional — a
+ * response may include either, both, or neither. `validBrandIds` is the group's real membership
+ * (from groupBrands() server-side, not trusted from the paste) — any brand_id outside this set is
+ * rejected at the item level rather than failing the whole import. `existingModelsByBrandId` keys
+ * by brand_id so model duplicate detection is scoped per sub-brand, not one shared pool across the
+ * group. `existingBrandsInGroup`/`allExistingBrands` feed the discovered-brands two-tiered dedup —
+ * see lib/brandDiscoveryResearch.ts's validateDiscoveredBrandItems for what they're used for.
  */
 export function parseBrandGroupManualImport(
   rawText: string,
   groupKey: string,
   validBrandIds: Set<string>,
-  existingModelsByBrandId: Map<string, { _id: string; name?: string; name_cn?: string; name_en?: string }[]>
+  existingModelsByBrandId: Map<string, { _id: string; name?: string; name_cn?: string; name_en?: string }[]>,
+  existingBrandsInGroup: ExistingBrandForDedup[],
+  allExistingBrands: ExistingBrandForDedup[]
 ): BrandGroupManualImportResult {
-  const empty = { brands: [], models: [], relationships: [], positioning: null, notes: "" };
+  const empty = { brands: [], models: [], relationships: [], positioning: null, discoveredBrands: [], notes: "" };
   const obj = extractJsonObjectLoose(rawText);
   if (!obj) return { valid: false, errors: ["Could not find a JSON object in the pasted text."], ...empty };
 
@@ -220,8 +261,14 @@ export function parseBrandGroupManualImport(
   const notes = typeof obj.notes === "string" ? obj.notes : "";
   const hasEvidence = notes.trim() !== "";
 
-  // brands[]
-  const rawBrands = Array.isArray(obj.brands) ? obj.brands : [];
+  const existingSection = obj.existing && typeof obj.existing === "object" ? (obj.existing as Record<string, unknown>) : {};
+
+  // discovered_brands[] — top-level, independent of "existing"
+  const rawDiscovered = Array.isArray(obj.discovered_brands) ? obj.discovered_brands : [];
+  const discoveredBrands = validateDiscoveredBrandItems(rawDiscovered, existingBrandsInGroup, allExistingBrands, hasEvidence);
+
+  // existing.brands[]
+  const rawBrands = Array.isArray(existingSection.brands) ? existingSection.brands : [];
   const brands: BrandGroupBrandItem[] = rawBrands.map((raw) => {
     const r = (raw ?? {}) as Record<string, unknown>;
     const brandId = typeof r.brand_id === "string" ? r.brand_id : "";
@@ -240,8 +287,8 @@ export function parseBrandGroupManualImport(
     return { brand_id: brandId, brand: gated, valid: true, errors: [] };
   });
 
-  // models[]
-  const rawModels = Array.isArray(obj.models) ? obj.models : [];
+  // existing.models[]
+  const rawModels = Array.isArray(existingSection.models) ? existingSection.models : [];
   const models: BrandGroupModelItem[] = rawModels.map((raw) => {
     const r = (raw ?? {}) as Record<string, unknown>;
     const brandId = typeof r.brand_id === "string" ? r.brand_id : "";
@@ -274,8 +321,8 @@ export function parseBrandGroupManualImport(
     return { brand_id: brandId, model: gated, valid: true, errors: [], duplicate: !!match, existingModelId: match?._id ?? null };
   });
 
-  // group_relationships[]
-  const rawRelationships = Array.isArray(obj.group_relationships) ? obj.group_relationships : [];
+  // existing.group_relationships[]
+  const rawRelationships = Array.isArray(existingSection.group_relationships) ? existingSection.group_relationships : [];
   const relationships: BrandGroupRelationshipItem[] = rawRelationships.map((raw) => {
     const r = (raw ?? {}) as Record<string, unknown>;
     const description = typeof r.description === "string" ? r.description : "";
@@ -291,10 +338,10 @@ export function parseBrandGroupManualImport(
     return { description, brands_involved: brandsInvolved, confidence, source_url: sourceUrl, valid: itemErrors.length === 0, errors: itemErrors };
   });
 
-  // group_positioning
+  // existing.group_positioning
   let positioning: BrandGroupPositioning | null = null;
-  if (obj.group_positioning && typeof obj.group_positioning === "object") {
-    const gp = obj.group_positioning as Record<string, unknown>;
+  if (existingSection.group_positioning && typeof existingSection.group_positioning === "object") {
+    const gp = existingSection.group_positioning as Record<string, unknown>;
     const summary = typeof gp.summary === "string" ? gp.summary : "";
     if (summary.trim()) {
       let confidence = typeof gp.confidence === "string" && CONFIDENCE_SET.has(gp.confidence) ? gp.confidence : "unconfirmed";
@@ -303,5 +350,5 @@ export function parseBrandGroupManualImport(
     }
   }
 
-  return { valid: true, errors: [], brands, models, relationships, positioning, notes };
+  return { valid: true, errors: [], brands, models, relationships, positioning, discoveredBrands, notes };
 }

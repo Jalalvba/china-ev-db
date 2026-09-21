@@ -6,10 +6,13 @@ import { groupBrands } from "@/lib/brandGrouping";
 import { buildBrandGroupManualExportPrompt, type BrandGroupMember } from "@/lib/brandGroupResearch";
 import type { IBrand } from "@/types";
 
-// Read-only: builds the copy-paste prompt (+ brand-group-manual-v1 envelope template) for an
-// entire manufacturer group at once. group_key is taken from the request body, not a URL param,
-// since a group key can contain spaces/punctuation (e.g. "Chery Automobile Co., Ltd.") that would
-// need careful encode/decode round-tripping as a dynamic route segment. Never calls the AI provider.
+// Read-only: builds the copy-paste prompt (+ brand-group-manual-v2 envelope template) for an
+// entire manufacturer group at once — covers both jobs in one prompt: updates/corrections for
+// brands+models already in the DB under this group, AND brands/sub-brands not in the DB at all
+// yet (the two used to be separate button pairs; see CLAUDE.md's 2026-09-21 merge entry). group_key
+// is taken from the request body, not a URL param, since a group key can contain spaces/
+// punctuation (e.g. "Chery Automobile Co., Ltd.") that would need careful encode/decode
+// round-tripping as a dynamic route segment. Never calls the AI provider.
 export async function POST(req: NextRequest) {
   await connectToDatabase();
   const body = await req.json().catch(() => null);

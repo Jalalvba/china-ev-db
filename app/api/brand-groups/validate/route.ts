@@ -4,12 +4,16 @@ import Brand from "@/models/Brand";
 import ModelSchema from "@/models/Model";
 import { groupBrands } from "@/lib/brandGrouping";
 import { parseBrandGroupManualImport } from "@/lib/brandGroupResearch";
+import type { ExistingBrandForDedup } from "@/lib/brandDiscoveryResearch";
 import type { IBrand } from "@/types";
 
-// Preview-only: parses + validates a pasted brand-group-manual-v1 response, sectioned by
-// sub-brand. Never writes — the client applies selected brand-field changes via the existing
-// apply-brand-research route (once per changed brand) and selected new models via the existing
-// create-models route (once per brand), same pattern as the single-brand/model-discovery panels.
+// Preview-only: parses + validates a pasted brand-group-manual-v2 response, covering both the
+// existing-brand/model updates (sectioned by sub-brand) AND newly-discovered brands not yet in the
+// DB, whichever or both are present in the paste (see CLAUDE.md's 2026-09-21 merge entry — this
+// used to be two separate routes/buttons). Never writes — the client applies selected brand-field
+// changes via the existing apply-brand-research route (once per changed brand), selected new
+// models via the existing create-models route (once per brand), and selected newly-discovered
+// brands via the existing generic POST /api/brands route, same pattern as the pre-merge panels.
 export async function POST(req: NextRequest) {
   await connectToDatabase();
   const body = await req.json().catch(() => null);
@@ -34,5 +38,16 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  return NextResponse.json(parseBrandGroupManualImport(json, groupKey, validBrandIds, existingModelsByBrandId));
+  const toDedupShape = (b: IBrand): ExistingBrandForDedup => ({
+    _id: String(b._id),
+    name: b.name,
+    name_cn: b.name_cn,
+    parent_group: b.parent_group,
+  });
+  const existingBrandsInGroup = group.brands.map(toDedupShape);
+  const allExistingBrands = allBrands.map(toDedupShape);
+
+  return NextResponse.json(
+    parseBrandGroupManualImport(json, groupKey, validBrandIds, existingModelsByBrandId, existingBrandsInGroup, allExistingBrands)
+  );
 }

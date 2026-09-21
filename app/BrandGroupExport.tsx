@@ -17,6 +17,7 @@ import type {
   BrandGroupManualImportResult,
   BrandGroupModelItem,
 } from "@/lib/brandGroupResearch";
+import type { DiscoveredBrandItem } from "@/lib/brandDiscoveryResearch";
 
 interface Props {
   groupKey: string;
@@ -35,6 +36,10 @@ interface EditableBrand {
 
 interface EditableModel extends BrandGroupModelItem {
   key: string;
+  selected: boolean;
+}
+
+interface EditableDiscoveredBrand extends DiscoveredBrandItem {
   selected: boolean;
 }
 
@@ -62,8 +67,9 @@ export default function BrandGroupExport({ groupKey, brandNamesById }: Props) {
   const [modelRows, setModelRows] = useState<EditableModel[]>([]);
   const [relationships, setRelationships] = useState<BrandGroupManualImportResult["relationships"]>([]);
   const [positioning, setPositioning] = useState<BrandGroupManualImportResult["positioning"]>(null);
+  const [discoveredRows, setDiscoveredRows] = useState<EditableDiscoveredBrand[]>([]);
 
-  const [applySummary, setApplySummary] = useState<{ brandsUpdated: number; modelsCreated: number; errors: string[] } | null>(null);
+  const [applySummary, setApplySummary] = useState<{ brandsUpdated: number; modelsCreated: number; brandsDiscovered: number; errors: string[] } | null>(null);
 
   async function handleExport(e: React.MouseEvent) {
     e.stopPropagation();
@@ -131,6 +137,12 @@ export default function BrandGroupExport({ groupKey, brandNamesById }: Props) {
       );
       setRelationships(data.relationships);
       setPositioning(data.positioning);
+      setDiscoveredRows(
+        (data.discoveredBrands ?? []).map((b) => ({
+          ...b,
+          selected: b.valid && !b.duplicate && !b.duplicateInDifferentGroup,
+        }))
+      );
       setPhase("review");
     } catch (err) {
       setErrorMessage(`Import failed: ${(err as Error).message}`);
@@ -144,6 +156,9 @@ export default function BrandGroupExport({ groupKey, brandNamesById }: Props) {
   function toggleModel(key: string) {
     setModelRows((prev) => prev.map((r) => (r.key === key ? { ...r, selected: !r.selected } : r)));
   }
+  function toggleDiscovered(key: string) {
+    setDiscoveredRows((prev) => prev.map((r) => (r.key === key ? { ...r, selected: !r.selected } : r)));
+  }
 
   async function handleApplySelected(e: React.MouseEvent) {
     e.stopPropagation();
@@ -152,6 +167,7 @@ export default function BrandGroupExport({ groupKey, brandNamesById }: Props) {
     const errs: string[] = [];
     let brandsUpdated = 0;
     let modelsCreated = 0;
+    let brandsDiscovered = 0;
 
     for (const row of brandRows.filter((r) => r.selected && r.valid)) {
       try {
@@ -191,7 +207,22 @@ export default function BrandGroupExport({ groupKey, brandNamesById }: Props) {
       }
     }
 
-    setApplySummary({ brandsUpdated, modelsCreated, errors: errs });
+    for (const row of discoveredRows.filter((r) => r.selected && r.valid)) {
+      try {
+        const res = await fetch(`/api/brands`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ...row.fields, parent_group: groupKey }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data?.error ?? `Request failed with status ${res.status}`);
+        brandsDiscovered++;
+      } catch (err) {
+        errs.push(`${String(row.fields.name ?? row.key)}: ${(err as Error).message}`);
+      }
+    }
+
+    setApplySummary({ brandsUpdated, modelsCreated, brandsDiscovered, errors: errs });
     setPhase("done");
     router.refresh();
   }
@@ -207,6 +238,7 @@ export default function BrandGroupExport({ groupKey, brandNamesById }: Props) {
     setModelRows([]);
     setRelationships([]);
     setPositioning(null);
+    setDiscoveredRows([]);
     setApplySummary(null);
   }
 
@@ -280,7 +312,7 @@ export default function BrandGroupExport({ groupKey, brandNamesById }: Props) {
               value={pasteText}
               onChange={(e) => setPasteText(e.target.value)}
               rows={8}
-              placeholder="Paste the brand-group-manual-v1 JSON response…"
+              placeholder="Paste the brand-group-manual-v2 JSON response…"
               className="w-full text-xs font-mono border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 rounded p-2"
             />
             {errorMessage && <p className="text-sm text-red-600 dark:text-red-400 mt-2">{errorMessage}</p>}
@@ -332,7 +364,8 @@ export default function BrandGroupExport({ groupKey, brandNamesById }: Props) {
             onClick={(e) => e.stopPropagation()}
           >
             <p className="font-medium">
-              Updated {applySummary.brandsUpdated} brand(s), created {applySummary.modelsCreated} model(s).
+              Updated {applySummary.brandsUpdated} brand(s), created {applySummary.modelsCreated} model(s), discovered{" "}
+              {applySummary.brandsDiscovered} new brand(s).
             </p>
             {applySummary.errors.length > 0 && (
               <ul className="mt-1 text-xs text-red-600 dark:text-red-400 list-disc pl-4">
@@ -366,7 +399,9 @@ export default function BrandGroupExport({ groupKey, brandNamesById }: Props) {
                 >
                   {phase === "applying"
                     ? "Applying…"
-                    : `Apply selected (${brandRows.filter((r) => r.selected).length} brands, ${modelRows.filter((r) => r.selected).length} models)`}
+                    : `Apply selected (${brandRows.filter((r) => r.selected).length} brand updates, ${
+                        modelRows.filter((r) => r.selected).length
+                      } models, ${discoveredRows.filter((r) => r.selected).length} new brands)`}
                 </button>
               </div>
             </div>
@@ -470,6 +505,52 @@ export default function BrandGroupExport({ groupKey, brandNamesById }: Props) {
                     <p className="text-zinc-500 dark:text-zinc-400">{positioning.confidence}</p>
                   </div>
                 )}
+              </section>
+
+              <section>
+                <h4 className="text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1.5">
+                  Discovered brands <span className="text-xs font-normal text-zinc-500">
+                    ({discoveredRows.length}, {discoveredRows.filter((r) => r.duplicate || r.duplicateInDifferentGroup).length} look like duplicates)
+                  </span>
+                </h4>
+                {discoveredRows.length === 0 && <p className="text-xs text-zinc-500 dark:text-zinc-400">No new brands proposed.</p>}
+                <div className="space-y-2">
+                  {discoveredRows.map((r) => (
+                    <div
+                      key={r.key}
+                      className={`border rounded-md p-2 ${
+                        !r.valid
+                          ? "border-red-300 dark:border-red-800"
+                          : r.duplicate || r.duplicateInDifferentGroup
+                          ? "border-amber-300 dark:border-amber-800"
+                          : "border-zinc-200 dark:border-zinc-800"
+                      }`}
+                    >
+                      <label className="flex items-start gap-2">
+                        <input type="checkbox" checked={r.selected} disabled={!r.valid} onChange={() => toggleDiscovered(r.key)} className="mt-1" />
+                        <div className="flex-1 min-w-0 text-xs">
+                          <p className="font-medium text-sm">{String(r.fields.name ?? "(unnamed)")}</p>
+                          {r.duplicate && (
+                            <p className="text-amber-700 dark:text-amber-400">Already exists in this group — deselected by default.</p>
+                          )}
+                          {r.duplicateInDifferentGroup && (
+                            <p className="text-amber-700 dark:text-amber-400">
+                              A brand with this name already exists under a DIFFERENT parent group — likely misattribution, deselected by default.
+                            </p>
+                          )}
+                          {!r.valid && <p className="text-red-600 dark:text-red-400">{r.errors.join(" — ")}</p>}
+                          {Object.entries(FIELD_LABELS)
+                            .filter(([k]) => r.fields[k] !== undefined && r.fields[k] !== null && r.fields[k] !== "")
+                            .map(([k, label]) => (
+                              <p key={k} className="text-zinc-700 dark:text-zinc-300">
+                                <span className="text-zinc-400 dark:text-zinc-500">{label}:</span> {String(r.fields[k])}
+                              </p>
+                            ))}
+                        </div>
+                      </label>
+                    </div>
+                  ))}
+                </div>
               </section>
             </div>
           </div>

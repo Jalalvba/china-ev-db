@@ -1028,6 +1028,40 @@ fact directly, not submitting an AI response for review.
   restarted. This is exactly the scenario this file's own Write safety section already warns about;
   confirms it's a real, recurring gotcha worth restating rather than a one-off.
 
+### Manufacturer-group panel merge: two button-pairs collapsed into one, schema bumped to v2 (2026-09-21)
+
+Per explicit user request, `BrandGroupExport`'s "📦 Export group prompt" pair and the separate
+`BrandDiscoveryExport` "📦 Export group brand-discovery prompt" pair (both documented above,
+added the same day) are now ONE button-pair per manufacturer-group card — one export prompt asking
+Kimi to do both jobs (update/correct brands+models already in the DB under the group, AND find
+brands/sub-brands not in the DB at all) in a single pass, one paste box whose importer handles
+whichever parts are present.
+
+- **Schema bumped `brand-group-manual-v1` -> `brand-group-manual-v2`**: the v1 top-level
+  `brands`/`models`/`group_relationships`/`group_positioning` moved under a new optional `existing`
+  key; a new optional top-level `discovered_brands` array (the old `brand-discovery-v1` shape)
+  sits alongside it. Nesting rather than flattening was deliberate — the two jobs have genuinely
+  different per-item validation (existing-brand/model routing+correction vs. new-brand two-tiered
+  dedup) that stays separable in code even though they now share one schema/prompt/paste box.
+- `lib/brandDiscoveryResearch.ts` is NOT deleted — it's no longer a standalone feature with its own
+  prompt/schema-version/route, but still owns `DISCOVERED_BRAND_FIELD_TEMPLATE` and the reusable
+  `validateDiscoveredBrandItems()` per-item validator (two-tiered duplicate detection unchanged),
+  now imported by `lib/brandGroupResearch.ts`'s merged parser. Its former `buildBrandDiscoveryExportPrompt`
+  became two reusable text blocks (`BRAND_DISCOVERY_PROMPT_BLOCK`/`BRAND_DISCOVERY_RULES_BLOCK`)
+  folded into the combined prompt instead of a separate envelope+prompt.
+- Deleted: `app/BrandDiscoveryExport.tsx` (merged into `app/BrandGroupExport.tsx`, which now
+  renders a fourth review section — "Discovered brands," same per-row checkbox/duplicate-flagging
+  UI as before — alongside brand/model/relationships/positioning) and
+  `app/api/brand-groups/discover/{export,validate}` (folded into the existing
+  `app/api/brand-groups/{export,validate}` routes, which now also resolve and pass the whole-DB
+  brand list needed for discovery's cross-group dedup check).
+- Apply is now one combined action: "Apply selected" posts brand-field updates
+  (`apply-brand-research`), new models (`create-models`), AND newly-discovered brands (generic
+  `POST /api/brands`, `parent_group` set to the group's own key) in one click, reusing all three
+  existing write routes unchanged.
+- Full-repo `npx tsc --noEmit` and `eslint` both clean; grepped for zero remaining references to
+  the deleted component/routes/schema-version constant.
+
 ## Write safety
 
 Every AI-researched write path (`lib/applySpecUpdates.ts`, the manual-import apply

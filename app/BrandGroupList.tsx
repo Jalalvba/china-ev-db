@@ -6,7 +6,6 @@ import type { BrandGroup } from "@/lib/brandGrouping";
 import type { IBrand } from "@/types";
 import BrandResearch from "@/app/BrandResearch";
 import BrandGroupExport from "@/app/BrandGroupExport";
-import BrandDiscoveryExport from "@/app/BrandDiscoveryExport";
 
 const STATUS_STYLES: Record<string, string> = {
   discontinued: "bg-zinc-200 text-zinc-600 dark:bg-zinc-700 dark:text-zinc-300",
@@ -98,7 +97,6 @@ function GroupSection({
             groupKey={group.key}
             brandNamesById={Object.fromEntries(group.brands.map((b) => [String(b._id), b.name]))}
           />
-          <BrandDiscoveryExport groupKey={group.key} />
         </div>
         <svg
           className={`shrink-0 w-5 h-5 text-zinc-400 transition-transform ${open ? "rotate-180" : ""}`}
