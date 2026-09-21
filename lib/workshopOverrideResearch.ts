@@ -16,10 +16,6 @@
 // lib/warrantyResearch.ts, lib/positioningResearch.ts, lib/issueResearch.ts — see
 // lib/chineseSourceGuard.ts's header for the shared reasoning.
 
-import { ModelNotFoundError, SearchProviderError, sleep } from "@/lib/techSpecResearch";
-import { runGroundedResearch } from "@/lib/groundedResearch";
-import { filterToChineseSources } from "@/lib/chineseSourceGuard";
-
 const CONFIDENCE_SET = new Set(["confirmed", "unconfirmed"]);
 
 export interface OverrideResearchInput {
@@ -172,100 +168,11 @@ export function passesSpecificityGate(overrides: ResearchedOverrideFields): bool
   return false;
 }
 
-interface OverrideAgentResponse {
-  overrides?: unknown;
-}
-
-function extractJson(text: string): OverrideAgentResponse | null {
-  const fencedMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/);
-  const candidate = fencedMatch ? fencedMatch[1] : text;
-  const braceStart = candidate.indexOf("{");
-  const braceEnd = candidate.lastIndexOf("}");
-  if (braceStart === -1 || braceEnd === -1 || braceEnd <= braceStart) return null;
-  try {
-    return JSON.parse(candidate.slice(braceStart, braceEnd + 1));
-  } catch {
-    return null;
-  }
-}
-
-async function queryOverrideResearch(
-  model: string,
-  input: OverrideResearchInput
-): Promise<{ parsed: OverrideAgentResponse | null; sourceUrls: string[]; rawText: string }> {
-  const kickoffPrompt = buildOverrideKickoffPrompt(input);
-  const formatPrompt = buildOverrideFormatPrompt();
-  const searchQueries = buildOverrideSearchQueries(input);
-
-  const maxAttempts = 3;
-  let lastErr: unknown;
-  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-    try {
-      const { formattedText, sourceUrls } = await runGroundedResearch({ kickoffPrompt, formatPrompt, searchQueries, model });
-      return { parsed: extractJson(formattedText), sourceUrls, rawText: formattedText };
-    } catch (err) {
-      if (err instanceof ModelNotFoundError) throw err;
-      if (err instanceof SearchProviderError) throw err;
-      lastErr = err;
-      const backoffMs = 2000 * attempt;
-      console.error(`  [retry ${attempt}/${maxAttempts}] research-workshop-override ${input.brandName}: ${(err as Error).message} — waiting ${backoffMs}ms`);
-      await sleep(backoffMs);
-    }
-  }
-  throw lastErr;
-}
-
-export interface OverrideResearchResult {
-  status: "found" | "thin" | "not_found" | "error";
-  errorMessage?: string;
-  sourceUrls: string[];
-  hasGrounding: boolean;
-  overrides?: ResearchedOverrideFields;
-  passesSpecificity: boolean;
-  valid: boolean;
-  errors: string[];
-}
-
-export async function researchBrandWorkshopOverride(model: string, input: OverrideResearchInput): Promise<OverrideResearchResult> {
-  try {
-    const { parsed, sourceUrls: rawSourceUrls, rawText } = await queryOverrideResearch(model, input);
-
-    if (!parsed || !parsed.overrides) {
-      return {
-        status: "error",
-        errorMessage: `Could not parse an overrides object from response (first 300 chars): ${rawText.slice(0, 300)}`,
-        sourceUrls: [],
-        hasGrounding: false,
-        passesSpecificity: false,
-        valid: false,
-        errors: [],
-      };
-    }
-
-    const sourceUrls = filterToChineseSources(rawSourceUrls);
-    const hasGrounding = sourceUrls.length > 0;
-    const { valid, errors } = validateResearchedOverride(parsed.overrides);
-    const overrides = parsed.overrides as ResearchedOverrideFields;
-
-    if (!valid) {
-      return { status: "not_found", sourceUrls, hasGrounding, overrides, passesSpecificity: false, valid, errors };
-    }
-    if (!hasGrounding) {
-      return { status: "not_found", sourceUrls, hasGrounding, overrides, passesSpecificity: false, valid: true, errors: [] };
-    }
-
-    const specific = passesSpecificityGate(overrides);
-    return {
-      status: specific ? "found" : "thin",
-      sourceUrls,
-      hasGrounding,
-      overrides,
-      passesSpecificity: specific,
-      valid: true,
-      errors: [],
-    };
-  } catch (err) {
-    if (err instanceof ModelNotFoundError || err instanceof SearchProviderError) throw err;
-    return { status: "error", errorMessage: (err as Error).message, sourceUrls: [], hasGrounding: false, passesSpecificity: false, valid: false, errors: [] };
-  }
-}
+// The live-call path (queryOverrideResearch/researchBrandWorkshopOverride, which
+// called lib/groundedResearch.ts directly) was removed 2026-09-21 — see CLAUDE.md.
+// This is a script-only feature with no UI button anywhere in the app, so no
+// manual-import panel was built for it; scripts/research-brand-workshop-overrides.ts
+// now writes buildOverrideKickoffPrompt/FormatPrompt's text to a batch file for
+// manual processing, and a human pastes the resulting JSON straight into
+// `npm run apply-workshop-overrides-batch` (validateResearchedOverride/
+// passesSpecificityGate above still gate that write).

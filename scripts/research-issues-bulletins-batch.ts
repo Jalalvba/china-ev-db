@@ -1,20 +1,26 @@
-// Batch known-issues (China + Global) and technical-bulletins research for a chosen SET of models,
-// designed to be run in small attended batches — NOT across all models unattended. READ-ONLY:
-// nothing is written to MongoDB. Every result (kept items, filter rejections with reasons,
-// warnings, leak flags) goes to a review file under raw-data/; applying is a separate, reviewed step.
+// Batch EXPORT-PROMPT generator for known-issues (China + Global) and technical-bulletins
+// research on a chosen SET of models. As of 2026-09-21 this script no longer calls any
+// AI/search provider directly (see CLAUDE.md's "automated research calls removed" entries) —
+// it writes one `research-categories-v1` export prompt per model to a single batch file under
+// raw-data/, for a human to paste into an external AI chat (Kimi/Gemini/DeepSeek) and then
+// run back through the existing manual-categories importer
+// (app/api/models/[id]/manual-categories/{validate,apply}, `ManualCategoryImporter`) exactly
+// like a single-model export. NEVER writes to MongoDB and never calls lib/aiProvider.ts or
+// lib/webSearch.ts.
 //
-// Why attended: the first global pass on Song Ultra DM-i padded 8 off-model items, and the
-// exact-model filter then needed a three-valued generation check (see CLAUDE.md). This runner adds
-// an INDEPENDENT leak check on everything the filter KEPT: prose like "related variant", or an item
-// that names another model in the DB but never the target. A HARD flag stops the whole run
-// immediately (exit code 2) so the pattern can't propagate through later models. Bulletins have no
-// exact-model filter yet, so they are checked by this detector alone.
+// Recalls are deliberately excluded from the generated prompts, same as before (automated
+// search couldn't reach recall notices reliably; the per-model manual export button already
+// covers recalls on its own if wanted).
 //
-// Recalls are deliberately excluded (automated search can't reach recall notices).
+// The leak-detection/verification machinery below (leakFlags, --retro) is preserved AS-IS: it
+// operates on review files already sitting in raw-data/ from before this change, or on
+// whatever the human pastes back through the manual importer — it never itself calls an AI
+// provider, so it stays in scope.
 //
 // Usage:
 //   npx tsx scripts/research-issues-bulletins-batch.ts --label batch1 --models "Song Ultra DM-i,Haval Raptor"
-//   add --dry to only print the plan (no research calls); add --passes china_issues,bulletins to run a subset.
+//   add --dry to only print the plan (no file written)
+//   --retro <file1,file2>  (unchanged: re-checks items already in earlier review files, no LLM, no writes)
 
 import dotenv from "dotenv";
 dotenv.config({ path: [".env.local", ".env"], quiet: true });
@@ -22,24 +28,17 @@ import mongoose from "mongoose";
 import fs from "node:fs";
 import Brand from "../models/Brand";
 import ModelSchema from "../models/Model";
-import { getDefaultModel, ModelNotFoundError, SearchProviderError, sleep } from "../lib/techSpecResearch";
-import { researchIssues } from "../lib/issueResearch";
-import { researchGlobalIssues } from "../lib/globalIssueResearch";
-import { researchBulletins } from "../lib/bulletinResearch";
-import { matchesTargetModel, OFF_MODEL_PROSE, tokenizeName, powertrainTextMismatch } from "../lib/categoryValidators";
+import { powertrainTextMismatch } from "../lib/categoryValidators";
 import { getModelPowertrain, describePowertrain } from "../lib/modelPowertrain";
 import { verifyItemSources } from "../lib/sourceVerification";
 import type { SourceCheck } from "../lib/sourceVerification";
-import type { TargetModel } from "../lib/categoryValidators";
+import { buildCategoryExportText } from "../lib/researchCategoriesImport";
 
 const args = process.argv.slice(2);
 const arg = (k: string) => { const i = args.indexOf(k); return i >= 0 ? args[i + 1] : undefined; };
 const label = arg("--label") ?? "batch";
 const names = (arg("--models") ?? "").split(",").map((s) => s.trim()).filter(Boolean);
 const dry = args.includes("--dry");
-const dropHard = args.includes("--drop-hard");
-// Optional: run only some passes (e.g. to re-run one that hit a transient error). Default: all three.
-const onlyPasses = (arg("--passes") ?? "").split(",").map((s) => s.trim()).filter(Boolean);
 if (names.length === 0 && !args.includes("--retro")) throw new Error('Pass --models "Name A,Name B" (exact Model.name values), or --retro file1,file2.');
 if (!process.env.MONGODB_URI) throw new Error("Missing MONGODB_URI");
 
@@ -61,97 +60,40 @@ interface PassResult {
   verification?: Record<string, number>;
 }
 
-const summarizeChecks = (cs: SourceCheck[] | undefined) => cs && cs.reduce<Record<string, number>>((a, c) => ((a[c.status] = (a[c.status] ?? 0) + 1), a), {});
-
-/** True when `inner`'s name is a contiguous word sequence inside `outer`'s (e.g. "Tiggo 8" inside "Tiggo 8 Pro") — mentioning the shorter model is not evidence of a different model. */
-function nameInside(inner: string, outer: string): boolean {
-  const a = tokenizeName(inner), b = tokenizeName(outer);
-  if (a.length === 0 || a.length > b.length) return false;
-  for (let i = 0; i <= b.length - a.length; i++) if (a.every((t, j) => b[i + j] === t)) return true;
-  return false;
-}
-
-const text = (it: Kept) => [it.issue_description, it.component_detail, it.source, it.source_url].filter((x) => typeof x === "string").join(" ");
-
-function leakFlags(items: Kept[], target: TargetModel & { id: string }, others: (TargetModel & { id: string })[]): Flag[] {
-  const flags: Flag[] = [];
-  for (const it of items) {
-    const t = text(it);
-    const desc = String(it.issue_description ?? "").slice(0, 110);
-    if (OFF_MODEL_PROSE.test(String(it.issue_description ?? ""))) { flags.push({ level: "HARD", reason: "kept item is framed as another/related model", item: desc }); continue; }
-    const mentionsTarget = matchesTargetModel(t, target);
-    const otherHits = others.filter((o) => o.id !== target.id && o.modelName.replace(/[^a-z0-9]/gi, "").length >= 4 && !nameInside(o.modelName, target.modelName) && matchesTargetModel(t, o)).map((o) => o.modelName);
-    if (otherHits.length && !mentionsTarget) flags.push({ level: "HARD", reason: `names other model(s) [${otherHits.slice(0, 3).join(", ")}] but never the target`, item: desc });
-    else if (otherHits.length) flags.push({ level: "SOFT", reason: `also mentions other model(s) [${otherHits.slice(0, 3).join(", ")}] (comparison?)`, item: desc });
-  }
-  return flags;
-}
-
 async function main() {
   await mongoose.connect(process.env.MONGODB_URI as string);
   void Brand;
-  const all = (await ModelSchema.find({}).populate("brand_id", "name name_en name_cn").lean()) as unknown as {
-    _id: mongoose.Types.ObjectId; name: string; name_cn?: string; generation?: string; year?: number; brand_id: { name: string; name_en?: string; name_cn?: string };
+  const all = (await ModelSchema.find({}).populate("brand_id", "name name_en name_cn segment production_status").lean()) as unknown as {
+    _id: mongoose.Types.ObjectId; name: string; name_cn?: string; segment: string; production_status: string; brand_id: { name: string; name_en?: string; name_cn?: string };
   }[];
-  const asTarget = (m: (typeof all)[number]) => ({ id: String(m._id), brandName: m.brand_id?.name_en ?? m.brand_id?.name ?? "", modelName: m.name, modelNameCn: m.name_cn });
-  const others = all.map(asTarget);
   const picked = names.map((n) => { const m = all.filter((x) => x.name === n); if (m.length !== 1) throw new Error(`Model "${n}" matched ${m.length} docs`); return m[0]; });
 
   console.log(`[${label}] ${picked.length} models: ${names.join(" | ")}${dry ? "  (DRY RUN)" : ""}`);
   if (dry) { await mongoose.disconnect(); return; }
 
-  const ai = getDefaultModel();
-  const results: { model: string; brand: string; id: string; passes: PassResult[] }[] = [];
-  const outFile = `raw-data/issues-bulletins-${label}-${new Date().toISOString().replace(/[-:T]/g, "").slice(0, 14)}.json`;
-  const save = (extra: object = {}) => fs.writeFileSync(outFile, JSON.stringify({ label, readOnly: true, results, ...extra }, null, 1));
-  let stopped: string | null = null;
+  const prompts = picked.map((m) => {
+    const ctx = {
+      brandName: m.brand_id?.name_en ?? m.brand_id?.name ?? "",
+      brandNameCn: m.brand_id?.name_cn,
+      modelName: m.name,
+      modelNameCn: m.name_cn,
+      segment: m.segment,
+      productionStatus: m.production_status,
+      modelId: String(m._id),
+    };
+    return { model: m.name, brand: ctx.brandName, id: String(m._id), prompt: buildCategoryExportText(ctx, ["known_issues", "technical_bulletins"]) };
+  });
 
-  outer: for (const m of picked) {
-    const target = asTarget(m);
-    const powertrain = await getModelPowertrain(String(m._id));
-    const input = { brandName: m.brand_id?.name_en ?? m.brand_id?.name ?? "", modelName: m.name, brandNameCn: m.brand_id?.name_cn, modelNameCn: m.name_cn, generation: m.generation, modelYear: m.year, powertrain };
-    console.log(`   target powertrain: ${powertrain.description}`);
-    const entry = { model: m.name, brand: input.brandName, id: String(m._id), passes: [] as PassResult[] };
-    results.push(entry);
-    console.log(`\n== ${input.brandName} ${m.name}`);
-
-    const passes: [PassResult["pass"], () => Promise<{ status: string; errorMessage?: string; sourceUrls: string[]; hasGrounding: boolean; items?: Kept[]; known_issues?: Kept[]; dropped?: { index: number; errors: string[] }[]; warnings?: string[]; verification?: SourceCheck[] }>][] = [
-      ["china_issues", () => researchIssues(ai, input) as never],
-      ["global_issues", () => researchGlobalIssues(ai, input) as never],
-      ["bulletins", () => researchBulletins(ai, input) as never],
-    ];
-    for (const [pass, run] of passes) {
-      if (onlyPasses.length > 0 && !onlyPasses.includes(pass)) continue;
-      let r: PassResult;
-      try {
-        const res = await run();
-        const kept = (res.items ?? res.known_issues ?? []) as Kept[];
-        r = { pass, status: res.status, error: res.errorMessage, sources: res.sourceUrls.length, grounded: res.hasGrounding, kept, rejected: (res.dropped ?? []).map((d) => d.errors.join("; ")), warnings: res.warnings ?? [], flags: leakFlags(kept, target, others), verification: summarizeChecks(res.verification) };
-      } catch (err) {
-        if (err instanceof SearchProviderError || err instanceof ModelNotFoundError) { stopped = `${(err as Error).name}: ${(err as Error).message} (during ${m.name} / ${pass})`; entry.passes.push({ pass, status: "aborted", error: stopped, sources: 0, grounded: false, kept: [], rejected: [], warnings: [], flags: [] }); break outer; }
-        r = { pass, status: "error", error: (err as Error).message, sources: 0, grounded: false, kept: [], rejected: [], warnings: [], flags: [] };
-      }
-      entry.passes.push(r);
-      const hard = r.flags.filter((f) => f.level === "HARD");
-      if (dropHard && hard.length) {
-        const dropped: { reason: string; item: Kept }[] = [];
-        r.kept = r.kept.filter((it) => {
-          const f = hard.find((h) => h.item === String(it.issue_description ?? "").slice(0, 110));
-          if (f) dropped.push({ reason: f.reason, item: it });
-          return !f;
-        });
-        r.auto_dropped_hard = dropped;
-        console.log(`    (--drop-hard) removed ${dropped.length} HARD-flagged item(s), continuing`);
-      }
-      console.log(`  ${pass.padEnd(14)} ${r.status.padEnd(9)} kept ${r.kept.length} | rejected ${r.rejected.length} | warnings ${r.warnings.length} | sources ${r.sources}${r.verification && Object.keys(r.verification).length ? ` | urls ${JSON.stringify(r.verification)}` : ""}${r.flags.length ? ` | FLAGS hard ${hard.length} soft ${r.flags.length - hard.length}` : ""}${r.error ? ` | ${r.error.slice(0, 100)}` : ""}`);
-      save();
-      if (hard.length && !dropHard) { stopped = `HARD off-model flag on ${m.name} / ${pass}: ${hard.map((f) => `"${f.item}" — ${f.reason}`).join(" || ")}`; break outer; }
-      await sleep(2000);
-    }
-  }
-  save({ stopped });
-  console.log(`\nreview file: ${outFile}`);
-  if (stopped) { console.log(`\n*** STOPPED: ${stopped}`); process.exitCode = 2; }
+  const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+  const outFile = `raw-data/issues-bulletins-prompts-${label}-${timestamp}.md`;
+  const body = prompts
+    .map((p) => `## ${p.brand} ${p.model}\n\n- Model DB id: \`${p.id}\`\n- Paste the response back into that model's known-issues/bulletins manual importer.\n\n\`\`\`\n${p.prompt}\n\`\`\`\n`)
+    .join("\n---\n\n");
+  fs.writeFileSync(
+    outFile,
+    `# Known-issues + bulletins export prompts — ${label} (${timestamp})\n\nGenerated by scripts/research-issues-bulletins-batch.ts. No AI/search provider was called — paste each prompt below into an external AI chat (Kimi/Gemini/DeepSeek), then paste its JSON response into the target model's manual-categories importer (\`ManualCategoryImporter\`) to validate and apply.\n\n${body}`
+  );
+  console.log(`\nWrote ${prompts.length} export prompt(s) to ${outFile}.`);
   await mongoose.disconnect();
 }
 

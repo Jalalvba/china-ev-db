@@ -1,24 +1,24 @@
-// Research agent: for every Model in our DB with zero Powertrain records, or
-// with existing Powertrain records missing engine/motor/battery/transmission/
-// performance data (or still marked "unconfirmed"), asks the configured AI provider (with real search
-// Search grounding enabled) to fill in the canonical spec, and writes the
-// results to a batch JSON file for human review.
+// Batch EXPORT-PROMPT generator for canonical-powertrain-v2 spec research. As of
+// 2026-09-21 this script no longer calls any AI/search provider directly (see
+// CLAUDE.md's "automated research calls removed" entries) — it finds every Model in
+// our DB with zero Powertrain records, or with existing Powertrain records missing
+// engine/motor/battery/transmission/performance data (or still marked
+// "unconfirmed"), and writes one manual-import export prompt per model to a single
+// batch file under raw-data/, reusing the exact same buildExportDocument/
+// buildCombinedExportText functions as the per-model "Export for Kimi/DeepSeek"
+// button (app/ExportForManualResearchButton.tsx -> app/api/models/[id]/manual-export)
+// and the single-model CLI (scripts/export-model-for-manual-research.ts), so there is
+// exactly one prompt implementation, not several that can drift.
 //
-// This script NEVER writes to MongoDB. It only produces
-// raw-data/tech-spec-batch-<timestamp>.json (plus a sibling
-// -rejected.json for responses that failed schema validation) — review the
-// file, edit out anything wrong, then hand it to whatever import step this
-// project uses for canonical-shaped powertrain data, like any other source.
-//
-// The core research/validation logic (prompt building, schema validation,
-// grounding gate) lives in lib/techSpecResearch.ts, shared with the per-model
-// "Update technical info" button (app/api/models/[id]/update-specs/route.ts)
-// so there is exactly one implementation, not two copies that can drift.
+// This script NEVER writes to MongoDB and never calls lib/aiProvider.ts or
+// lib/webSearch.ts. Paste each prompt into an external AI chat (Kimi/Gemini/
+// DeepSeek), then paste its JSON response into the target model's "Manual research
+// import" panel (or POST to /api/models/[id]/manual-import/validate) to validate and
+// apply — same reviewed round trip as every other manual import in this project.
 //
 // Usage:
 //   npm run tech-spec-agent                  (full run over every incomplete model)
 //   npm run tech-spec-agent -- --limit 5     (only the first 5, for a quick test)
-//   npm run tech-spec-agent -- --model deepseek-reasoner  (override the active provider's default model)
 //   npm run tech-spec-agent -- --brand-ids <id1>,<id2>    (only these brands)
 //   npm run tech-spec-agent -- --zero-only   (only models with zero Powertrain docs — skip
 //                                              re-researching models that already have some,
@@ -36,37 +36,16 @@ import "../models/Brand";
 import ModelSchema from "../models/Model";
 import Powertrain from "../models/Powertrain";
 import type { IBrand } from "../types";
-import {
-  getDefaultModel,
-  DEFAULT_DELAY_MS,
-  ModelNotFoundError,
-  SearchProviderError,
-  sleep,
-  needsResearch,
-  researchModel,
-  type PowertrainLean,
-} from "../lib/techSpecResearch";
-import { lookupMoteurMa, renderMoteurMaContext } from "../lib/moteurMaScraper";
+import { needsResearch, type PowertrainLean } from "../lib/techSpecResearch";
+import { buildCombinedExportText, buildExportDocument, exportFileBase } from "../lib/manualResearchImport";
 
 const MONGODB_URI = process.env.MONGODB_URI;
 if (!MONGODB_URI) {
   throw new Error("Missing MONGODB_URI. Copy .env.example to .env and set it.");
 }
 
-// A real function call (not a module-level const — see the comment on
-// getActiveProvider() in lib/aiProvider.ts for why that matters: import
-// hoisting vs. this script's own dotenv.config() call above) that surfaces a
-// missing <PROVIDER>_API_KEY / bad AI_PROVIDER value immediately, before any
-// Mongo connection or research work starts.
-import { getActiveProvider } from "../lib/aiProvider";
-console.log(`AI provider: ${getActiveProvider()}`);
-if (!process.env.SEARCH_API_KEY) {
-  throw new Error("Missing SEARCH_API_KEY. Get a free Brave Search API key at https://api.search.brave.com/app/keys and set it in .env.");
-}
-
 interface CliOptions {
   limit?: number;
-  model: string;
   /** Restrict targets to these Brand _ids (comma-separated). Unset = every brand, same as before. */
   brandIds?: string[];
   /** Only models with ZERO Powertrain docs — skips the needsResearch() "has some data but it's incomplete/unconfirmed" case entirely, rather than also re-researching partially-populated models. */
@@ -75,12 +54,10 @@ interface CliOptions {
 
 function parseArgs(): CliOptions {
   const args = process.argv.slice(2);
-  const options: CliOptions = { model: getDefaultModel() };
+  const options: CliOptions = {};
   for (let i = 0; i < args.length; i++) {
     if (args[i] === "--limit") {
       options.limit = Number(args[++i]);
-    } else if (args[i] === "--model") {
-      options.model = args[++i];
     } else if (args[i] === "--brand-ids") {
       options.brandIds = args[++i].split(",").map((s) => s.trim()).filter(Boolean);
     } else if (args[i] === "--zero-only") {
@@ -90,30 +67,11 @@ function parseArgs(): CliOptions {
   return options;
 }
 
-interface TechSpecBatchEntry {
-  brand_en: string;
-  brand_cn?: string;
-  model_en: string;
-  model_cn?: string;
-  model_generation?: string;
-  agent_query_model_db_id: string;
-  agent_query_brand_db_name: string;
-  agent_query_time: string;
-  agent_model_used: string;
-  source_url?: string[];
-  variant: Record<string, unknown>;
-}
-
-interface RejectedBatchEntry extends TechSpecBatchEntry {
-  validation_errors: string[];
-}
-
 async function run() {
-  const { limit, model, brandIds, zeroOnly } = parseArgs();
-  const delayMs = Number(process.env.AI_AGENT_DELAY_MS ?? DEFAULT_DELAY_MS);
+  const { limit, brandIds, zeroOnly } = parseArgs();
 
   await mongoose.connect(MONGODB_URI as string);
-  console.log(`Connected to MongoDB. Using model: ${model}, delay: ${delayMs}ms between requests.`);
+  console.log(`Connected to MongoDB.`);
 
   const allModels = await ModelSchema.find({})
     .populate("brand_id", "name name_cn name_en parent_group relationship_type stake_percentage tech_partner status")
@@ -150,170 +108,39 @@ async function run() {
   );
 
   const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
-  const outPath = path.resolve(`raw-data/tech-spec-batch-${timestamp}.json`);
+  const outPath = path.resolve(`raw-data/tech-spec-batch-prompts-${timestamp}.md`);
   fs.mkdirSync(path.dirname(outPath), { recursive: true });
-  const rejectedPath = path.resolve(`raw-data/tech-spec-batch-${timestamp}.rejected.json`);
-  const results: TechSpecBatchEntry[] = [];
-  const rejected: RejectedBatchEntry[] = [];
 
-  function flush() {
-    fs.writeFileSync(outPath, JSON.stringify(results, null, 2) + "\n");
-    if (rejected.length > 0) {
-      fs.writeFileSync(rejectedPath, JSON.stringify(rejected, null, 2) + "\n");
-    }
-  }
-
-  let acceptedCount = 0;
-  let rejectedCount = 0;
-  let modelsFoundCount = 0;
-  let modelsNotFoundCount = 0;
-  let modelsErrorCount = 0;
-  let forcedUnconfirmedCount = 0;
-
+  const sections: string[] = [];
   for (let i = 0; i < targets.length; i++) {
     const m = targets[i];
     const brand = m.brand_id as unknown as IBrand | null;
     const brandName = brand?.name_en ?? brand?.name ?? "Unknown";
     const progress = `[${i + 1}/${targets.length}]`;
 
-    const existingTrimNames = (powertrainsByModel.get(String(m._id)) ?? [])
-      .map((pt) => pt.trim_name)
-      .filter((t): t is string => Boolean(t));
+    const powertrainDocs = powertrainsByModel.get(String(m._id)) ?? [];
+    const exportDoc = buildExportDocument(
+      m as unknown as Record<string, unknown> & { _id: unknown },
+      brand as unknown as (IBrand & { _id: unknown }) | null,
+      powertrainDocs as unknown as (PowertrainLean & Record<string, unknown>)[]
+    );
+    const combinedText = buildCombinedExportText(exportDoc);
 
-    try {
-      const modelName = m.name_en ?? m.name;
-      // Real code-level pre-fetch — an actual HTTP fetch + JSON-LD parse of
-      // moteur.ma's own pages, not a prompt asking the AI to go check itself.
-      const moteurLookup = await lookupMoteurMa(brandName, modelName);
-      const moteurMaContext = renderMoteurMaContext(moteurLookup);
-
-      const result = await researchModel(model, {
-        modelDbId: String(m._id),
-        brandName,
-        brandNameCn: brand?.name_cn,
-        modelName,
-        modelNameCn: m.name_cn,
-        generation: m.generation,
-        segment: m.segment,
-        bodyType: m.body_type,
-        existingTrimNames: existingTrimNames.length ? existingTrimNames : undefined,
-        brandContext: brand
-          ? {
-              parentGroup: brand.parent_group,
-              relationshipType: brand.relationship_type,
-              stakePercentage: brand.stake_percentage,
-              techPartner: brand.tech_partner,
-              status: brand.status,
-            }
-          : undefined,
-        moteurMaContext,
-      });
-
-      if (result.status === "error") {
-        console.log(`${progress} ${brandName} ${m.name}: error — ${result.errorMessage}`);
-        modelsErrorCount++;
-        continue;
-      }
-
-      if (result.variants.length === 0) {
-        console.log(
-          `${progress} ${brandName} ${m.name}: not found — model returned zero variants${result.errorMessage ? ` (${result.errorMessage})` : ""}`
-        );
-        modelsNotFoundCount++;
-        continue;
-      }
-
-      const entryBase: Omit<TechSpecBatchEntry, "variant"> = {
-        brand_en: brandName,
-        brand_cn: brand?.name_cn,
-        model_en: m.name_en ?? m.name,
-        model_cn: m.name_cn,
-        model_generation: m.generation,
-        agent_query_model_db_id: String(m._id),
-        agent_query_brand_db_name: brandName,
-        agent_query_time: result.queriedAt,
-        agent_model_used: model,
-        source_url: result.sourceUrls,
-      };
-
-      let acceptedHere = 0;
-      let rejectedHere = 0;
-      for (const rv of result.variants) {
-        if (!rv.valid) {
-          rejected.push({ ...entryBase, variant: rv.variant, validation_errors: rv.errors });
-          rejectedHere++;
-          continue;
-        }
-        results.push({ ...entryBase, variant: rv.variant });
-        acceptedHere++;
-        if (!result.hasGrounding) forcedUnconfirmedCount++;
-      }
-
-      console.log(
-        `${progress} ${brandName} ${m.name}: ${acceptedHere} accepted, ${rejectedHere} rejected (schema mismatch), ${result.sourceUrls.length} source(s)${
-          result.hasGrounding ? "" : " — NO grounding, forced unconfirmed"
-        }`
-      );
-      acceptedCount += acceptedHere;
-      rejectedCount += rejectedHere;
-      if (acceptedHere > 0) modelsFoundCount++;
-      else modelsNotFoundCount++;
-      flush();
-    } catch (err) {
-      if (err instanceof ModelNotFoundError || err instanceof SearchProviderError) {
-        // Every remaining model would hit this same 404, or a search-
-        // provider failure (rate limit, exhausted credit) that won't clear
-        // itself mid-run — stop now rather than grinding through the rest
-        // logging the same root cause repeatedly. Flush first so any results
-        // found before the failure aren't lost.
-        const remaining = targets.length - i;
-        const reason =
-          err instanceof SearchProviderError
-            ? `Brave Search credit exhausted (HTTP ${err.status}) — ${i} model(s) processed successfully before failure, ${remaining} model(s) remain unprocessed.`
-            : err.message;
-        console.error(`\n${progress} ${brandName} ${m.name}: FATAL — ${reason}`);
-        console.error(
-          `\n=== PARTIAL SUMMARY (aborted early) ===\n` +
-            `Models processed before abort: ${i} / ${targets.length}\n` +
-            `  - found (>=1 variant): ${modelsFoundCount}\n` +
-            `  - not found:           ${modelsNotFoundCount}\n` +
-            `  - errored:             ${modelsErrorCount}\n` +
-            `Variants accepted:       ${acceptedCount}\n` +
-            `Variants rejected (schema mismatch): ${rejectedCount}\n` +
-            `Variants forced to "unconfirmed" (zero-citation gate): ${forcedUnconfirmedCount} / ${acceptedCount}\n`
-        );
-        if (results.length > 0 || rejected.length > 0) {
-          flush();
-          console.error(`Stopping the run — this is not a per-model issue. ${results.length} already-found result(s) saved to ${outPath}.`);
-        } else {
-          console.error(`Stopping the run — this is not a per-model issue. No results were found before this failure, so no output file was written.`);
-        }
-        await mongoose.disconnect();
-        process.exit(1);
-      }
-      console.error(`${progress} ${brandName} ${m.name}: error — ${(err as Error).message}`);
-      modelsErrorCount++;
-    }
-
-    if (i < targets.length - 1) await sleep(delayMs);
+    console.log(`${progress} ${brandName} ${m.name}: prompt built`);
+    sections.push(
+      `## ${brandName} ${m.name}\n\n- Model DB id: \`${String(m._id)}\`\n- File base (if exporting individually): \`${exportFileBase(m)}\`\n- Paste the response back into this model's "Manual research import" panel, or POST to \`/api/models/${String(m._id)}/manual-import/validate\`.\n\n\`\`\`\n${combinedText}\n\`\`\`\n`
+    );
   }
 
-  flush();
-  console.log(
-    `\n=== SUMMARY ===\n` +
-      `Models processed:        ${targets.length}\n` +
-      `  - found (>=1 variant): ${modelsFoundCount}\n` +
-      `  - not found:           ${modelsNotFoundCount}\n` +
-      `  - errored:             ${modelsErrorCount}\n` +
-      `Variants accepted:       ${acceptedCount}\n` +
-      `Variants rejected (schema mismatch): ${rejectedCount}\n` +
-      `Variants forced to "unconfirmed" (zero-citation gate): ${forcedUnconfirmedCount} / ${acceptedCount}\n`
+  fs.writeFileSync(
+    outPath,
+    `# Tech-spec export prompts — ${timestamp}\n\n${targets.length} model(s) need research (zero or incomplete powertrain data). Generated by scripts/tech-spec-agent.ts. No AI/search provider was called — paste each prompt below into an external AI chat (Kimi/Gemini/DeepSeek), then paste its JSON response into the target model's manual-import panel to validate and apply.\n\n${sections.join(
+      "\n---\n\n"
+    )}`
   );
-  console.log(`Wrote ${results.length} accepted variant(s) to ${outPath}`);
-  if (rejected.length > 0) {
-    console.log(`Wrote ${rejected.length} rejected variant(s) (with validation errors) to ${rejectedPath} — review before deciding whether to fix and re-include them.`);
-  }
-  console.log(`\nThis file was NOT written to MongoDB. Review it manually before importing.`);
+
+  console.log(`\nWrote ${targets.length} export prompt(s) to ${outPath}`);
+  console.log(`This file was NOT written to MongoDB and no AI provider was called.`);
 
   await mongoose.disconnect();
 }

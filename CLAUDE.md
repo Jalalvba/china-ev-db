@@ -631,6 +631,75 @@ pattern as the model-level categories, just single-object instead of append-and-
   `scripts/research-issues-bulletins-batch.ts` (still broken from stage 1, pending the same
   batch-script repurposing).
 
+## Stage 3 (final): batch scripts repurposed into prompt generators (2026-09-21)
+
+Closes out the multi-stage effort above. Summary of all three stages: (1) removed automated
+routes/buttons for model spec, known issues (China/Global), market trend, bulletins, recalls —
+each already had a manual export/import path; (2) built new manual export/import panels for
+positioning, brand, warranty, workshop, then removed their automated buttons/routes; (3) this
+stage — the batch scripts left broken by stage 1, plus two script-only features flagged in
+scope by the original request, converted from "call the AI provider in bulk" to "write a batch
+of export prompts to `raw-data/` for manual processing", never deleted outright.
+
+- **`scripts/tech-spec-agent.ts`** — rewritten to iterate the same target-selection logic
+  (models with zero or incomplete/unconfirmed Powertrain data) and, for each, build the same
+  export text the per-model "Export for Kimi/DeepSeek" button uses
+  (`buildExportDocument`/`buildCombinedExportText` from `lib/manualResearchImport.ts`), writing
+  all of them to one `raw-data/tech-spec-batch-prompts-<timestamp>.md` file. No longer imports
+  `researchModel` or `lib/aiProvider.ts`/`lib/moteurMaScraper.ts` at all.
+- **`scripts/research-issues-bulletins-batch.ts`** — its `main()` path (which called the
+  now-deleted `researchIssues`/`researchGlobalIssues` and the removed `researchBulletins`) is
+  rewritten the same way, reusing `buildCategoryExportText` from `lib/researchCategoriesImport.ts`
+  (the same function the model-level manual-categories panel uses) for `known_issues` +
+  `technical_bulletins` per model, written to one `.md` batch file. Recalls stay excluded from
+  the generated prompts, same as before. **`--retro` mode is completely untouched** — it never
+  called an AI provider (it only re-checks items already sitting in old review files against
+  `powertrainTextMismatch`/`verifyItemSources`), so it stays in scope and working exactly as
+  before; the `--drop-hard`/`--passes` flags tied to the old live-call loop were removed since
+  there's no live "kept items" stream to filter anymore.
+- **`lib/phevSuvWorkshopResearch.ts`** and **`lib/workshopOverrideResearch.ts`** — grepped and
+  confirmed both called `runGroundedResearch` (from `lib/groundedResearch.ts`) directly, so both
+  were in scope for the same ban despite not being flagged in the original stage-1 audit (they're
+  the "workshop/PHEV-SUV-workshop research" the original request explicitly named). Both had
+  their live-call functions (`researchPhevSuvWorkshopProfile`/`researchBrandWorkshopOverride`,
+  plus their internal `queryXResearch`/`extractJson` helpers) deleted; their existing
+  `buildXKickoffPrompt`/`buildXFormatPrompt` and validator functions
+  (`validatePhevSuvWorkshopProfile`, `validateResearchedOverride`/`passesSpecificityGate`) were
+  kept as-is. **Confirmed both are genuinely script-only features with zero UI button anywhere in
+  the app** — `app/workshop-phev-suv/page.tsx` only displays already-applied profiles, and no
+  `app/api/brands/[id]/research-*` route or component ever called either function — so per the
+  original request's own scoping (convert *buttons*; note where none exists rather than invent
+  new UI unprompted), no manual-import panel was built for these two. `scripts/research-phev-suv-workshop.ts`
+  and `scripts/research-brand-workshop-overrides.ts` were rewritten to write the kickoff+format
+  prompts to a batch `.md` file instead; a human pastes each resulting JSON straight into the
+  existing `npm run apply-phev-suv-workshop-batch` / `npm run apply-workshop-overrides-batch`
+  scripts, which still gate the DB write with the same validators. The workshop-override script's
+  "dead brand" skip-list (`raw-data/workshop-override-dead-brands.json`), which depended on
+  reading an automated result's status, no longer applies and was dropped — every qualifying
+  brand now gets a prompt on every run; the old dead-brands file, if present, is left untouched
+  but no longer read or written.
+- **Full-repo `npx tsc --noEmit` is clean**, including `scripts/` (broken since stage 1, now
+  fixed).
+- **Final state of `lib/aiProvider.ts` callers, confirmed by a repo-wide grep** — three
+  categories remain, all deliberate:
+  1. `lib/techSpecResearch.ts`'s `researchModel` — kept alive per stage 1's decision, still used
+     by `scripts/fill-missing-mandatory-fields.ts` and `scripts/backfill-trim-price.ts`. Backfill/QA
+     tooling, not a "research" button — out of scope for the original request, which named ten
+     specific research categories/buttons, not general AI-assisted backfill scripts.
+  2. `app/api/brands/[id]/discover-models/route.ts` (via `lib/modelDiscovery.ts`) — flagged by
+     stage 2, still unchanged: model *discovery* (finding candidate new models for a brand with
+     none yet) is a different feature from the ten named research categories and was explicitly
+     called out as out of scope for this pass rather than silently left.
+  3. **Newly found in this stage, not previously flagged**: `scripts/backfill-segment.ts` (calls
+     `complete`/`getActiveProvider` directly to backfill the `segment` field) and
+     `scripts/morocco-agent.ts` (calls `complete` to extract Morocco price findings from search
+     results — unlike `fetch-all-prices.ts`/`sync-morocco-prices.ts`, which only scrape moteur.ma
+     with no AI call and were confirmed out of scope earlier). Both are one-off backfill/agent
+     scripts, not buttons, and weren't in the original request's named list — flagging explicitly
+     here rather than silently leaving them, per the instruction not to leave ambiguous cases
+     unmentioned. Not touched in this pass; worth a decision if the ban is meant to extend to
+     every AI-calling script rather than just research buttons.
+
 ## Write safety
 
 Every AI-researched write path (`lib/applySpecUpdates.ts`, the manual-import apply

@@ -7,10 +7,6 @@
 // certification, dealer audit standard) — same "several targeted queries beat one broad
 // query" lesson workshopOverrideResearch.ts already encoded for this domain.
 
-import { ModelNotFoundError, SearchProviderError, sleep } from "@/lib/techSpecResearch";
-import { runGroundedResearch } from "@/lib/groundedResearch";
-import { filterToChineseSources } from "@/lib/chineseSourceGuard";
-
 const CONFIDENCE_SET = new Set(["confirmed", "unconfirmed"]);
 
 export interface PhevSuvWorkshopResearchInput {
@@ -164,107 +160,12 @@ export function applyPhevSuvWorkshopGroundingGate(profile: Record<string, unknow
   return profile;
 }
 
-interface PhevSuvWorkshopAgentResponse {
-  diagnostic_interface?: unknown;
-  lift_spec?: unknown;
-  ppe_required?: unknown;
-  technician_prerequisites?: unknown;
-  audit_checklist?: unknown;
-  confidence?: unknown;
-}
-
-function extractJson(text: string): PhevSuvWorkshopAgentResponse | null {
-  const fencedMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/);
-  const candidate = fencedMatch ? fencedMatch[1] : text;
-  const braceStart = candidate.indexOf("{");
-  const braceEnd = candidate.lastIndexOf("}");
-  if (braceStart === -1 || braceEnd === -1 || braceEnd <= braceStart) return null;
-  try {
-    return JSON.parse(candidate.slice(braceStart, braceEnd + 1));
-  } catch {
-    return null;
-  }
-}
-
-async function queryPhevSuvWorkshopResearch(
-  model: string,
-  input: PhevSuvWorkshopResearchInput
-): Promise<{ parsed: PhevSuvWorkshopAgentResponse | null; sourceUrls: string[]; rawText: string }> {
-  const kickoffPrompt = buildPhevSuvWorkshopKickoffPrompt(input);
-  const formatPrompt = buildPhevSuvWorkshopFormatPrompt();
-  const cn = input.brandNameCn ?? input.brandName;
-  const searchQueries = [
-    `${input.brandName} PHEV SUV 授权维修站 设备要求`,
-    `${input.brandName} 插电混动 诊断仪 型号`,
-    `${cn} 新能源 技师 认证 要求`,
-    `${cn} 经销商 售后 审核 标准`,
-  ];
-
-  const maxAttempts = 3;
-  let lastErr: unknown;
-  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-    try {
-      const { formattedText, sourceUrls } = await runGroundedResearch({ kickoffPrompt, formatPrompt, searchQueries, model });
-      return { parsed: extractJson(formattedText), sourceUrls, rawText: formattedText };
-    } catch (err) {
-      if (err instanceof ModelNotFoundError) throw err;
-      if (err instanceof SearchProviderError) throw err;
-      lastErr = err;
-      const backoffMs = 2000 * attempt;
-      console.error(`  [retry ${attempt}/${maxAttempts}] research-phev-suv-workshop ${input.brandName}: ${(err as Error).message} — waiting ${backoffMs}ms`);
-      await sleep(backoffMs);
-    }
-  }
-  throw lastErr;
-}
-
-export interface PhevSuvWorkshopResearchResult {
-  status: "found" | "not_found" | "error";
-  errorMessage?: string;
-  sourceUrls: string[];
-  hasGrounding: boolean;
-  profile?: Record<string, unknown>;
-  valid: boolean;
-  errors: string[];
-}
-
-export async function researchPhevSuvWorkshopProfile(
-  model: string,
-  input: PhevSuvWorkshopResearchInput
-): Promise<PhevSuvWorkshopResearchResult> {
-  try {
-    const { parsed, sourceUrls: rawSourceUrls, rawText } = await queryPhevSuvWorkshopResearch(model, input);
-
-    if (!parsed) {
-      return {
-        status: "error",
-        errorMessage: `Could not parse a JSON object from response (first 300 chars): ${rawText.slice(0, 300)}`,
-        sourceUrls: [],
-        hasGrounding: false,
-        valid: false,
-        errors: [],
-      };
-    }
-
-    const sourceUrls = filterToChineseSources(rawSourceUrls);
-    const hasGrounding = sourceUrls.length > 0;
-    const { valid, errors } = validatePhevSuvWorkshopProfile(parsed);
-    if (!valid) {
-      return { status: "not_found", sourceUrls, hasGrounding, profile: parsed as Record<string, unknown>, valid, errors };
-    }
-
-    const gated = applyPhevSuvWorkshopGroundingGate({ ...(parsed as Record<string, unknown>) }, hasGrounding);
-
-    const hasAnyData =
-      Boolean(gated.diagnostic_interface) ||
-      Boolean(gated.lift_spec) ||
-      (Array.isArray(gated.ppe_required) && gated.ppe_required.length > 0) ||
-      (Array.isArray(gated.technician_prerequisites) && gated.technician_prerequisites.length > 0) ||
-      (Array.isArray(gated.audit_checklist) && gated.audit_checklist.length > 0);
-
-    return { status: hasAnyData ? "found" : "not_found", sourceUrls, hasGrounding, profile: gated, valid: true, errors: [] };
-  } catch (err) {
-    if (err instanceof ModelNotFoundError || err instanceof SearchProviderError) throw err;
-    return { status: "error", errorMessage: (err as Error).message, sourceUrls: [], hasGrounding: false, valid: false, errors: [] };
-  }
-}
+// The live-call path (queryPhevSuvWorkshopResearch/researchPhevSuvWorkshopProfile,
+// which called lib/groundedResearch.ts directly) was removed 2026-09-21 — see
+// CLAUDE.md. This is a script-only feature with no UI button anywhere in the app
+// (app/workshop-phev-suv/page.tsx only displays already-applied profiles), so no
+// manual-import panel was built for it; scripts/research-phev-suv-workshop.ts now
+// writes buildPhevSuvWorkshopKickoffPrompt/FormatPrompt's text to a batch file for
+// manual processing, and a human pastes the resulting JSON straight into
+// `npm run apply-phev-suv-workshop-batch` (validatePhevSuvWorkshopProfile above still
+// gates that write).
