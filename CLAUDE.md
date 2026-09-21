@@ -319,24 +319,59 @@ applying. Scope of the fix is the update path of `parseManualImport`/`applySpecU
 
 ## Listing conventions
 
+**Reversed 2026-09-21** — see the dated note at the end of this section for what changed and why;
+the numbered rules below describe the CURRENT behavior, not the original one.
+
 Everywhere a list of brands or models is shown (homepage, a brand's model grid), the
 default view:
-1. **Filters to items with a confirmed Morocco price** (`morocco_price_confirmed ===
-   true` and `morocco_price_dh` present) — an unpriced item is out of scope for the
-   default view, not a first-class citizen. `morocco_price_dh` can be set without
-   `morocco_price_confirmed: true` (e.g. an AI-fallback reconciliation pending human
-   review) — only a confirmed price is trustworthy enough to show by default.
-2. **Sorts cheapest-to-most-expensive** by that price — a brand's position is decided
-   by its cheapest model, not alphabetically or by model count.
-3. **Never hides data, only defers it** — every filtered-out item stays reachable via
-   a `?all=1` query param, with a count of how many are hidden and why. Nothing is
-   deleted from the database by this convention; it's presentation-only.
+1. **Shows every item regardless of Morocco price status** — a brand/model with no
+   confirmed Morocco price is still real, valid data and is a first-class citizen of the
+   default view, not deferred behind a toggle. An item without a confirmed price is
+   labeled inline "no confirmed Morocco price" (`BrandGroupList.tsx`'s `BrandCard`,
+   `app/brands/[id]/page.tsx`'s model cards) rather than hidden.
+2. **Sorts cheapest-to-most-expensive** by confirmed Morocco price, unpriced items
+   sorting last via an `Infinity` sentinel — a brand's position is decided by its
+   cheapest model, not alphabetically or by model count. This ordering is unchanged by
+   the 2026-09-21 reversal; only the hide/show behavior changed.
+3. **`?all=1` still exists but now means something narrower**: on the homepage it only
+   reveals discontinued/bankrupt/merged brands (`brand.status !== "active"`), a
+   separate, still-legitimate reason to hide something by default — it no longer
+   controls Morocco-price visibility at all. On `app/brands/[id]/page.tsx` the param
+   was removed entirely (nothing left for it to toggle once price-based hiding was
+   dropped).
 
 Implemented in `app/page.tsx` + `lib/brandGrouping.ts` (`getCheapestMoroccoPriceByBrandId()`,
 `groupBrands()`, `Infinity` sentinel for unpriced) and `app/brands/[id]/page.tsx`
-(same pattern for models within a brand). If a new page lists brands/models and should
-follow this convention, reuse `getCheapestMoroccoPriceByBrandId()`'s query shape
-rather than re-deriving it.
+(same sort convention for models within a brand, no separate hide/show logic anymore).
+If a new page lists brands/models and should follow this sort convention, reuse
+`getCheapestMoroccoPriceByBrandId()`'s query shape rather than re-deriving it — but do
+NOT reintroduce price-based default-hiding; that's the specific thing that was removed.
+
+**2026-09-21 — default-hiding of unpriced brands/models removed, explicit user decision**:
+the original convention (rules 1 and 3 above, before this rewrite) hid any brand/model
+without a confirmed Morocco price behind a `?all=1` toggle, on the reasoning that this
+app's whole point is the Morocco market so an unpriced item was "out of scope for the
+default view." That reasoning was overturned: an unpriced item is still real, valid data
+on file and should be visible by default, just clearly labeled as unpriced rather than
+tucked away. Scope of the change was confirmed to be exactly two pages (`app/page.tsx`,
+`app/brands/[id]/page.tsx`) — `/search` and `/search/specs` (Tech Search) were checked
+and never had this price-based default-filter in the first place, so nothing there
+needed touching.
+
+**`?all=1` silently changed meaning on the homepage — a deliberate tradeoff, called out
+explicitly so it isn't mistaken for an accident**: before this change, `?all=1` meant "show
+absolutely everything" (unpriced brands AND discontinued/bankrupt/merged ones, both hidden
+by the same toggle). After removing the price-based half of that filter, `app/page.tsx`
+kept `?all=1` alive for the OTHER half — discontinued/bankrupt/merged brands, a separate
+and still-legitimate reason to hide something — rather than deleting the param outright.
+Net effect: a pre-existing bookmarked or shared `?all=1` link now returns a narrower result
+than it used to (no more unpriced-brand reveal, since those are unconditionally visible
+now; only the status-based reveal remains). This was a considered choice made while
+implementing the fix, not an incidental side effect of deleting the price-filter code —
+flagging it here in case anyone relied on the old link behavior. `app/brands/[id]/page.tsx`
+took the opposite approach: `?all=1` had nothing left to toggle once price-based hiding was
+dropped there, so the param was removed entirely rather than kept alive for a smaller
+purpose — the two pages are intentionally NOT symmetric on this point.
 
 **Power always displays in hp, never bare kW** — `lib/units.ts`'s `kwToHp()`/`hpToKw()`.
 Model detail + Compare page's table show both (`"150 kW (201 hp)"`); the trim picker

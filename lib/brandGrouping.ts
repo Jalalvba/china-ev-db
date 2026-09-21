@@ -34,10 +34,11 @@ export function groupBrands(
   brands: IBrand[],
   cheapestMoroccoPriceByBrandId?: Record<string, number>
 ): { groups: BrandGroup[]; standalone: IBrand[] } {
-  // Missing price (a brand with no confirmed Morocco price, only reachable
-  // via the ?all=1 view) sorts after every priced brand rather than first —
-  // Infinity as the "no price" sentinel makes that the natural result of a
-  // plain ascending numeric sort with no separate branch needed.
+  // Missing price (a brand with no confirmed Morocco price — shown by default
+  // as of 2026-09-21, not hidden behind a toggle) sorts after every priced
+  // brand rather than first — Infinity as the "no price" sentinel makes that
+  // the natural result of a plain ascending numeric sort with no separate
+  // branch needed.
   const priceFor = (b: IBrand): number => (b._id ? cheapestMoroccoPriceByBrandId?.[b._id] : undefined) ?? Infinity;
   const names = new Set(brands.map((b) => b.name));
   const byName = new Map(brands.map((b) => [b.name, b]));

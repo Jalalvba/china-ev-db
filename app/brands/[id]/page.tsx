@@ -46,27 +46,16 @@ async function getData(
   return JSON.parse(JSON.stringify({ brand, models, moteurMaByModelId }));
 }
 
-export default async function BrandPage({
-  params,
-  searchParams,
-}: {
-  params: Promise<{ id: string }>;
-  searchParams: Promise<{ all?: string }>;
-}) {
+export default async function BrandPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const { all } = await searchParams;
-  const showAll = all === "1";
   const data = await getData(id);
   if (!data) notFound();
-  const { brand, models: allModels, moteurMaByModelId } = data;
-  // Same "hidden unless asked for" pattern as the homepage's brand list
-  // (b798cec/c9c6ab1) — a model with no confirmed Morocco price is still on
-  // file, just not shown by default, since this app's whole point is the
-  // Morocco market. Already sorted cheapest-first above, so hiding the
-  // unpriced tail just trims the list rather than needing a re-sort.
-  const modelsWithMoroccoPrice = allModels.filter((m) => m.morocco_price_confirmed && m.morocco_price_dh != null);
-  const models = showAll ? allModels : modelsWithMoroccoPrice;
-  const hiddenModelCount = allModels.length - modelsWithMoroccoPrice.length;
+  // 2026-09-21: this used to hide models with no confirmed Morocco price by default behind an
+  // `?all=1` toggle (same pattern as the homepage's old brand list) — removed per an explicit
+  // decision that an unpriced model is still real, valid data and should be visible, just clearly
+  // marked "no confirmed Morocco price" instead of tucked away. Already sorted cheapest-first
+  // above, with unpriced models naturally trailing via the Infinity sentinel.
+  const { brand, models, moteurMaByModelId } = data;
 
   return (
     <div>
@@ -113,26 +102,11 @@ export default async function BrandPage({
         <WorkshopResearch brandId={brand._id as string} />
       </div>
 
-      <h2 className="text-lg font-semibold mt-6 mb-1">
-        Models ({models.length}{showAll ? "" : " with a confirmed Morocco price"})
-      </h2>
-      {hiddenModelCount > 0 && (
-        <p className="text-sm mb-3">
-          <Link
-            href={showAll ? `/brands/${id}` : `/brands/${id}?all=1`}
-            className="text-blue-600 dark:text-blue-400 hover:underline"
-          >
-            {showAll
-              ? "Hide models with no Morocco price"
-              : `Show ${hiddenModelCount} more model(s) (no confirmed Morocco price yet)`}
-          </Link>
-        </p>
-      )}
+      <h2 className="text-lg font-semibold mt-6 mb-1">Models ({models.length})</h2>
       {models.length === 0 && (
         <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-4">
-          {allModels.length > 0
-            ? "No models with a confirmed Morocco price yet — use the link above to see all models on file."
-            : 'No models on file yet for this brand — use "📋 Export prompt for model discovery" above to find its lineup.'}
+          No models on file yet for this brand — use &quot;📋 Export prompt for model discovery&quot; above to find its
+          lineup.
         </p>
       )}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
@@ -148,12 +122,14 @@ export default async function BrandPage({
                   {m.generation ? ` (${m.generation})` : ""}
                 </h3>
               </Link>
-              {m.morocco_price_confirmed && m.morocco_price_dh && m.morocco_price_url && (
+              {m.morocco_price_confirmed && m.morocco_price_dh && m.morocco_price_url ? (
                 <MoroccoPriceChipLink
                   href={m.morocco_price_url}
                   title={m.morocco_price_source}
                   priceDh={m.morocco_price_dh}
                 />
+              ) : (
+                <span className="shrink-0 text-xs text-zinc-400 dark:text-zinc-500 italic">no confirmed Morocco price</span>
               )}
             </div>
             <Link href={`/models/${m._id}`} className="block">

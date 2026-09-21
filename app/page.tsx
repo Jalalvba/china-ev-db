@@ -62,10 +62,15 @@ export default async function Home({
     getMoroccoDealersByBrandName(),
     getCheapestMoroccoPriceByBrandId(),
   ]);
+  // 2026-09-21: this used to also filter down to only brands with a confirmed Morocco price by
+  // default (the whole point being cross-referencing against the Morocco market) — changed per an
+  // explicit decision that a brand with no confirmed Morocco price is still real, valid data and
+  // should be visible, not tucked behind a toggle. `?all=1` now only reveals discontinued/bankrupt/
+  // merged brands (still a legitimate reason to hide something by default); price is shown or
+  // marked "no confirmed Morocco price" per-card instead (see BrandGroupList.tsx's BrandCard).
   const activeBrands = allBrands.filter((b) => !b.status || b.status === "active");
-  const activeBrandsWithMoroccoPrice = activeBrands.filter((b) => b._id && cheapestMoroccoPriceByBrandId[b._id] !== undefined);
-  const brands = showAll ? allBrands : activeBrandsWithMoroccoPrice;
-  const hiddenCount = allBrands.length - activeBrandsWithMoroccoPrice.length;
+  const brands = showAll ? allBrands : activeBrands;
+  const hiddenCount = allBrands.length - activeBrands.length;
 
   const { groups, standalone } = groupBrands(brands, cheapestMoroccoPriceByBrandId);
 
@@ -73,15 +78,14 @@ export default async function Home({
     <div>
       <h1 className="text-2xl font-bold mb-1">Chinese Automotive Brands</h1>
       <p className="text-zinc-600 dark:text-zinc-400 mb-1">
-        Browse {brands.length} Chinese automotive brands{showAll ? "" : " with a confirmed Morocco price"}, grouped by
-        manufacturer.
+        Browse {brands.length} Chinese automotive brands, grouped by manufacturer.
       </p>
       {hiddenCount > 0 && (
         <p className="text-sm mb-6">
           <Link href={showAll ? "/" : "/?all=1"} className="text-blue-600 dark:text-blue-400 hover:underline">
             {showAll
-              ? "Hide brands with no Morocco price / discontinued brands"
-              : `Show ${hiddenCount} more brand(s) (no confirmed Morocco price yet, or discontinued/bankrupt)`}
+              ? "Hide discontinued/bankrupt/merged brands"
+              : `Show ${hiddenCount} more brand(s) (discontinued/bankrupt/merged)`}
           </Link>
         </p>
       )}

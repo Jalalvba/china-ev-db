@@ -77,6 +77,8 @@ SCOPE — this database exists to cross-reference vehicles against export market
 - If genuinely uncertain whether a specific model has ever been exported, err toward INCLUDING it rather than silently dropping it — but note the uncertainty (set confidence to unconfirmed and say so in "notes") rather than guessing either way.
 - When a model IS exported, its name in this database must be the INTERNATIONAL/EXPORT market name, not the domestic Chinese-market name — e.g. Geely's domestic "Boyue Pro" must be recorded as "Coolray" (its export name), not as a separate "Boyue Pro" entry alongside or instead of "Coolray". Put the domestic Chinese name in "name_cn" if it differs from the export name, don't treat them as two different models.
 - If a model is sold under different names in different export regions, use the single most globally common/recognized export name as the primary name, and note the other regional names in "regional_name_note" — never create multiple model entries for what's mechanically the same vehicle under different regional badges.
+
+NO GHOST ENTRIES: Only include a model if it has at least one verifiable, sourced fact confirming it is a real, currently or recently sold PHEV SUV — do not include placeholder names, rumored future models, or brands/models with no findable product information. A name appearing in a single unconfirmed listing, forum post, or speculative article is NOT enough on its own. If uncertain whether an entry is real, exclude it rather than guess.
 ${
   existingModelNames?.length
     ? `\nAlready on file for this brand (do not re-report these as if they were new, but you may correct/update details about them if you find something different): ${existingModelNames.join(", ")}`
@@ -100,6 +102,7 @@ CRITICAL RULES:
 - Do NOT add, rename, or omit any field from the shape above.
 - Do not include a model already listed as "already on file" above unless you have new/corrected details about it — this is for discovering models not yet in the database, not re-describing known ones.
 - Do NOT include a model confirmed to be sold only in mainland China with no export history — see the export-scope rule above. If unsure, include it with confidence "unconfirmed" rather than dropping it.
+- NO GHOST ENTRIES: do not include a model unless you found at least one real, verifiable, sourced fact about it (a spec, a price, a sales/availability report, an official announcement). A bare name with no findable product information behind it, a rumored/speculative future model, or a placeholder listing must be excluded entirely — do not add it with confidence "unconfirmed" as a middle ground; this rule is about whether the model is real at all, not how well-sourced its details are.
 - "price_range" must be the DOMESTIC China price in CNY, never an export-market price (AED, MAD, USD, etc.) — export scoping decides which models to include, not what currency to price them in. Leave price_range null rather than report an export-market price in it.
 - "name" must be the model's export/international name if it's exported anywhere — never the domestic Chinese name for an exported model. One export-relevant vehicle = one entry in "models", even if it has a different domestic name or multiple regional export names (put those in "name_cn" / "regional_name_note" instead of duplicating the entry).`;
 }

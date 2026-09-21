@@ -56,10 +56,12 @@ function BrandCard({
         <span>{brand.country_origin}</span>
         {brand.founded_year && <span>Founded {brand.founded_year}</span>}
       </div>
-      {cheapestMoroccoPriceDh !== undefined && (
+      {cheapestMoroccoPriceDh !== undefined ? (
         <p className="mt-2 text-sm font-medium text-zinc-900 dark:text-zinc-100">
           from {cheapestMoroccoPriceDh.toLocaleString()} DH
         </p>
+      ) : (
+        <p className="mt-2 text-sm text-zinc-400 dark:text-zinc-500 italic">no confirmed Morocco price</p>
       )}
       {moroccoDealer && (
         <p className="mt-2 text-xs text-green-600 dark:text-green-400">

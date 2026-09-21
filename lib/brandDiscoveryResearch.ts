@@ -52,6 +52,8 @@ ${existingBrandNames.length ? existingBrandNames.map((n) => `- ${n}`).join("\n")
 
 Find any OTHER brands or sub-brands controlled by, owned by, or otherwise affiliated with this same manufacturer group that are NOT in the list above — for example, a joint-venture brand, an export-only brand, a recently-launched sub-brand, or a brand acquired by this group that isn't yet listed. Only include a brand if you can identify a real, currently-or-formerly operating brand — do not invent one.
 
+NO GHOST ENTRIES: only include a brand if it has at least one verifiable, sourced fact confirming it is a real, currently or recently sold PHEV SUV brand — do not include placeholder names, rumored future brands, or brands with no findable product information. A name appearing in a single unconfirmed listing, forum post, or speculative article is NOT enough on its own. If uncertain whether an entry is real, exclude it rather than guess.
+
 For each brand you find, research: its Chinese name (if different), its relationship to the group (ownership/control type, equity stake), any distinct technology partner, country of origin, founding year, and current status.
 
 Respond with ONLY a JSON object (no markdown fencing, no prose before or after) in exactly this envelope. Each value below describes the type the field must have, not a literal example value.
@@ -63,6 +65,7 @@ CRITICAL RULES:
 - If you find no additional brands, return "discovered_brands": [] — do not force a result.
 - OUTPUT LANGUAGE: every string value must be English, except "name_cn" (kept in its original script). Translate any Chinese source text before writing it elsewhere.
 - Every fact must come from a source you actually opened — do not estimate or infer. Use null for anything you cannot find a sourced value for.
+- NO GHOST ENTRIES: do not include a brand unless you found at least one real, verifiable, sourced fact about a product it actually sells (a model, a spec, a price, a sales/availability report, an official announcement). A bare brand name with no findable product information, a rumored/speculative future brand, or a placeholder listing must be excluded entirely.
 - "relationship_type" must be exactly one of: ${RELATIONSHIP_TYPES.join(", ")} — or null.
 - "status" must be exactly one of: ${BRAND_STATUSES.join(", ")} — or null.
 - Do NOT add, rename, or omit any field from the shape above.`;
