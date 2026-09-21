@@ -41,7 +41,7 @@ if (!MONGODB_URI) {
 
 // Same threshold confirmed with the user for this run: brands with 2+ PHEV/REEV SUV
 // models in the catalog, not the single-model long tail.
-const MIN_MODEL_COUNT = 2;
+const MIN_MODEL_COUNT = 1;
 
 const args = process.argv.slice(2);
 const limitArg = args.find((a) => a.startsWith("--limit"));
@@ -68,7 +68,7 @@ async function main() {
   if (onlyBrandName) targets = targets.filter((t) => t.brand.name === onlyBrandName);
   if (limit) targets = targets.slice(0, limit);
 
-  console.log(`${targets.length} brand(s) in scope (>=${MIN_MODEL_COUNT} PHEV/REEV SUV models):`);
+  console.log(`${targets.length} brand(s) in scope (>=${MIN_MODEL_COUNT} PHEV SUV models):`);
   for (const t of targets) console.log(`  - ${t.brand.name} (${t.count} model(s))`);
 
   const sections = targets.map(({ brand }) => {

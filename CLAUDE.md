@@ -1071,6 +1071,33 @@ whichever parts are present.
 - Full-repo `npx tsc --noEmit` and `eslint` both clean; grepped for zero remaining references to
   the deleted component/routes/schema-version constant.
 
+### Workshop research consolidated onto BrandPhevSuvWorkshopProfile (2026-09-21)
+
+The brand-page "Workshop requirements" panel (`WorkshopResearch.tsx`) used to write a simple
+`Brand.workshop_requirements` object that nothing displayed; it now writes the richer
+`BrandPhevSuvWorkshopProfile` (diagnostic_interface, lift_spec, ppe_required, technician_prerequisites,
+audit_checklist) that `/workshop-phev-suv` reads. Envelope `workshop-manual-v2`; import-only (export prompt ->
+paste -> `manual-workshop/validate` -> review -> `apply-workshop-profile`), no provider call. Parser/prompt live in
+`lib/phevSuvWorkshopResearch.ts`; `confirmed` survives only if every filled fact has its own http(s) `source_url`.
+`apply-workshop-profile` upserts by `brand_id` with REPLACE semantics (fields absent from the paste are unset),
+re-fetch-verified. Rendering is one shared component, `app/WorkshopProfileFields.tsx`, used by `/workshop-phev-suv`
+and the brand page's "PHEV SUV workshop profile" card. `/workshop-phev-suv`'s `MIN_MODEL_COUNT` was lowered 2 -> 1
+(also in `scripts/research-phev-suv-workshop.ts`, kept in sync) — at 2, Chery (1 PHEV SUV model) and Lepas were
+invisible even after their profile was applied. The model page still reads only `diagnostic_interface.tool_name`
+(recalls panel label) — it does not render the profile.
+- **KNOWN LANDMINE — null vs undefined.** `WorkshopProfileFields` tests
+  `diagnostic_interface.requires_dealer_account !== undefined`, so a stored `null` renders "No dealer account
+  required" (wrong: it means "unknown"). Unreachable through `apply-workshop-profile` ONLY because
+  `normalizePhevSuvWorkshopProfile()` (`lib/phevSuvWorkshopResearch.ts`) strips every null/empty value before the
+  write. **NOT unreachable overall**: `scripts/apply-phev-suv-workshop-batch.ts` writes `rest.diagnostic_interface`
+  etc. as pasted, nulls included (checked 2026-09-21) — a batch-applied profile with
+  `requires_dealer_account: null` would render the wrong label. If the apply route's normalization changes, or the
+  batch script is used, fix the render (`!= null`) at the same time. Left unfixed on purpose (explicit decision),
+  not overlooked.
+- **Still open**: `Brand.workshop_requirements` + `apply-workshop` + the brand page's "(legacy)" card remain until
+  Chery/Lepas are re-pasted against v2; then delete all of them together. Stale "PHEV/REEV" wording fixed on
+  `/workshop-phev-suv` only — the rest of the list in "Stale PHEV/REEV SUV wording" above is still outstanding.
+
 ## Write safety
 
 Every AI-researched write path (`lib/applySpecUpdates.ts`, the manual-import apply

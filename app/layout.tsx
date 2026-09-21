@@ -53,7 +53,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
               Workshop
             </a>
             <a href="/workshop-phev-suv" className="text-sm text-zinc-300 hover:text-white">
-              PHEV/REEV SUV Workshop
+              PHEV SUV Workshop
             </a>
             <a href="/known-issues" className="text-sm text-zinc-300 hover:text-white">
               Known Issues
