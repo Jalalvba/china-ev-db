@@ -1,5 +1,6 @@
 import { Schema, model, models } from "mongoose";
 import type { IBrand } from "@/types";
+import { checkParentGroup, parentGroupFromUpdate, parentGroupOverrideActive, InvalidParentGroupError } from "@/lib/brandParentGroup";
 
 // See CLAUDE.md (Data model conventions) before changing any field's meaning or adding new
 // ownership/grouping fields — it's the frozen reference for what parent_group,
@@ -83,6 +84,45 @@ const BrandSchema = new Schema<IBrand>(
   },
   { timestamps: true }
 );
+
+// parent_group write-time guard — see lib/brandParentGroup.ts for the rule and why it exists. These hooks
+// only fire when parent_group is being written, so unrelated edits to a legacy doc are unaffected.
+async function existingBrandNames(): Promise<Set<string>> {
+  const rows = (await model("Brand").find({}, { name: 1 }).lean()) as unknown as { name: string }[];
+  return new Set(rows.map((r) => r.name));
+}
+
+BrandSchema.pre("validate", async function () {
+  const doc = this as unknown as { name?: string; parent_group?: unknown; isModified(p: string): boolean; $locals?: { allowUnknownParentGroup?: boolean } };
+  if (parentGroupOverrideActive() || doc.$locals?.allowUnknownParentGroup) return;
+  if (!doc.isModified("parent_group")) return;
+  const r = checkParentGroup(doc.parent_group, await existingBrandNames(), doc.name);
+  if (!r.ok) throw new InvalidParentGroupError(String(doc.parent_group), r.reason ?? "is invalid");
+});
+
+BrandSchema.pre(
+  ["findOneAndUpdate", "updateOne", "updateMany", "findOneAndReplace", "replaceOne"] as never,
+  async function (this: { getUpdate(): unknown; getFilter(): Record<string, unknown>; getOptions(): { allowUnknownParentGroup?: boolean }; model: { findOne(f: unknown, p: unknown): { lean(): Promise<{ name?: string } | null> } } }) {
+    if (parentGroupOverrideActive() || this.getOptions().allowUnknownParentGroup) return;
+    const w = parentGroupFromUpdate(this.getUpdate());
+    if (!w.present) return;
+    // Own name for the self-reference check: only knowable when the filter targets a single brand.
+    const own = await this.model.findOne(this.getFilter(), { name: 1 }).lean();
+    const r = checkParentGroup(w.value, await existingBrandNames(), own?.name);
+    if (!r.ok) throw new InvalidParentGroupError(String(w.value), r.reason ?? "is invalid");
+  }
+);
+
+BrandSchema.pre("insertMany", async function (docs: unknown) {
+  if (parentGroupOverrideActive()) return;
+  const names = await existingBrandNames();
+  const batch = new Set(names);
+  for (const d of Array.isArray(docs) ? docs : [docs]) if (d && typeof (d as { name?: unknown }).name === "string") batch.add((d as { name: string }).name);
+  for (const d of Array.isArray(docs) ? docs : [docs]) {
+    const r = checkParentGroup((d as { parent_group?: unknown })?.parent_group, batch, (d as { name?: string })?.name);
+    if (!r.ok) throw new InvalidParentGroupError(String((d as { parent_group?: unknown }).parent_group), r.reason ?? "is invalid");
+  }
+});
 
 // See the matching comment in models/Model.ts: `models.Brand || model(...)`
 // reuses whatever schema is already cached in mongoose's process-global

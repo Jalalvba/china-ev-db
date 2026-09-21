@@ -80,7 +80,7 @@ that's an input needed to find Chinese-language sources, not model output.
 - **Known-correct reference facts** (treat a future claim that contradicts these as
   something to verify, not apply blindly): Geely has no Renault ownership relationship
   (only the HORSE Powertrain JV + minority equity stakes, informational-only in
-  `status_note`). Soueast/Exeed → parent `"Chery"`; Hongqi → parent `"FAW"`. AIVA →
+  `status_note`). Every Chery-family brand — Chery itself, Soueast, Exeed, Jaecoo, Jetour, Lepas, Omoda, iCar… — carries the literal group string `parent_group: "Chery Automobile Co., Ltd."` (corrected 2026-09-21: an earlier version of this line said parent `"Chery"`, but the data never used the brand-name/chain form, and Chery/Jaecoo/Jetour/Lepas had drifted to four different prose strings that left them in "Independent brands"; fixed via one-off write, backup `backups/fix_chery_parent_group_*.json`). Hongqi → parent `"FAW"`. AIVA →
   parent `"Chongqing Saidou Technology"` (not Seres). Jinguo → parent `"Juneyao
   Group"`. Cowin → parent `"Yibin State Capital"` (Chery holds an 18% minority stake).
   JMC → parent `"JMCG"` (Ford holds ~32% of listed Jiangling Motors Corp).
@@ -97,6 +97,21 @@ that's an input needed to find Chinese-language sources, not model output.
   `preflightCheckCrossBrandDuplicates()` before any write, aborting the import if a
   model would collide with a same-parent sibling's existing model — general safety
   net for any future sub-brand split, not just Dongfeng.
+
+- **Ownership grouping normalized + guarded (2026-09-21).** `parent_group` is matched by EXACT string, and unvalidated
+  drift had split real groups into "Independent brands". Fixed in data (backups `backups/fix_chery_parent_group_*`,
+  `fix_gwm_chery_stake_*`, `fix_ownership_rows_*`): the Chery family (Chery/Jaecoo/Jetour/Lepas) now carry the literal key
+  `"Chery Automobile Co., Ltd."`; Haval/TANK/WEY carry the brand name `"GWM (Great Wall Motor)"`; Nevo/Avatr → `"Changan"`,
+  Trumpchi → `"GAC"`, Yijing/M-Hero → `"Dongfeng"`, Huajing → `"SAIC (Roewe/MG)"` (brand-name/chain form — the group
+  label still resolves to the flagship's own corporate key). Chery's `relationship_type` stays `independent` (no holding
+  company since 2025) with `stake_percentage` cleared. Result: groups 8 → 10, "Independent brands" 23 → 9 (AIVA, Baojun,
+  FAW Yueyi, Leapmotor, Li Auto, Polestones, SkyNomad, SWM, XPeng). **Enforced at write time**: `lib/brandParentGroup.ts`
+  + hooks in `models/Brand.ts` reject a `parent_group` that is neither an existing brand's `name` (not the brand's own) nor
+  in `KNOWN_PARENT_GROUP_KEYS` — a NEW corporate group must be appended to that list in the same change. Fires only when
+  parent_group is written; bulkWrite/raw-driver writes aren't covered; opt-out `BRAND_PARENT_GROUP_OVERRIDE=1` /
+  `allowUnknownParentGroup`; needs a dev-server restart. `npm run audit-brand-groups` (read-only, exit 1) reports legacy
+  violations — currently only SWM's compound string (an orphaned brand, left alone). `scripts/seed.ts` still carries the
+  old drifted strings and would now be rejected if re-run — it is legacy all-powertrain seed data.
 
 ### Still open (as of 2026-09-13, not yet acted on)
 

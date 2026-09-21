@@ -31,6 +31,7 @@
     "apply-phev-suv-workshop-batch": "tsx scripts/apply-phev-suv-workshop-batch.ts",
     "backfill-known-issue-region": "tsx scripts/backfill-known-issue-region.ts",
     "audit-scope": "tsx scripts/audit-powertrain-scope.ts",
+    "audit-brand-groups": "tsx scripts/audit-parent-groups.ts",
     "cleanup-scope": "tsx scripts/cleanup-out-of-scope-trims.ts"
   },
   "dependencies": {
