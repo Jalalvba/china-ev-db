@@ -5,6 +5,31 @@ import { AFFECTED_SYSTEMS, ISSUE_REGIONS, SALES_TRENDS } from "@/types/researchC
 
 type ModelDoc = Omit<IModel, "brand_id"> & { brand_id: Types.ObjectId };
 
+// One model-to-platform link (Model.platforms). Referenced by _id, never by name — see models/Platform.ts.
+// A model can sit on more than one platform group over its life, hence an array; the same platform twice on
+// one model is rejected below. `confidence`/`source_url` are PER LINK (the platform may be well known while
+// this model's membership is only rumored), and "confirmed" requires an http(s) source_url, same rule as
+// every other confirmed field in this app. Referential integrity (platform_id must exist) can't be a schema
+// rule; the import/apply layer checks it. NOTE: this sub-document hook runs on save()/create()/validate(),
+// NOT on findOneAndUpdate — the apply route must re-validate the same way (as every other apply route does).
+const ModelPlatformLinkSchema = new Schema(
+  {
+    platform_id: { type: Schema.Types.ObjectId, ref: "Platform", required: true },
+    confidence: { type: String, enum: CONFIDENCE_VALUES, required: true, default: "unconfirmed" },
+    source_url: { type: String, trim: true },
+    /** Scope of the sharing, e.g. "front subframe only" — free text, descriptive. */
+    note: { type: String, trim: true },
+  },
+  { _id: false }
+);
+ModelPlatformLinkSchema.pre("validate", function () {
+  const doc = this as unknown as { confidence?: string; source_url?: string; invalidate(p: string, m: string): void };
+  if (doc.confidence === "confirmed" && !/^https?:\/\/\S+$/i.test(doc.source_url ?? "")) {
+    doc.invalidate("source_url", 'confidence "confirmed" requires an http(s) source_url');
+  }
+});
+
+
 // Exported so lib/modelDiscovery.ts (AI model-discovery prompt + validation)
 // has one source of truth for these enums, not a second hand-copied list.
 export const SEGMENTS = [
@@ -66,6 +91,16 @@ const ModelSchema = new Schema<ModelDoc>(
       default: "in production",
     },
     unverified: { type: Boolean, default: false },
+    /** Technical-platform lineage (chassis) — links to the `platforms` collection; see models/Platform.ts. Empty = not researched. */
+    platforms: {
+      type: [ModelPlatformLinkSchema],
+      default: undefined,
+      validate: {
+        validator: (links: { platform_id?: unknown }[] | undefined) =>
+          !links || new Set(links.map((l) => String(l.platform_id))).size === links.length,
+        message: "platforms: the same platform_id appears more than once on this model",
+      },
+    },
     notable_facts: { type: String, trim: true },
     notable_facts_confidence: { type: String, enum: CONFIDENCE_VALUES },
     /** Set only by lib/applySpecUpdates.ts, only when a notable_facts write is verified as actually applied — see the comment on IModel.notable_facts_last_researched_at in types/index.ts. */

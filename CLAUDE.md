@@ -1113,6 +1113,29 @@ invisible even after their profile was applied. The model page still reads only 
   Chery/Lepas are re-pasted against v2; then delete all of them together. Stale "PHEV/REEV" wording fixed on
   `/workshop-phev-suv` only — the rest of the list in "Stale PHEV/REEV SUV wording" above is still outstanding.
 
+### Technical-platform grouping — schema only (2026-09-21)
+
+A SECOND grouping axis alongside ownership (`parent_group`, above): which models share chassis/engineering lineage, for
+parts/tooling/diagnostic commonality. Ownership grouping stays the homepage's axis; this is additive, not a replacement.
+- **Schema built, nothing populated yet**: `models/Platform.ts` (new `platforms` collection: `name` unique, `name_cn`,
+  `aliases[]`, `kind`, `developer` (descriptive only, NOT an ownership axis), `description`, `confidence`, `source_url`)
+  and `Model.platforms[]` (`{ platform_id, confidence, source_url, note }`, linked by `_id`, never by a free-text name —
+  the `parent_group` drift lesson). Types: `IPlatform`, `IModelPlatformLink`. Model-level, not brand-level: sharing is
+  between specific models/generations (Soueast S06 + Jetour Dashing on Chery's T1X), never uniform across a brand.
+- **`kind` is `"chassis"` ONLY, deliberately.** `hybrid_system` would duplicate trim-level `Powertrain.hybrid_system_name`/
+  `hybrid_architecture`; `electrical_architecture` has too little evidence. Add a kind (one enum value in `PLATFORM_KINDS`)
+  only when real, well-sourced data justifies it.
+- Rules in the schema: a "confirmed" platform or link needs an http(s) `source_url`; the same `platform_id` can't appear twice
+  on one model. Those hooks run on `save()`/`create()`/`validate()` — NOT on `findOneAndUpdate` — and referential integrity
+  (`platform_id` exists) can't be a schema rule, so the future apply route must re-validate and re-fetch-verify like every
+  other apply route. Needs a dev-server restart (stale-schema rule).
+- **Existing data is free text only**: 22 of 96 models mention a platform inside `Model.notable_facts` (S09 "P6X … shares with
+  Jetour X90 Pro", S06 DM/Shanhai L6, Baojun Yunhai "Tianyu D", WEY Macchiato "Lemon", Coolray "BMA", Tank 800/700 Hi4-T…) —
+  a review list to confirm by hand, NOT to auto-parse. The Lepas benchmark facts (Lepas L8 on LEX/T1X with Tiggo 7/8 and Jaecoo
+  J7) are not in the DB at all: the Lepas models carry no `notable_facts`.
+- **Not built yet (next, each behind review)**: the manual export/import path (`platform-manual-v1`, import-only, no provider
+  call), the apply route, and any `/platforms` grouping page or model-page badge.
+
 ## Write safety
 
 Every AI-researched write path (`lib/applySpecUpdates.ts`, the manual-import apply

@@ -177,6 +177,30 @@ export interface IPriceRange {
   exchange_rate_date?: string;
 }
 
+/** A vehicle platform (technical lineage) — see models/Platform.ts. */
+export interface IPlatform {
+  _id?: string;
+  name: string;
+  name_cn?: string;
+  aliases?: string[];
+  /** "chassis" only for now — see models/Platform.ts for why the other candidate kinds were left out. */
+  kind: "chassis";
+  developer?: string;
+  description?: string;
+  confidence: Confidence;
+  source_url?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+/** One model-to-platform link (IModel.platforms), by platform _id — never by name. */
+export interface IModelPlatformLink {
+  platform_id: string;
+  confidence: Confidence;
+  source_url?: string;
+  note?: string;
+}
+
 export interface IModel {
   _id?: string;
   brand_id: string;
@@ -197,6 +221,8 @@ export interface IModel {
   production_status: ProductionStatus;
   unverified?: boolean;
   /** Free-text prose noting anything genuinely unusual about this model as a whole — e.g. battery-swap capability, an award, a production milestone, a controversy, a first-in-class feature. Model-level (not per-trim), and deliberately separate from the structured canonical Powertrain fields. Optional — omitted when nothing stands out. */
+  /** Technical-platform lineage, by Platform _id. Undefined = not researched; [] = researched, none found. */
+  platforms?: IModelPlatformLink[];
   notable_facts?: string;
   /** Same source-citation rule as every other researched field: "confirmed" only when backed by an actual citation, "unconfirmed" otherwise. */
   notable_facts_confidence?: Confidence;
