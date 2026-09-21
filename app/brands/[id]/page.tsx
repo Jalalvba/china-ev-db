@@ -12,6 +12,7 @@ import BrandAndModelDiscovery from "@/app/BrandAndModelDiscovery";
 import BrandResearch from "@/app/BrandResearch";
 import WarrantyResearch from "@/app/WarrantyResearch";
 import WorkshopResearch from "@/app/WorkshopResearch";
+import MoroccoInfoEditor from "@/app/MoroccoInfoEditor";
 import { formatRelativeTime } from "@/lib/relativeTime";
 
 export const dynamic = "force-dynamic";
@@ -89,6 +90,9 @@ export default async function BrandPage({ params }: { params: Promise<{ id: stri
       {brand.status_note && (
         <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1 italic">{brand.status_note}</p>
       )}
+      {brand.morocco_name && brand.morocco_name !== brand.name && (
+        <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">🇲🇦 Marketed in Morocco as: {brand.morocco_name}</p>
+      )}
       <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-1">
         {brand.last_researched_at
           ? `Brand identity researched ${formatRelativeTime(brand.last_researched_at)}`
@@ -100,6 +104,12 @@ export default async function BrandPage({ params }: { params: Promise<{ id: stri
         <BrandResearch brandId={brand._id as string} />
         <WarrantyResearch brandId={brand._id as string} />
         <WorkshopResearch brandId={brand._id as string} />
+        <MoroccoInfoEditor
+          basePath={`/api/brands/${brand._id}`}
+          currentMoroccoName={brand.morocco_name}
+          showPrice={false}
+          fallbackName={brand.name}
+        />
       </div>
 
       <h2 className="text-lg font-semibold mt-6 mb-1">Models ({models.length})</h2>

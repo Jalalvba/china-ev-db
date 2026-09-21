@@ -1020,13 +1020,22 @@ fact directly, not submitting an AI response for review.
   field — distinct from `0`/empty; clearing price also clears `source`/`url`/`confirmed` together;
   re-fetch-verifies per this file's Write safety convention below) and `app/MoroccoInfoEditor.tsx`
   (a small modal: text input + Clear, number input + Clear, Save/Cancel), wired onto the model
-  detail page next to the existing research-flow buttons. Brand-level and Trim-level UI/routes are
-  NOT built yet — same pattern, pending rollout.
+  detail page next to the existing research-flow buttons.
 - **Real incident hit while testing, not a code defect**: an old dev-server process from earlier in
   the session had a stale cached Mongoose schema (pre-dating the `morocco_price_source` enum
   change) — writing `"manual"` 500'd with a Mongoose `ValidationError` until the dev server was
   restarted. This is exactly the scenario this file's own Write safety section already warns about;
   confirms it's a real, recurring gotcha worth restating rather than a one-off.
+- **Rolled out to Brand and Trim (same session, follow-up commit)**: `PATCH
+  /api/brands/[id]/morocco-info` (name only — no price field, brands don't have a single price) on
+  the brand detail page; `PATCH /api/powertrains/[id]/morocco-info` (name + price, both genuinely
+  new at trim level — no scraper populates Trim Morocco price, so `morocco_price_source` there is
+  `"manual"` only, no other enum value) as a new "🇲🇦 Morocco" row in the model page's trim
+  comparison table, one editor per trim column. Same `MoroccoInfoEditor.tsx` component reused at
+  all three levels via its `showPrice` prop. Verified on local dev AND on the live deployed site
+  (edit+save+clear round-tripped correctly for a real brand, model, and trim on production) before
+  calling this done — all verification writes were cleaned up afterward, nothing test-related left
+  in the database.
 
 ### Manufacturer-group panel merge: two button-pairs collapsed into one, schema bumped to v2 (2026-09-21)
 

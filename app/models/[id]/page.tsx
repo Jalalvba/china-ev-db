@@ -244,6 +244,25 @@ export default async function ModelPage({ params }: { params: Promise<{ id: stri
                 values={powertrains.map(() => chinaPriceUsdLabel)}
               />
               <Row label="Trim Price" values={powertrains.map((p) => formatTrimPrice(p))} />
+              <tr className="border-b border-zinc-100 dark:border-zinc-800">
+                <td className="py-2 pr-4 font-medium text-zinc-600 dark:text-zinc-400 whitespace-nowrap align-top">🇲🇦 Morocco</td>
+                {powertrains.map((p) => (
+                  <td key={p._id as string} className="py-2 pr-4 align-top">
+                    {p.morocco_price_confirmed && p.morocco_price_dh ? (
+                      <p className="text-sm">💰 {p.morocco_price_dh.toLocaleString()} DH</p>
+                    ) : null}
+                    {p.morocco_name && p.morocco_name !== p.trim_name && (
+                      <p className="text-xs text-zinc-500 dark:text-zinc-400">as: {p.morocco_name}</p>
+                    )}
+                    <MoroccoInfoEditor
+                      basePath={`/api/powertrains/${p._id}`}
+                      currentMoroccoName={p.morocco_name}
+                      currentMoroccoPriceDh={p.morocco_price_dh}
+                      fallbackName={p.trim_name}
+                    />
+                  </td>
+                ))}
+              </tr>
               <Row
                 label="Engine"
                 values={powertrains.map((p) =>
