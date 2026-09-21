@@ -7,32 +7,52 @@ interface Props {
   compact?: boolean;
 }
 
-/** Manual export/import panel for brand workshop_requirements — see SingleObjectManualPanel for the shared mechanics. */
+/** Manual export/import panel for the brand's PHEV SUV workshop profile (BrandPhevSuvWorkshopProfile, shown on /workshop-phev-suv) — see SingleObjectManualPanel for the shared mechanics. */
 export default function WorkshopResearch({ brandId, compact }: Props) {
   return (
     <SingleObjectManualPanel
       basePath={`/api/brands/${brandId}`}
       segment="manual-workshop"
-      applySegment="apply-workshop"
-      dataKey="workshop_requirements"
-      title="Workshop requirements research (Chinese sources only)"
+      applySegment="apply-workshop-profile"
+      dataKey="workshop_profile"
+      title="PHEV SUV workshop profile research (Chinese sources only)"
       triggerLabel="Workshop requirements"
       triggerEmoji="🔧"
       compact={compact}
-      renderPreview={(w) => (
-        <>
-          {Array.isArray(w.special_tools_list) && w.special_tools_list.length > 0 && (
-            <p className="text-zinc-700 dark:text-zinc-300">
-              <span className="text-zinc-400 dark:text-zinc-500">Special tools:</span> {(w.special_tools_list as string[]).join(", ")}
+      renderPreview={(w) => {
+        const list = (k: string) => (Array.isArray(w[k]) ? (w[k] as Record<string, unknown>[]) : []);
+        const di = w.diagnostic_interface as Record<string, unknown> | undefined;
+        const ls = w.lift_spec as Record<string, unknown> | undefined;
+        const line = "text-zinc-700 dark:text-zinc-300";
+        const label = "text-zinc-400 dark:text-zinc-500";
+        return (
+          <>
+            <p className={line}>
+              <span className={label}>Diagnostic interface:</span>{" "}
+              {di ? [di.tool_name, di.connector_type, di.software_platform].filter(Boolean).join(" · ") || "(no name)" : "not found"}
             </p>
-          )}
-          {w.hv_safety_requirements ? <p className="text-zinc-700 dark:text-zinc-300">HV safety: {String(w.hv_safety_requirements)}</p> : null}
-          {w.diagnostic_software_name ? <p className="text-zinc-700 dark:text-zinc-300">Diagnostic software: {String(w.diagnostic_software_name)}</p> : null}
-          {w.technician_certification_required ? <p className="text-zinc-700 dark:text-zinc-300">Certification: {String(w.technician_certification_required)}</p> : null}
-          {w.source ? <p className="text-zinc-400 dark:text-zinc-500">Source: {String(w.source)}</p> : null}
-          {w.confidence === "unconfirmed" && <p className="text-amber-600 dark:text-amber-400">Marked unconfirmed — no source given.</p>}
-        </>
-      )}
+            <p className={line}>
+              <span className={label}>Lift:</span>{" "}
+              {ls ? [ls.type, ls.min_capacity_kg ? `min ${ls.min_capacity_kg} kg` : null, ls.battery_removal_capable ? "battery removal" : null].filter(Boolean).join(" · ") || "(no detail)" : "not found"}
+            </p>
+            <p className={line}>
+              <span className={label}>PPE ({list("ppe_required").length}):</span> {list("ppe_required").map((p) => String(p.item)).join(", ") || "none found"}
+            </p>
+            <p className={line}>
+              <span className={label}>Technician prerequisites ({list("technician_prerequisites").length}):</span>{" "}
+              {list("technician_prerequisites").map((t) => String(t.certification_name_en ?? t.certification_name_cn ?? "?")).join(", ") || "none found"}
+            </p>
+            <p className={line}>
+              <span className={label}>Audit checklist:</span> {list("audit_checklist").length} checkpoint(s)
+            </p>
+            {w.confidence === "unconfirmed" && (
+              <p className="text-amber-600 dark:text-amber-400">
+                Will be stored as unconfirmed — confirmed requires a source_url on every filled fact.
+              </p>
+            )}
+          </>
+        );
+      }}
     />
   );
 }
