@@ -112,6 +112,68 @@ export default async function BrandPage({ params }: { params: Promise<{ id: stri
         />
       </div>
 
+      {brand.workshop_requirements && (
+        <section className="mt-4 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-4 text-sm">
+          <div className="flex items-center gap-2 flex-wrap">
+            <h2 className="text-base font-semibold">Workshop requirements</h2>
+            {brand.workshop_requirements.confidence && (
+              <span
+                className={`px-2 py-0.5 rounded-full text-xs ${
+                  brand.workshop_requirements.confidence === "confirmed"
+                    ? "bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300"
+                    : "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300"
+                }`}
+              >
+                {brand.workshop_requirements.confidence}
+              </span>
+            )}
+            {brand.workshop_requirements_last_researched_at && (
+              <span className="text-xs text-zinc-400 dark:text-zinc-500">
+                researched {formatRelativeTime(brand.workshop_requirements_last_researched_at)}
+              </span>
+            )}
+          </div>
+          <dl className="mt-2 space-y-2">
+            {brand.workshop_requirements.diagnostic_software_name && (
+              <div>
+                <dt className="font-medium">Diagnostic software</dt>
+                <dd className="text-zinc-600 dark:text-zinc-400">{brand.workshop_requirements.diagnostic_software_name}</dd>
+              </div>
+            )}
+            {!!brand.workshop_requirements.special_tools_list?.length && (
+              <div>
+                <dt className="font-medium">Special tools</dt>
+                <dd>
+                  <ul className="list-disc pl-5 text-zinc-600 dark:text-zinc-400">
+                    {brand.workshop_requirements.special_tools_list.map((t, i) => (
+                      <li key={i}>{t}</li>
+                    ))}
+                  </ul>
+                </dd>
+              </div>
+            )}
+            {brand.workshop_requirements.hv_safety_requirements && (
+              <div>
+                <dt className="font-medium">HV safety requirements</dt>
+                <dd className="text-zinc-600 dark:text-zinc-400">{brand.workshop_requirements.hv_safety_requirements}</dd>
+              </div>
+            )}
+            {brand.workshop_requirements.technician_certification_required && (
+              <div>
+                <dt className="font-medium">Technician certification</dt>
+                <dd className="text-zinc-600 dark:text-zinc-400">{brand.workshop_requirements.technician_certification_required}</dd>
+              </div>
+            )}
+            {brand.workshop_requirements.source && (
+              <div>
+                <dt className="font-medium">Source</dt>
+                <dd className="text-zinc-500 dark:text-zinc-400 break-words">{brand.workshop_requirements.source}</dd>
+              </div>
+            )}
+          </dl>
+        </section>
+      )}
+
       <h2 className="text-lg font-semibold mt-6 mb-1">Models ({models.length})</h2>
       {models.length === 0 && (
         <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-4">
