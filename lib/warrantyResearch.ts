@@ -8,11 +8,8 @@
 // instruction). If nothing survives the allowlist, this is functionally
 // "found nothing" and the confidence gate forces "unconfirmed".
 
-import { ModelNotFoundError, SearchProviderError, sleep } from "@/lib/techSpecResearch";
-import { runGroundedResearch } from "@/lib/groundedResearch";
-import { filterToChineseSources } from "@/lib/chineseSourceGuard";
-
 const CONFIDENCE_SET = new Set(["confirmed", "unconfirmed"]);
+export const WARRANTY_MANUAL_SCHEMA_VERSION = "warranty-manual-v1";
 
 export interface WarrantyResearchInput {
   brandName: string;
@@ -98,11 +95,28 @@ export function applyWarrantyGroundingGate(warranty: Record<string, unknown>, ha
   return warranty;
 }
 
-interface WarrantyAgentResponse {
-  warranty_terms?: unknown;
+// ---------- manual export/import (research-categories-v1-style envelope, single object) ----------
+
+export interface WarrantyManualExportContext extends WarrantyResearchInput {
+  brandId: string;
 }
 
-function extractJson(text: string): WarrantyAgentResponse | null {
+export function buildWarrantyManualExportPrompt(ctx: WarrantyManualExportContext): string {
+  const envelope = { schema_version: WARRANTY_MANUAL_SCHEMA_VERSION, brand_id: ctx.brandId, warranty_terms: WARRANTY_FIELD_TEMPLATE };
+  return `${buildWarrantyKickoffPrompt(ctx)}
+
+Respond with ONLY a JSON object (no markdown fencing, no prose before or after) in exactly this envelope. Each value below describes the type the field must have, not a literal example value.
+${JSON.stringify(envelope, null, 2)}
+
+CRITICAL RULES:
+- Keep "schema_version" and "brand_id" exactly as shown.
+- OUTPUT LANGUAGE: every string value must be English (translate any Chinese source text before writing it), except do not translate a specific policy document's proper name if quoting it directly in "source".
+- Every fact must come from a Chinese-language source you actually opened — do not estimate, infer from a sibling brand, or use a non-Chinese source.
+- Use null for anything you cannot find a sourced Chinese value for. Do NOT guess.
+- Do NOT add, rename, or omit any field from the shape above.`;
+}
+
+function extractJsonObjectLoose(text: string): Record<string, unknown> | null {
   const fencedMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/);
   const candidate = fencedMatch ? fencedMatch[1] : text;
   const braceStart = candidate.indexOf("{");
@@ -115,79 +129,28 @@ function extractJson(text: string): WarrantyAgentResponse | null {
   }
 }
 
-async function queryWarrantyResearch(
-  model: string,
-  input: WarrantyResearchInput
-): Promise<{ parsed: WarrantyAgentResponse | null; sourceUrls: string[]; rawText: string }> {
-  const kickoffPrompt = buildWarrantyKickoffPrompt(input);
-  const formatPrompt = buildWarrantyFormatPrompt();
-  // Chinese-only search terms, deliberately — no English query added (unlike
-  // buildVehicleSearchQueries), since an English query is what would surface
-  // the non-Chinese sources this category must never use.
-  const searchQueries = [
-    `${input.brandName} 质保政策`,
-    `${input.brandName} 三包政策`,
-    `${input.brandNameCn ?? input.brandName} 电池质保`,
-    `${input.brandNameCn ?? input.brandName} 保修政策`,
-  ];
-
-  const maxAttempts = 3;
-  let lastErr: unknown;
-  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-    try {
-      const { formattedText, sourceUrls } = await runGroundedResearch({ kickoffPrompt, formatPrompt, searchQueries, model });
-      return { parsed: extractJson(formattedText), sourceUrls, rawText: formattedText };
-    } catch (err) {
-      if (err instanceof ModelNotFoundError) throw err;
-      if (err instanceof SearchProviderError) throw err;
-      lastErr = err;
-      const backoffMs = 2000 * attempt;
-      console.error(`  [retry ${attempt}/${maxAttempts}] research-warranty ${input.brandName}: ${(err as Error).message} — waiting ${backoffMs}ms`);
-      await sleep(backoffMs);
-    }
-  }
-  throw lastErr;
-}
-
-export interface WarrantyResearchResult {
-  status: "found" | "not_found" | "error";
-  errorMessage?: string;
-  sourceUrls: string[];
-  hasGrounding: boolean;
-  warranty_terms?: Record<string, unknown>;
+export interface WarrantyManualImportResult {
   valid: boolean;
   errors: string[];
+  warranty_terms: Record<string, unknown> | null;
 }
 
-export async function researchWarranty(model: string, input: WarrantyResearchInput): Promise<WarrantyResearchResult> {
-  try {
-    const { parsed, sourceUrls: rawSourceUrls, rawText } = await queryWarrantyResearch(model, input);
-
-    if (!parsed || !parsed.warranty_terms) {
-      return {
-        status: "error",
-        errorMessage: `Could not parse a warranty_terms object from response (first 300 chars): ${rawText.slice(0, 300)}`,
-        sourceUrls: [],
-        hasGrounding: false,
-        valid: false,
-        errors: [],
-      };
-    }
-
-    // Defense-in-depth: drop any source URL not on the Chinese-source
-    // allowlist before it's allowed to count as grounding, regardless of
-    // what the LLM claims it used.
-    const sourceUrls = filterToChineseSources(rawSourceUrls);
-    const hasGrounding = sourceUrls.length > 0;
-    const { valid, errors } = validateResearchedWarranty(parsed.warranty_terms);
-    if (!valid) {
-      return { status: "not_found", sourceUrls, hasGrounding, warranty_terms: parsed.warranty_terms as Record<string, unknown>, valid, errors };
-    }
-
-    const gated = applyWarrantyGroundingGate({ ...(parsed.warranty_terms as Record<string, unknown>) }, hasGrounding);
-    return { status: "found", sourceUrls, hasGrounding, warranty_terms: gated, valid: true, errors: [] };
-  } catch (err) {
-    if (err instanceof ModelNotFoundError || err instanceof SearchProviderError) throw err;
-    return { status: "error", errorMessage: (err as Error).message, sourceUrls: [], hasGrounding: false, valid: false, errors: [] };
+/** Parses + validates a pasted warranty-manual-v1 reply. Confidence forced "unconfirmed" if no "source" is given (mirrors applyWarrantyGroundingGate's zero-citation rule). */
+export function parseWarrantyManualImport(rawText: string, brandId: string): WarrantyManualImportResult {
+  const obj = extractJsonObjectLoose(rawText);
+  if (!obj) return { valid: false, errors: ["Could not find a JSON object in the pasted text."], warranty_terms: null };
+  const errors: string[] = [];
+  if (obj.schema_version !== WARRANTY_MANUAL_SCHEMA_VERSION) {
+    errors.push(`schema_version must be "${WARRANTY_MANUAL_SCHEMA_VERSION}" (got ${JSON.stringify(obj.schema_version)}).`);
   }
+  if (obj.brand_id !== brandId) errors.push(`brand_id ${JSON.stringify(obj.brand_id)} does not match this brand (${brandId}) — pasted into the wrong brand's page?`);
+  if (errors.length > 0) return { valid: false, errors, warranty_terms: null };
+
+  const terms = obj.warranty_terms as Record<string, unknown> | null | undefined;
+  if (!terms || typeof terms !== "object") return { valid: true, errors: [], warranty_terms: null };
+  const { valid, errors: itemErrors } = validateResearchedWarranty(terms);
+  if (!valid) return { valid: false, errors: itemErrors, warranty_terms: null };
+
+  const gated = applyWarrantyGroundingGate({ ...terms }, !!terms.source);
+  return { valid: true, errors: [], warranty_terms: gated };
 }

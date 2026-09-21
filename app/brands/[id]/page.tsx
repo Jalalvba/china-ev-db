@@ -9,7 +9,9 @@ import MoroccoPriceFetcher from "@/app/MoroccoPriceFetcher";
 import MoroccoPriceChipLink from "@/app/MoroccoPriceChipLink";
 import { SegmentLabel } from "@/lib/segmentDisplay";
 import BrandAndModelDiscovery from "@/app/BrandAndModelDiscovery";
+import BrandResearch from "@/app/BrandResearch";
 import WarrantyResearch from "@/app/WarrantyResearch";
+import WorkshopResearch from "@/app/WorkshopResearch";
 import { formatRelativeTime } from "@/lib/relativeTime";
 
 export const dynamic = "force-dynamic";
@@ -101,12 +103,14 @@ export default async function BrandPage({
       <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-1">
         {brand.last_researched_at
           ? `Brand identity researched ${formatRelativeTime(brand.last_researched_at)}`
-          : `Brand identity not yet researched${brand.createdAt ? ` (original import data, ${formatRelativeTime(brand.createdAt)})` : ""} — consider running "Research this brand" before discovering models, for more targeted results`}
+          : `Brand identity not yet researched${brand.createdAt ? ` (original import data, ${formatRelativeTime(brand.createdAt)})` : ""} — consider using "Research this brand" before discovering models, for more targeted results`}
       </p>
 
       <div className="flex flex-wrap items-start gap-4 mt-3">
         <BrandAndModelDiscovery brandId={brand._id as string} />
+        <BrandResearch brandId={brand._id as string} />
         <WarrantyResearch brandId={brand._id as string} />
+        <WorkshopResearch brandId={brand._id as string} />
       </div>
 
       <h2 className="text-lg font-semibold mt-6 mb-1">

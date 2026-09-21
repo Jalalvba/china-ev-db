@@ -559,13 +559,7 @@ technical bulletins, recalls.
   (`scripts/fill-missing-mandatory-fields.ts`, `scripts/backfill-trim-price.ts`,
   `scripts/tech-spec-agent.ts`). Gutting it here would have broken those for no reason; only the
   UI-triggered `update-specs` route was removed.
-- **Not yet done (separate stage)**: brand research, warranty research, and workshop research
-  (`app/api/brands/[id]/{research-brand,research-warranty,research-workshop}` +
-  `BrandResearch.tsx`/`WarrantyResearch.tsx`/`WorkshopResearch.tsx`) are still automated —
-  no manual export/import panel exists yet for those three categories, so cutting them first
-  would remove functionality with nothing to replace it. Positioning research
-  (`PositioningResearch.tsx`, `research-positioning`) is likewise untouched pending the same
-  decision. `scripts/tech-spec-agent.ts` and `scripts/research-issues-bulletins-batch.ts` now
+- `scripts/tech-spec-agent.ts` and `scripts/research-issues-bulletins-batch.ts` now
   call dead/changed exports (`researchIssues`, `researchGlobalIssues` no longer exist;
   `researchBulletins` was removed from `bulletinResearch.ts`) and are broken until repurposed
   into prompt-batch generators (writing export-prompt text to `raw-data/` instead of calling
@@ -574,6 +568,68 @@ technical bulletins, recalls.
   Price-scraping scripts (`fetch-all-prices.ts`, `sync-morocco-prices.ts`,
   `MoroccoPriceFetcher.tsx`) are out of scope for this ban — they scrape moteur.ma directly,
   not an AI/search provider.
+
+## Positioning/brand/warranty/workshop research: automated buttons replaced with manual panels (2026-09-21)
+
+Stage 2 of the same automated-research removal above. These four categories had no manual
+export/import path when stage 1 landed, so removing their automated buttons first would have
+cut functionality with nothing to replace it — this pass builds the manual round trip for
+each, then removes the automated trigger, same "research-categories-v1"-style envelope
+pattern as the model-level categories, just single-object instead of append-and-dedupe lists.
+
+- **New schema versions** (one per category, checked by each validate route so a paste can't
+  land on the wrong model/brand or the wrong category): `positioning-manual-v1` (keyed by
+  `model_id`), `brand-manual-v1`, `warranty-manual-v1`, `workshop-manual-v1` (the latter three
+  keyed by `brand_id`).
+- **Export/parse/validate logic lives in the same lib file the old automated call used** —
+  `lib/positioningResearch.ts`, `lib/brandResearch.ts`, `lib/warrantyResearch.ts`,
+  `lib/workshopResearch.ts` — each now exports `buildXManualExportPrompt()` (reuses the
+  existing kickoff-prompt text and canonical field template) and `parseXManualImport()`
+  (schema/id check, then the same `validateResearchedX()` shape validator the automated path
+  used). The old `researchX()` live-call functions, their `queryXResearch()` helpers, and the
+  `runGroundedResearch`/`aiProvider`/Chinese-source-guard imports they needed are deleted from
+  all four files — nothing in these files calls an AI/search provider anymore.
+- **Confidence downgrading without a source-URL list**: the automated path's zero-citation
+  grounding gate (`applyXGroundingGate`) is reused, but since a manual paste carries no
+  `sourceUrls` array, "has evidence" is approximated as "the item has a non-empty `source`
+  field" (positioning/warranty/workshop) or "`status_note`/`notes` is non-empty" (brand) —
+  weaker than a fetched-and-verified URL, but the only signal a plain paste gives; downgrades
+  to `unconfirmed` on absence.
+- **New routes**: `app/api/models/[id]/manual-positioning/{export,validate}` and
+  `app/api/brands/[id]/manual-{brand,warranty,workshop}/{export,validate}` — `export` is
+  read-only (builds the prompt), `validate` is read-only (parses + previews). **No new apply
+  routes were built** — each category's existing apply-* route
+  (`apply-positioning`, `apply-brand-research`, `apply-warranty`, `apply-workshop`) already took
+  exactly the validated shape as its request body and was already re-fetch-verified per this
+  file's "Write safety" section, so the manual panel calls it directly on "Apply".
+- **Deleted routes**: `app/api/models/[id]/research-positioning`,
+  `app/api/brands/[id]/{research-brand,research-warranty,research-workshop}`.
+- **New shared UI**: `app/SingleObjectManualPanel.tsx` — one generic copy-prompt /
+  paste-JSON / validate / preview / apply modal, parameterized per category (API paths, the
+  response/request key, a `renderPreview` function). `app/PositioningResearch.tsx`,
+  `app/BrandResearch.tsx`, `app/WarrantyResearch.tsx`, `app/WorkshopResearch.tsx` are now thin
+  wrappers configuring it — same public prop shape as before (`modelId`/`brandId`, `compact`),
+  so their call sites didn't need to change. `app/WorkshopResearch.tsx` had no page wiring it
+  in before this pass (dead-but-present component); it's now rendered on
+  `app/brands/[id]/page.tsx` alongside the other three, next to `BrandResearch` (also newly
+  wired there — previously only reachable via the combined discovery flow below).
+- **`app/BrandAndModelDiscovery.tsx` decoupled from Tier-1 brand research**: it used to chain
+  an automated `research-brand` call in front of `discover-models` (Tier 2, model discovery),
+  passing Tier 1's freshly-found fields as context and showing both result sets in one review
+  screen. With `research-brand` removed, this component now goes straight to `discover-models`
+  with empty brand context and only reviews/creates models — the "Brand identity" review
+  section, its field-selection checkboxes, and the `apply-brand-research` call from this
+  flow were removed. Brand-identity research is reached separately now, via the `BrandResearch`
+  manual panel next to it on the brand page. **`discover-models` itself is untouched and still
+  calls the AI provider directly** — it wasn't in this ban's original route list (it does model
+  *discovery*, not one of the ten named research categories) and building a manual-paste
+  equivalent for it was out of scope for this pass; flagged here so it isn't mistaken for an
+  oversight if it's revisited later.
+- Not touched by this pass: `lib/phevSuvWorkshopResearch.ts` and
+  `lib/workshopOverrideResearch.ts` (script-only, no route/button ever called them — batch
+  script repurposing is a separate later stage), and `scripts/tech-spec-agent.ts` /
+  `scripts/research-issues-bulletins-batch.ts` (still broken from stage 1, pending the same
+  batch-script repurposing).
 
 ## Write safety
 

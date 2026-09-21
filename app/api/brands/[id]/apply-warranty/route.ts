@@ -5,9 +5,9 @@ import { findMismatchedKeys } from "@/lib/applySpecUpdates";
 import { assertSchemaKnowsFields } from "@/lib/schemaGuard";
 
 // The only write path for warranty_terms: only ever called after the user
-// has reviewed results from ../research-warranty/route.ts and clicked
-// "Apply". Same verification posture as lib/applySpecUpdates.ts: re-fetched
-// and checked before being counted as applied.
+// has reviewed results from the manual export/import panel (../manual-warranty,
+// app/WarrantyResearch.tsx) and clicked "Apply". Same verification posture as
+// lib/applySpecUpdates.ts: re-fetched and checked before being counted as applied.
 
 const ALLOWED_FIELDS = new Set(["ice_component_years", "ice_component_km", "battery_years", "battery_km", "motor_years", "motor_km", "source", "confidence"]);
 

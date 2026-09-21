@@ -10,11 +10,8 @@
 // note this module's first real run produced (reported back to the user
 // separately, not encoded here).
 
-import { ModelNotFoundError, SearchProviderError, sleep } from "@/lib/techSpecResearch";
-import { runGroundedResearch } from "@/lib/groundedResearch";
-import { filterToChineseSources } from "@/lib/chineseSourceGuard";
-
 const CONFIDENCE_SET = new Set(["confirmed", "unconfirmed"]);
+export const WORKSHOP_MANUAL_SCHEMA_VERSION = "workshop-manual-v1";
 
 export interface WorkshopResearchInput {
   brandName: string;
@@ -102,11 +99,28 @@ export function applyWorkshopGroundingGate(workshop: Record<string, unknown>, ha
   return workshop;
 }
 
-interface WorkshopAgentResponse {
-  workshop_requirements?: unknown;
+// ---------- manual export/import (research-categories-v1-style envelope, single object) ----------
+
+export interface WorkshopManualExportContext extends WorkshopResearchInput {
+  brandId: string;
 }
 
-function extractJson(text: string): WorkshopAgentResponse | null {
+export function buildWorkshopManualExportPrompt(ctx: WorkshopManualExportContext): string {
+  const envelope = { schema_version: WORKSHOP_MANUAL_SCHEMA_VERSION, brand_id: ctx.brandId, workshop_requirements: WORKSHOP_FIELD_TEMPLATE };
+  return `${buildWorkshopKickoffPrompt(ctx)}
+
+Respond with ONLY a JSON object (no markdown fencing, no prose before or after) in exactly this envelope. Each value below describes the type the field must have, not a literal example value.
+${JSON.stringify(envelope, null, 2)}
+
+CRITICAL RULES:
+- Keep "schema_version" and "brand_id" exactly as shown.
+- OUTPUT LANGUAGE: every string value must be English (translate any Chinese source text before writing it).
+- Every fact must come from a Chinese-language source you actually opened — do not estimate or use a non-Chinese source.
+- Use null (or an empty array for special_tools_list) for anything you cannot find a sourced Chinese value for. Do NOT guess.
+- Do NOT add, rename, or omit any field from the shape above.`;
+}
+
+function extractJsonObjectLoose(text: string): Record<string, unknown> | null {
   const fencedMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/);
   const candidate = fencedMatch ? fencedMatch[1] : text;
   const braceStart = candidate.indexOf("{");
@@ -119,73 +133,28 @@ function extractJson(text: string): WorkshopAgentResponse | null {
   }
 }
 
-async function queryWorkshopResearch(
-  model: string,
-  input: WorkshopResearchInput
-): Promise<{ parsed: WorkshopAgentResponse | null; sourceUrls: string[]; rawText: string }> {
-  const kickoffPrompt = buildWorkshopKickoffPrompt(input);
-  const formatPrompt = buildWorkshopFormatPrompt();
-  const searchQueries = [
-    `${input.brandName} 经销商招募`,
-    `${input.brandName} 服务网络招募`,
-    `${input.brandNameCn ?? input.brandName} 售后服务标准`,
-    `${input.brandNameCn ?? input.brandName} 特约维修 工具`,
-  ];
-
-  const maxAttempts = 3;
-  let lastErr: unknown;
-  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-    try {
-      const { formattedText, sourceUrls } = await runGroundedResearch({ kickoffPrompt, formatPrompt, searchQueries, model });
-      return { parsed: extractJson(formattedText), sourceUrls, rawText: formattedText };
-    } catch (err) {
-      if (err instanceof ModelNotFoundError) throw err;
-      if (err instanceof SearchProviderError) throw err;
-      lastErr = err;
-      const backoffMs = 2000 * attempt;
-      console.error(`  [retry ${attempt}/${maxAttempts}] research-workshop ${input.brandName}: ${(err as Error).message} — waiting ${backoffMs}ms`);
-      await sleep(backoffMs);
-    }
-  }
-  throw lastErr;
-}
-
-export interface WorkshopResearchResult {
-  status: "found" | "not_found" | "error";
-  errorMessage?: string;
-  sourceUrls: string[];
-  hasGrounding: boolean;
-  workshop_requirements?: Record<string, unknown>;
+export interface WorkshopManualImportResult {
   valid: boolean;
   errors: string[];
+  workshop_requirements: Record<string, unknown> | null;
 }
 
-export async function researchWorkshop(model: string, input: WorkshopResearchInput): Promise<WorkshopResearchResult> {
-  try {
-    const { parsed, sourceUrls: rawSourceUrls, rawText } = await queryWorkshopResearch(model, input);
-
-    if (!parsed || !parsed.workshop_requirements) {
-      return {
-        status: "error",
-        errorMessage: `Could not parse a workshop_requirements object from response (first 300 chars): ${rawText.slice(0, 300)}`,
-        sourceUrls: [],
-        hasGrounding: false,
-        valid: false,
-        errors: [],
-      };
-    }
-
-    const sourceUrls = filterToChineseSources(rawSourceUrls);
-    const hasGrounding = sourceUrls.length > 0;
-    const { valid, errors } = validateResearchedWorkshop(parsed.workshop_requirements);
-    if (!valid) {
-      return { status: "not_found", sourceUrls, hasGrounding, workshop_requirements: parsed.workshop_requirements as Record<string, unknown>, valid, errors };
-    }
-
-    const gated = applyWorkshopGroundingGate({ ...(parsed.workshop_requirements as Record<string, unknown>) }, hasGrounding);
-    return { status: "found", sourceUrls, hasGrounding, workshop_requirements: gated, valid: true, errors: [] };
-  } catch (err) {
-    if (err instanceof ModelNotFoundError || err instanceof SearchProviderError) throw err;
-    return { status: "error", errorMessage: (err as Error).message, sourceUrls: [], hasGrounding: false, valid: false, errors: [] };
+/** Parses + validates a pasted workshop-manual-v1 reply. Confidence forced "unconfirmed" if no "source" is given (mirrors applyWorkshopGroundingGate's zero-citation rule). */
+export function parseWorkshopManualImport(rawText: string, brandId: string): WorkshopManualImportResult {
+  const obj = extractJsonObjectLoose(rawText);
+  if (!obj) return { valid: false, errors: ["Could not find a JSON object in the pasted text."], workshop_requirements: null };
+  const errors: string[] = [];
+  if (obj.schema_version !== WORKSHOP_MANUAL_SCHEMA_VERSION) {
+    errors.push(`schema_version must be "${WORKSHOP_MANUAL_SCHEMA_VERSION}" (got ${JSON.stringify(obj.schema_version)}).`);
   }
+  if (obj.brand_id !== brandId) errors.push(`brand_id ${JSON.stringify(obj.brand_id)} does not match this brand (${brandId}) — pasted into the wrong brand's page?`);
+  if (errors.length > 0) return { valid: false, errors, workshop_requirements: null };
+
+  const req = obj.workshop_requirements as Record<string, unknown> | null | undefined;
+  if (!req || typeof req !== "object") return { valid: true, errors: [], workshop_requirements: null };
+  const { valid, errors: itemErrors } = validateResearchedWorkshop(req);
+  if (!valid) return { valid: false, errors: itemErrors, workshop_requirements: null };
+
+  const gated = applyWorkshopGroundingGate({ ...req }, !!req.source);
+  return { valid: true, errors: [], workshop_requirements: gated };
 }

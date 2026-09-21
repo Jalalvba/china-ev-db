@@ -17,12 +17,11 @@
 // proper reusable, reviewed, source-cited agent.
 
 import { BRAND_STATUSES, RELATIONSHIP_TYPES } from "@/models/Brand";
-import { ModelNotFoundError, SearchProviderError, sleep } from "@/lib/techSpecResearch";
-import { runGroundedResearch } from "@/lib/groundedResearch";
 
 const STATUS_SET = new Set<string>(BRAND_STATUSES);
 const RELATIONSHIP_SET = new Set<string>(RELATIONSHIP_TYPES);
 const CONFIDENCE_SET = new Set(["confirmed", "unconfirmed"]);
+export const BRAND_MANUAL_SCHEMA_VERSION = "brand-manual-v1";
 
 export interface BrandResearchInput {
   brandName: string;
@@ -143,12 +142,31 @@ export function applyBrandGroundingGate(brand: Record<string, unknown>, hasGroun
   return brand;
 }
 
-interface BrandAgentResponse {
-  brand?: unknown;
-  notes?: string;
+// ---------- manual export/import (research-categories-v1-style envelope, single object) ----------
+
+export interface BrandManualExportContext extends BrandResearchInput {
+  brandId: string;
 }
 
-function extractJson(text: string): BrandAgentResponse | null {
+export function buildBrandManualExportPrompt(ctx: BrandManualExportContext): string {
+  const envelope = { schema_version: BRAND_MANUAL_SCHEMA_VERSION, brand_id: ctx.brandId, brand: BRAND_FIELD_TEMPLATE, notes: "string" };
+  return `${buildBrandResearchKickoffPrompt(ctx)}
+
+Respond with ONLY a JSON object (no markdown fencing, no prose before or after) in exactly this envelope. Each value below describes the type the field must have, not a literal example value.
+${JSON.stringify(envelope, null, 2)}
+
+CRITICAL RULES:
+- Keep "schema_version" and "brand_id" exactly as shown.
+- OUTPUT LANGUAGE: every string value must be English, except "name_cn" (kept in its original script). Translate any Chinese source text before writing it elsewhere.
+- Every fact must come from a source you actually opened — do not estimate or infer from similar brands.
+- Use null for anything you cannot find a sourced value for. Do NOT guess.
+- "relationship_type" must be exactly one of: ${RELATIONSHIP_TYPES.join(", ")} — or null.
+- "status" must be exactly one of: ${BRAND_STATUSES.join(", ")} — or null.
+- Do NOT add, rename, or omit any field from the shape above.
+- Do NOT include any model/vehicle/spec information — this is brand-identity only.`;
+}
+
+function extractJsonObjectLoose(text: string): Record<string, unknown> | null {
   const fencedMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/);
   const candidate = fencedMatch ? fencedMatch[1] : text;
   const braceStart = candidate.indexOf("{");
@@ -161,76 +179,29 @@ function extractJson(text: string): BrandAgentResponse | null {
   }
 }
 
-async function queryBrandResearch(
-  model: string,
-  input: BrandResearchInput
-): Promise<{ parsed: BrandAgentResponse | null; sourceUrls: string[]; rawText: string }> {
-  const kickoffPrompt = buildBrandResearchKickoffPrompt(input);
-  const formatPrompt = buildBrandResearchFormatPrompt();
-  const searchQueries = [
-    `${input.brandName} 母公司 股权`,
-    `${input.brandName} parent company ownership`,
-    input.brandNameCn ? `${input.brandNameCn} 母公司` : `${input.brandName} corporate structure`,
-  ];
-
-  const maxAttempts = 3;
-  let lastErr: unknown;
-  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-    try {
-      const { formattedText, sourceUrls } = await runGroundedResearch({ kickoffPrompt, formatPrompt, searchQueries, model });
-      return { parsed: extractJson(formattedText), sourceUrls, rawText: formattedText };
-    } catch (err) {
-      if (err instanceof ModelNotFoundError) throw err;
-      // Same fail-fast reasoning as lib/techSpecResearch.ts's queryModel —
-      // a search-provider failure (rate limit, exhausted credit) won't clear
-      // within this retry loop's backoff, so retrying just burns more of an
-      // already-exhausted budget before the fatal error surfaces anyway.
-      if (err instanceof SearchProviderError) throw err;
-      lastErr = err;
-      const backoffMs = 2000 * attempt;
-      console.error(`  [retry ${attempt}/${maxAttempts}] research-brand ${input.brandName}: ${(err as Error).message} — waiting ${backoffMs}ms`);
-      await sleep(backoffMs);
-    }
-  }
-  throw lastErr;
-}
-
-export interface BrandResearchResult {
-  status: "found" | "not_found" | "error";
-  errorMessage?: string;
-  sourceUrls: string[];
-  hasGrounding: boolean;
-  brand?: Record<string, unknown>;
+export interface BrandManualImportResult {
   valid: boolean;
   errors: string[];
+  brand: Record<string, unknown> | null;
 }
 
-/** Runs the full brand research + validation + grounding-gate pipeline. Throws ModelNotFoundError on a 404 (fatal, same as the other research libs); any other failure is captured in the returned result's status. */
-export async function researchBrand(model: string, input: BrandResearchInput): Promise<BrandResearchResult> {
-  try {
-    const { parsed, sourceUrls, rawText } = await queryBrandResearch(model, input);
-
-    if (!parsed || !parsed.brand) {
-      return {
-        status: "error",
-        errorMessage: `Could not parse a brand object from response (first 300 chars): ${rawText.slice(0, 300)}`,
-        sourceUrls: [],
-        hasGrounding: false,
-        valid: false,
-        errors: [],
-      };
-    }
-
-    const hasGrounding = sourceUrls.length > 0;
-    const { valid, errors } = validateResearchedBrand(parsed.brand);
-    if (!valid) {
-      return { status: "not_found", sourceUrls, hasGrounding, brand: parsed.brand as Record<string, unknown>, valid, errors };
-    }
-
-    const gated = applyBrandGroundingGate({ ...(parsed.brand as Record<string, unknown>) }, hasGrounding);
-    return { status: "found", sourceUrls, hasGrounding, brand: gated, valid: true, errors: [] };
-  } catch (err) {
-    if (err instanceof ModelNotFoundError || err instanceof SearchProviderError) throw err;
-    return { status: "error", errorMessage: (err as Error).message, sourceUrls: [], hasGrounding: false, valid: false, errors: [] };
+/** Parses + validates a pasted brand-manual-v1 reply. Confidence is forced "unconfirmed" if the reply cites no source-bearing "notes"/status_note evidence — mirrors applyBrandGroundingGate's zero-citation rule, applied here on absence of any status_note/notes text since a manual paste carries no source-URL list of its own. */
+export function parseBrandManualImport(rawText: string, brandId: string): BrandManualImportResult {
+  const obj = extractJsonObjectLoose(rawText);
+  if (!obj) return { valid: false, errors: ["Could not find a JSON object in the pasted text."], brand: null };
+  const errors: string[] = [];
+  if (obj.schema_version !== BRAND_MANUAL_SCHEMA_VERSION) {
+    errors.push(`schema_version must be "${BRAND_MANUAL_SCHEMA_VERSION}" (got ${JSON.stringify(obj.schema_version)}).`);
   }
+  if (obj.brand_id !== brandId) errors.push(`brand_id ${JSON.stringify(obj.brand_id)} does not match this brand (${brandId}) — pasted into the wrong brand's page?`);
+  if (errors.length > 0) return { valid: false, errors, brand: null };
+
+  const brand = obj.brand as Record<string, unknown> | null | undefined;
+  if (!brand || typeof brand !== "object") return { valid: true, errors: [], brand: null };
+  const { valid, errors: itemErrors } = validateResearchedBrand(brand);
+  if (!valid) return { valid: false, errors: itemErrors, brand: null };
+
+  const hasEvidence = !!(brand.status_note || (typeof obj.notes === "string" && obj.notes.trim() !== ""));
+  const gated = applyBrandGroundingGate({ ...brand }, hasEvidence);
+  return { valid: true, errors: [], brand: gated };
 }

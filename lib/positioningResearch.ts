@@ -15,11 +15,8 @@
 // language pulled from Chinese auto-media coverage, not a general
 // competitive analysis.
 
-import { ModelNotFoundError, SearchProviderError, sleep } from "@/lib/techSpecResearch";
-import { runGroundedResearch } from "@/lib/groundedResearch";
-import { filterToChineseSources } from "@/lib/chineseSourceGuard";
-
 const CONFIDENCE_SET = new Set(["confirmed", "unconfirmed"]);
+export const POSITIONING_MANUAL_SCHEMA_VERSION = "positioning-manual-v1";
 
 export interface PositioningResearchInput {
   brandName: string;
@@ -92,11 +89,44 @@ export function applyPositioningGroundingGate(positioning: Record<string, unknow
   return positioning;
 }
 
-interface PositioningAgentResponse {
-  market_positioning?: unknown;
+// ---------- manual export/import (research-categories-v1-style envelope, single object) ----------
+
+export interface PositioningManualExportContext extends PositioningResearchInput {
+  modelId: string;
 }
 
-function extractJson(text: string): PositioningAgentResponse | null {
+/** One-shot prompt for the manual round trip: paste into any external AI chat, paste its JSON reply into the importer. */
+export function buildPositioningManualExportPrompt(ctx: PositioningManualExportContext): string {
+  const envelope = {
+    schema_version: POSITIONING_MANUAL_SCHEMA_VERSION,
+    model_id: ctx.modelId,
+    market_positioning: {
+      text: "string | null (the positioning claim, translated to English, e.g. 'Positioned by Chinese media against the Honda CR-V')",
+      source: "string | null (which Chinese source this came from)",
+      confidence: [...CONFIDENCE_SET].join(" | ") + " | null",
+    },
+  };
+  return `${buildPositioningKickoffPrompt(ctx)}
+
+Respond with ONLY a JSON object (no markdown fencing, no prose before or after) in exactly this envelope. Each value below describes the type the field must have, not a literal example value.
+${JSON.stringify(envelope, null, 2)}
+
+CRITICAL RULES:
+- Keep "schema_version" and "model_id" exactly as shown.
+- OUTPUT LANGUAGE: "text" and "source" must be English — translate the Chinese framing faithfully, do not leave Chinese characters in the output.
+- The claim must come from a Chinese-language source you actually opened — never invent a comparison.
+- Use null for "text" if no Chinese source's own framing was found.
+- Do NOT add, rename, or omit any field from the shape above.`;
+}
+
+export interface PositioningManualImportResult {
+  valid: boolean;
+  errors: string[];
+  /** null when the model has "text": null (researched, nothing found) — nothing to apply. */
+  market_positioning: Record<string, unknown> | null;
+}
+
+function extractJsonObjectLoose(text: string): Record<string, unknown> | null {
   const fencedMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/);
   const candidate = fencedMatch ? fencedMatch[1] : text;
   const braceStart = candidate.indexOf("{");
@@ -109,73 +139,24 @@ function extractJson(text: string): PositioningAgentResponse | null {
   }
 }
 
-async function queryPositioningResearch(
-  model: string,
-  input: PositioningResearchInput
-): Promise<{ parsed: PositioningAgentResponse | null; sourceUrls: string[]; rawText: string }> {
-  const kickoffPrompt = buildPositioningKickoffPrompt(input);
-  const formatPrompt = buildPositioningFormatPrompt();
-  const cnName = input.modelNameCn ?? (input.brandNameCn ? `${input.brandNameCn} ${input.modelName}` : `${input.brandName} ${input.modelName}`);
-  const searchQueries = [
-    `${cnName} 对标`,
-    `${cnName} 竞品对比`,
-    `${input.brandName} ${input.modelName} 定位`,
-  ];
-
-  const maxAttempts = 3;
-  let lastErr: unknown;
-  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-    try {
-      const { formattedText, sourceUrls } = await runGroundedResearch({ kickoffPrompt, formatPrompt, searchQueries, model });
-      return { parsed: extractJson(formattedText), sourceUrls, rawText: formattedText };
-    } catch (err) {
-      if (err instanceof ModelNotFoundError) throw err;
-      if (err instanceof SearchProviderError) throw err;
-      lastErr = err;
-      const backoffMs = 2000 * attempt;
-      console.error(`  [retry ${attempt}/${maxAttempts}] research-positioning ${input.brandName} ${input.modelName}: ${(err as Error).message} — waiting ${backoffMs}ms`);
-      await sleep(backoffMs);
-    }
+/** Parses + validates a pasted positioning-manual-v1 reply. Confidence is forced "unconfirmed" if no source is given — same rule the automated grounding gate used to enforce (see applyPositioningGroundingGate, kept for the automated-era write path's own use if ever revived). */
+export function parsePositioningManualImport(rawText: string, modelId: string): PositioningManualImportResult {
+  const obj = extractJsonObjectLoose(rawText);
+  if (!obj) return { valid: false, errors: ["Could not find a JSON object in the pasted text."], market_positioning: null };
+  const errors: string[] = [];
+  if (obj.schema_version !== POSITIONING_MANUAL_SCHEMA_VERSION) {
+    errors.push(`schema_version must be "${POSITIONING_MANUAL_SCHEMA_VERSION}" (got ${JSON.stringify(obj.schema_version)}).`);
   }
-  throw lastErr;
-}
+  if (obj.model_id !== modelId) errors.push(`model_id ${JSON.stringify(obj.model_id)} does not match this model (${modelId}) — pasted into the wrong model's page?`);
+  if (errors.length > 0) return { valid: false, errors, market_positioning: null };
 
-export interface PositioningResearchResult {
-  status: "found" | "not_found" | "error";
-  errorMessage?: string;
-  sourceUrls: string[];
-  hasGrounding: boolean;
-  market_positioning?: Record<string, unknown>;
-  valid: boolean;
-  errors: string[];
-}
-
-export async function researchPositioning(model: string, input: PositioningResearchInput): Promise<PositioningResearchResult> {
-  try {
-    const { parsed, sourceUrls: rawSourceUrls, rawText } = await queryPositioningResearch(model, input);
-
-    if (!parsed || !parsed.market_positioning) {
-      return {
-        status: "error",
-        errorMessage: `Could not parse a market_positioning object from response (first 300 chars): ${rawText.slice(0, 300)}`,
-        sourceUrls: [],
-        hasGrounding: false,
-        valid: false,
-        errors: [],
-      };
-    }
-
-    const sourceUrls = filterToChineseSources(rawSourceUrls);
-    const hasGrounding = sourceUrls.length > 0;
-    const { valid, errors } = validateResearchedPositioning(parsed.market_positioning);
-    if (!valid) {
-      return { status: "not_found", sourceUrls, hasGrounding, market_positioning: parsed.market_positioning as Record<string, unknown>, valid, errors };
-    }
-
-    const gated = applyPositioningGroundingGate({ ...(parsed.market_positioning as Record<string, unknown>) }, hasGrounding);
-    return { status: "found", sourceUrls, hasGrounding, market_positioning: gated, valid: true, errors: [] };
-  } catch (err) {
-    if (err instanceof ModelNotFoundError || err instanceof SearchProviderError) throw err;
-    return { status: "error", errorMessage: (err as Error).message, sourceUrls: [], hasGrounding: false, valid: false, errors: [] };
+  const positioning = obj.market_positioning as Record<string, unknown> | null | undefined;
+  if (positioning === null || positioning === undefined || !positioning.text) {
+    return { valid: true, errors: [], market_positioning: null };
   }
+  const { valid, errors: itemErrors } = validateResearchedPositioning(positioning);
+  if (!valid) return { valid: false, errors: itemErrors, market_positioning: null };
+
+  const gated = applyPositioningGroundingGate({ ...positioning }, !!positioning.source);
+  return { valid: true, errors: [], market_positioning: gated };
 }

@@ -4,10 +4,10 @@ import Brand from "@/models/Brand";
 import { findMismatchedKeys } from "@/lib/applySpecUpdates";
 
 // The only write path for Tier-1 brand-identity research: only ever called
-// after the user has reviewed results from ../research-brand/route.ts and
-// clicked "Apply". Same verification posture as lib/applySpecUpdates.ts:
-// re-fetched and checked before being counted as applied, not trusted just
-// because the call didn't throw.
+// after the user has reviewed results from the manual export/import panel
+// (../manual-brand, app/BrandResearch.tsx) and clicked "Apply". Same
+// verification posture as lib/applySpecUpdates.ts: re-fetched and checked
+// before being counted as applied, not trusted just because the call didn't throw.
 
 const ALLOWED_FIELDS = new Set([
   "name_cn",
