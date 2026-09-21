@@ -36,9 +36,12 @@ function relativeLabel(input: string | undefined): string {
 export default function KnownIssuesList({
   rows,
   unresearched,
+  hideBrandFilter,
 }: {
   rows: IssueRow[];
   unresearched: UnresearchedModel[];
+  /** Set when a shared brand picker (/technical) already scopes the rows to one brand. */
+  hideBrandFilter?: boolean;
 }) {
   const [brandFilter, setBrandFilter] = useState("all");
   const [systemFilter, setSystemFilter] = useState("all");
@@ -61,18 +64,20 @@ export default function KnownIssuesList({
     <div>
       {rows.length > 0 && (
         <div className="flex flex-wrap gap-3 mb-4">
-          <select
-            value={brandFilter}
-            onChange={(e) => setBrandFilter(e.target.value)}
-            className="text-sm border border-zinc-300 dark:border-zinc-700 rounded-md px-2 py-1 bg-white dark:bg-zinc-900"
-          >
-            <option value="all">All brands</option>
-            {brands.map((b) => (
-              <option key={b} value={b}>
-                {b}
-              </option>
-            ))}
-          </select>
+          {!hideBrandFilter && (
+            <select
+              value={brandFilter}
+              onChange={(e) => setBrandFilter(e.target.value)}
+              className="text-sm border border-zinc-300 dark:border-zinc-700 rounded-md px-2 py-1 bg-white dark:bg-zinc-900"
+            >
+              <option value="all">All brands</option>
+              {brands.map((b) => (
+                <option key={b} value={b}>
+                  {b}
+                </option>
+              ))}
+            </select>
+          )}
           <select
             value={systemFilter}
             onChange={(e) => setSystemFilter(e.target.value)}
