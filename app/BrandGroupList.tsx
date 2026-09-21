@@ -84,21 +84,35 @@ function GroupSection({
 
   return (
     <section className="rounded-xl border border-zinc-200 bg-zinc-50/60 dark:border-zinc-800 dark:bg-zinc-900/40">
-      <button
-        onClick={() => setOpen((v) => !v)}
-        className="w-full flex items-center justify-between gap-3 px-4 py-3 text-left flex-wrap"
-      >
+      {/* Header is a plain div, NOT a <button>: it contains BrandGroupExport's own buttons, and a button nested in a
+          button is invalid HTML (browser re-parents it -> hydration mismatch). The toggle is a real button inside the
+          <h2>, stretched over the whole row by its ::after; the export control is a `relative` sibling that paints above
+          the stretched overlay (later in DOM, both positioned, no z-index — so it creates no stacking context to trap
+          its modal). */}
+      <div className="relative flex items-center justify-between gap-3 px-4 py-3 flex-wrap">
         <div className="flex items-baseline gap-2 min-w-0 flex-wrap">
-          <h2 className="text-lg font-bold truncate text-zinc-900 dark:text-zinc-100">{group.label}</h2>
+          <h2 className="text-lg font-bold truncate text-zinc-900 dark:text-zinc-100">
+            <button
+              type="button"
+              aria-expanded={open}
+              onClick={() => setOpen((v) => !v)}
+              className="text-left after:absolute after:inset-0 after:content-['']"
+            >
+              {group.label}
+            </button>
+          </h2>
           <span className="shrink-0 text-xs font-medium text-zinc-500 dark:text-zinc-400 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-full px-2 py-0.5">
             {group.brands.length} brands
           </span>
-          <BrandGroupExport
-            groupKey={group.key}
-            brandNamesById={Object.fromEntries(group.brands.map((b) => [String(b._id), b.name]))}
-          />
+          <div className="relative">
+            <BrandGroupExport
+              groupKey={group.key}
+              brandNamesById={Object.fromEntries(group.brands.map((b) => [String(b._id), b.name]))}
+            />
+          </div>
         </div>
         <svg
+          aria-hidden="true"
           className={`shrink-0 w-5 h-5 text-zinc-400 transition-transform ${open ? "rotate-180" : ""}`}
           fill="none"
           viewBox="0 0 24 24"
@@ -106,7 +120,7 @@ function GroupSection({
         >
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
         </svg>
-      </button>
+      </div>
       {open && (
         <div className="px-4 pb-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {group.brands.map((brand) => (
