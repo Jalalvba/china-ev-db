@@ -1,4 +1,5 @@
 import type { IBrandPhevSuvWorkshopProfile } from "@/types";
+import SourceRef from "@/app/SourceRef";
 
 // Shared by /workshop-phev-suv (one card per brand) and /brands/[id] (the brand's own card).
 // Rendering copied verbatim from the original page — including its `requires_dealer_account !== undefined`
@@ -14,12 +15,7 @@ function Field({ label, empty, children }: { label: string; empty: boolean; chil
 }
 
 function SourceLink({ url }: { url?: string }) {
-  if (!url) return null;
-  return (
-    <a href={url} className="text-xs text-indigo-600 dark:text-indigo-400 hover:underline ml-1">
-      source
-    </a>
-  );
+  return <SourceRef source={url} />;
 }
 
 export default function WorkshopProfileFields({ profile }: { profile: Omit<IBrandPhevSuvWorkshopProfile, "brand_id"> & { brand_id?: unknown } }) {
@@ -52,6 +48,12 @@ export default function WorkshopProfileFields({ profile }: { profile: Omit<IBran
             <p className="text-zinc-500 dark:text-zinc-400">
               {profile.diagnostic_interface.requires_dealer_account ? "Requires dealer account" : "No dealer account required"}
             </p>
+          )}
+          {profile.diagnostic_interface?.tool_cost && (
+            <p className="text-zinc-500 dark:text-zinc-400">Tool cost: {profile.diagnostic_interface.tool_cost}</p>
+          )}
+          {profile.diagnostic_interface?.subscription_terms && (
+            <p className="text-zinc-500 dark:text-zinc-400">Subscription: {profile.diagnostic_interface.subscription_terms}</p>
           )}
           <SourceLink url={profile.diagnostic_interface?.source_url} />
         </Field>

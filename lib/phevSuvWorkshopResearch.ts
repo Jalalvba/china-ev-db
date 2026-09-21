@@ -20,6 +20,8 @@ const FIELD_TEMPLATE = {
     connector_type: "'J2534 pass-thru' | 'proprietary VCI' | string | null",
     software_platform: "string | null",
     requires_dealer_account: "boolean | null",
+    tool_cost: "string | null",
+    subscription_terms: "string | null",
     source_url: "string | null",
   },
   lift_spec: {
@@ -33,7 +35,7 @@ const FIELD_TEMPLATE = {
   technician_prerequisites:
     "array of { certification_name_cn: string|null, certification_name_en: string|null, issuing_body: string|null, minimum_grade: string|null, hv_endorsement_required: boolean|null, source_url: string|null } — empty array if none found",
   audit_checklist:
-    "array of { check_point: string, category: 'tooling'|'certification'|'facility'|'documentation'|null, source_url: string|null } — empty array if none found",
+    "array of { check_point: string, category: 'tooling'|'certification'|'facility'|'documentation'|'parts'|null, source_url: string|null } — empty array if none found",
   confidence: [...CONFIDENCE_SET].join(" | ") + " | null",
 } as const;
 
@@ -89,10 +91,11 @@ function isStringOrNull(v: unknown): boolean {
 function isBoolOrNull(v: unknown): boolean {
   return v === undefined || v === null || typeof v === "boolean";
 }
-function isHttpUrlOrNull(v: unknown): boolean {
-  return v === undefined || v === null || (typeof v === "string" && /^https?:\/\/\S+$/i.test(v.trim()));
+/** A source reference: an http(s) URL, or "ATTACHED: <title>" for a document the researcher was handed directly (dealership-ops-manual-v1). Distinguished on display — see app/SourceRef.tsx. */
+function isSourceRefOrNull(v: unknown): boolean {
+  return v === undefined || v === null || (typeof v === "string" && (/^https?:\/\/\S+$/i.test(v.trim()) || /^ATTACHED:\s*\S.*$/i.test(v.trim())));
 }
-const AUDIT_CATEGORIES = new Set(["tooling", "certification", "facility", "documentation"]);
+const AUDIT_CATEGORIES = new Set(["tooling", "certification", "facility", "documentation", "parts"]);
 
 export function validatePhevSuvWorkshopProfile(raw: unknown): { valid: boolean; errors: string[] } {
   const errors: string[] = [];
@@ -112,7 +115,9 @@ export function validatePhevSuvWorkshopProfile(raw: unknown): { valid: boolean; 
       if (!isStringOrNull(d.connector_type)) errors.push("diagnostic_interface.connector_type: must be string or null");
       if (!isStringOrNull(d.software_platform)) errors.push("diagnostic_interface.software_platform: must be string or null");
       if (!isBoolOrNull(d.requires_dealer_account)) errors.push("diagnostic_interface.requires_dealer_account: must be boolean or null");
-      if (!isHttpUrlOrNull(d.source_url)) errors.push("diagnostic_interface.source_url: must be an http(s) URL or null");
+      if (!isStringOrNull(d.tool_cost)) errors.push("diagnostic_interface.tool_cost: must be string or null");
+      if (!isStringOrNull(d.subscription_terms)) errors.push("diagnostic_interface.subscription_terms: must be string or null");
+      if (!isSourceRefOrNull(d.source_url)) errors.push("diagnostic_interface.source_url: must be an http(s) URL, ATTACHED: <title> or null");
     }
   }
 
@@ -125,7 +130,7 @@ export function validatePhevSuvWorkshopProfile(raw: unknown): { valid: boolean; 
         errors.push("lift_spec.min_capacity_kg: must be number or null");
       if (!isBoolOrNull(l.battery_removal_capable)) errors.push("lift_spec.battery_removal_capable: must be boolean or null");
       if (!isStringOrNull(l.lift_point_notes)) errors.push("lift_spec.lift_point_notes: must be string or null");
-      if (!isHttpUrlOrNull(l.source_url)) errors.push("lift_spec.source_url: must be an http(s) URL or null");
+      if (!isSourceRefOrNull(l.source_url)) errors.push("lift_spec.source_url: must be an http(s) URL, ATTACHED: <title> or null");
     }
   }
 
@@ -139,7 +144,7 @@ export function validatePhevSuvWorkshopProfile(raw: unknown): { valid: boolean; 
           if (typeof p.item !== "string") errors.push(`ppe_required[${i}].item: required string`);
           if (!isStringOrNull(p.spec)) errors.push(`ppe_required[${i}].spec: must be string or null`);
           if (!isBoolOrNull(p.mandatory)) errors.push(`ppe_required[${i}].mandatory: must be boolean or null`);
-          if (!isHttpUrlOrNull(p.source_url)) errors.push(`ppe_required[${i}].source_url: must be an http(s) URL or null`);
+          if (!isSourceRefOrNull(p.source_url)) errors.push(`ppe_required[${i}].source_url: must be an http(s) URL, ATTACHED: <title> or null`);
         }
       });
   }
@@ -157,7 +162,7 @@ export function validatePhevSuvWorkshopProfile(raw: unknown): { valid: boolean; 
           if (!isStringOrNull(t[k])) errors.push(`technician_prerequisites[${i}].${k}: must be string or null`);
         }
         if (!isBoolOrNull(t.hv_endorsement_required)) errors.push(`technician_prerequisites[${i}].hv_endorsement_required: must be boolean or null`);
-        if (!isHttpUrlOrNull(t.source_url)) errors.push(`technician_prerequisites[${i}].source_url: must be an http(s) URL or null`);
+        if (!isSourceRefOrNull(t.source_url)) errors.push(`technician_prerequisites[${i}].source_url: must be an http(s) URL, ATTACHED: <title> or null`);
       });
   }
 
@@ -171,7 +176,7 @@ export function validatePhevSuvWorkshopProfile(raw: unknown): { valid: boolean; 
           if (typeof a.check_point !== "string") errors.push(`audit_checklist[${i}].check_point: required string`);
           if (a.category != null && !(typeof a.category === "string" && AUDIT_CATEGORIES.has(a.category)))
             errors.push(`audit_checklist[${i}].category: invalid value ${JSON.stringify(a.category)}`);
-          if (!isHttpUrlOrNull(a.source_url)) errors.push(`audit_checklist[${i}].source_url: must be an http(s) URL or null`);
+          if (!isSourceRefOrNull(a.source_url)) errors.push(`audit_checklist[${i}].source_url: must be an http(s) URL, ATTACHED: <title> or null`);
         }
       });
   }
@@ -204,12 +209,12 @@ export interface PhevSuvWorkshopManualExportContext extends PhevSuvWorkshopResea
 // Same shape as FIELD_TEMPLATE, but scalar "string | null" placeholders are replaced by a terse
 // type hint so the envelope stays readable in a chat window. Kept next to FIELD_TEMPLATE's own
 // field names via TOP_LEVEL_KEYS-driven validation, not a second hand-maintained key list.
-const MANUAL_PROFILE_SHAPE = `{
-    "diagnostic_interface": { "tool_name": string|null, "connector_type": string|null, "software_platform": string|null, "requires_dealer_account": boolean|null, "source_url": string|null },
+export const MANUAL_PROFILE_SHAPE = `{
+    "diagnostic_interface": { "tool_name": string|null, "connector_type": string|null, "software_platform": string|null, "requires_dealer_account": boolean|null, "tool_cost": string|null, "subscription_terms": string|null, "source_url": string|null },
     "lift_spec": { "type": string|null, "min_capacity_kg": number|null, "battery_removal_capable": boolean|null, "lift_point_notes": string|null, "source_url": string|null },
     "ppe_required": [ { "item": string, "spec": string|null, "mandatory": boolean|null, "source_url": string|null } ],
     "technician_prerequisites": [ { "certification_name_cn": string|null, "certification_name_en": string|null, "issuing_body": string|null, "minimum_grade": string|null, "hv_endorsement_required": boolean|null, "source_url": string|null } ],
-    "audit_checklist": [ { "check_point": string, "category": "tooling"|"certification"|"facility"|"documentation"|null, "source_url": string|null } ],
+    "audit_checklist": [ { "check_point": string, "category": "tooling"|"certification"|"facility"|"documentation"|"parts"|null, "source_url": string|null } ],
     "confidence": "confirmed" | "unconfirmed"
   }`;
 

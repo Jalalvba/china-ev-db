@@ -4,7 +4,10 @@ import { connectToDatabase } from "@/lib/db";
 import Brand from "@/models/Brand";
 import ModelSchema from "@/models/Model";
 import BrandPhevSuvWorkshopProfile from "@/models/BrandPhevSuvWorkshopProfile";
-import WorkshopProfileFields from "@/app/WorkshopProfileFields";
+import DealershipOpsSection, { type BrandRecallGroup } from "@/app/DealershipOpsSection";
+import DealershipOpsPanel from "@/app/DealershipOpsPanel";
+import BrandAfterSalesProcess from "@/models/BrandAfterSalesProcess";
+import type { IBrandAfterSalesProcess } from "@/types/afterSalesProcess";
 import MoroccoListing from "@/models/MoroccoListing";
 import type { IBrand, IModel, IBrandPhevSuvWorkshopProfile } from "@/types";
 import MoroccoPriceFetcher from "@/app/MoroccoPriceFetcher";
@@ -26,6 +29,8 @@ async function getData(
   models: IModel[];
   moteurMaByModelId: Record<string, { price: number; url?: string }>;
   workshopProfile: IBrandPhevSuvWorkshopProfile | null;
+  afterSales: IBrandAfterSalesProcess | null;
+  recallGroups: BrandRecallGroup[];
 } | null> {
   await connectToDatabase();
   const brand = await Brand.findById(id).lean();
@@ -53,7 +58,15 @@ async function getData(
 
   const workshopProfile = await BrandPhevSuvWorkshopProfile.findOne({ brand_id: id }).lean();
 
-  return JSON.parse(JSON.stringify({ brand, models, moteurMaByModelId, workshopProfile }));
+  const afterSales = await BrandAfterSalesProcess.findOne({ brand_id: id }).lean();
+
+  // Read-only recall aggregation across this brand's models — recalls stay model-level data (exact-model identity
+  // guard); this only reads what is already stored per model.
+  const recallGroups = models
+    .filter((m) => m.recalls && m.recalls.length > 0)
+    .map((m) => ({ model_id: String(m._id), model_name: m.name, recalls: m.recalls! }));
+
+  return JSON.parse(JSON.stringify({ brand, models, moteurMaByModelId, workshopProfile, afterSales, recallGroups }));
 }
 
 export default async function BrandPage({ params }: { params: Promise<{ id: string }> }) {
@@ -65,7 +78,7 @@ export default async function BrandPage({ params }: { params: Promise<{ id: stri
   // decision that an unpriced model is still real, valid data and should be visible, just clearly
   // marked "no confirmed Morocco price" instead of tucked away. Already sorted cheapest-first
   // above, with unpriced models naturally trailing via the Infinity sentinel.
-  const { brand, models, moteurMaByModelId, workshopProfile } = data;
+  const { brand, models, moteurMaByModelId, workshopProfile, afterSales, recallGroups } = data;
 
   return (
     <div>
@@ -113,6 +126,7 @@ export default async function BrandPage({ params }: { params: Promise<{ id: stri
         <BrandResearch brandId={brand._id as string} />
         <WarrantyResearch brandId={brand._id as string} />
         <WorkshopResearch brandId={brand._id as string} />
+        <DealershipOpsPanel brandId={brand._id as string} />
         <MoroccoInfoEditor
           basePath={`/api/brands/${brand._id}`}
           currentMoroccoName={brand.morocco_name}
@@ -121,28 +135,7 @@ export default async function BrandPage({ params }: { params: Promise<{ id: stri
         />
       </div>
 
-      {workshopProfile && (
-        <section className="mt-4 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-4 text-sm">
-          <div className="flex items-center gap-2 flex-wrap mb-3">
-            <h2 className="text-base font-semibold">PHEV SUV workshop profile</h2>
-            <span
-              className={`px-2 py-0.5 rounded-full text-xs ${
-                workshopProfile._confidence === "confirmed"
-                  ? "bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300"
-                  : "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300"
-              }`}
-            >
-              {workshopProfile._confidence}
-            </span>
-            {workshopProfile._last_researched_at && (
-              <span className="text-xs text-zinc-400 dark:text-zinc-500">
-                researched {formatRelativeTime(workshopProfile._last_researched_at)}
-              </span>
-            )}
-          </div>
-          <WorkshopProfileFields profile={workshopProfile} />
-        </section>
-      )}
+      <DealershipOpsSection brand={brand} workshopProfile={workshopProfile} afterSales={afterSales} recallGroups={recallGroups} />
 
       {brand.workshop_requirements && (
         <section className="mt-4 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-4 text-sm">

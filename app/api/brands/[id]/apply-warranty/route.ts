@@ -9,7 +9,7 @@ import { assertSchemaKnowsFields } from "@/lib/schemaGuard";
 // app/WarrantyResearch.tsx) and clicked "Apply". Same verification posture as
 // lib/applySpecUpdates.ts: re-fetched and checked before being counted as applied.
 
-const ALLOWED_FIELDS = new Set(["ice_component_years", "ice_component_km", "battery_years", "battery_km", "motor_years", "motor_km", "source", "confidence"]);
+const ALLOWED_FIELDS = new Set(["ice_component_years", "ice_component_km", "battery_years", "battery_km", "motor_years", "motor_km", "source", "confidence", "tiers"]);
 
 function stripUndefined(obj: Record<string, unknown>): Record<string, unknown> {
   const out: Record<string, unknown> = {};
@@ -38,7 +38,11 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const brand = await Brand.findById(brandId).lean();
   if (!brand) return NextResponse.json({ applied: false, error: "Brand not found" }, { status: 404 });
 
-  const expected = { warranty_terms: cleaned, warranty_terms_last_researched_at: new Date() };
+  // FIELD-LEVEL MERGE (was: replace the whole warranty_terms block). A tiered paste must not wipe the legacy flat
+  // figures — they stay until a human reviews the tiered result and clears them (CLAUDE.md, tiered-warranty entry).
+  // `tiers` is replaced as a unit; each other field is written only if the paste supplied it (nulls are stripped above).
+  const expected: Record<string, unknown> = { warranty_terms_last_researched_at: new Date() };
+  for (const [k, v] of Object.entries(cleaned)) expected[`warranty_terms.${k}`] = v;
 
   try {
     assertSchemaKnowsFields(Brand, Object.keys(expected), "Brand");

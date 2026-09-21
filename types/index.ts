@@ -1,3 +1,4 @@
+import type { IWarrantyTier } from "./warrantyTiers";
 import type { IMarketTrend, ITechnicalBulletin, IRecall, IssueRegion } from "./researchCategories";
 
 export type Segment =
@@ -131,6 +132,8 @@ export interface IBrand {
 }
 
 export interface IWarrantyTerms {
+  /** Tiered structure (kind/use/powertrain/period/parts); preferred over the legacy flat fields below where present. See types/warrantyTiers.ts. */
+  tiers?: IWarrantyTier[];
   ice_component_years?: number;
   ice_component_km?: number;
   battery_years?: number;
@@ -345,6 +348,10 @@ export interface IBrandPhevSuvWorkshopProfile {
     connector_type?: string;
     software_platform?: string;
     requires_dealer_account?: boolean;
+    /** Purchase price of the OEM tool, as stated (currency kept in the text). Added for dealership-ops-manual-v1. */
+    tool_cost?: string;
+    /** Software subscription / licence / update terms, as stated. Added for dealership-ops-manual-v1. */
+    subscription_terms?: string;
     source_url?: string;
   };
   lift_spec?: {
@@ -370,7 +377,7 @@ export interface IBrandPhevSuvWorkshopProfile {
   }>;
   audit_checklist?: Array<{
     check_point: string;
-    category?: "tooling" | "certification" | "facility" | "documentation";
+    category?: "tooling" | "certification" | "facility" | "documentation" | "parts";
     source_url?: string;
   }>;
   _source: "brand_specific";

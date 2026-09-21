@@ -15,6 +15,8 @@ const DiagnosticInterfaceSchema = new Schema(
     connector_type: { type: String, trim: true },
     software_platform: { type: String, trim: true },
     requires_dealer_account: { type: Boolean },
+    tool_cost: { type: String, trim: true },
+    subscription_terms: { type: String, trim: true },
     source_url: { type: String, trim: true },
   },
   { _id: false }
@@ -56,7 +58,7 @@ const TechnicianPrerequisiteSchema = new Schema(
 const AuditChecklistItemSchema = new Schema(
   {
     check_point: { type: String, trim: true, required: true },
-    category: { type: String, enum: ["tooling", "certification", "facility", "documentation"] },
+    category: { type: String, enum: ["tooling", "certification", "facility", "documentation", "parts"] },
     source_url: { type: String, trim: true },
   },
   { _id: false }

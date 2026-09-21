@@ -233,6 +233,11 @@ emptied out): `Yangwang`, `XPeng`, `Li Auto`, `Zeekr`, `Leapmotor`, `AITO`, `Lux
 
 Backup of the pre-scoping DB (before any of the three passes): `backups/backup_20260918_020737/`.
 
+**Dead code left by the Compare/`/search` deletion (2026-09-21, known cleanup item, deliberately not done):** `specGroupKey()` in
+`lib/specGrouping.ts` and `segmentText()` in `lib/segmentDisplay.tsx` now have zero callers (checked by grep) — both existed for the deleted
+Compare page. `compactSpecLabel`/`hardwareSpecKey` in the same files are still used by Tech Search. Safe to delete both; check
+`lib/specGrouping.ts`'s header comment and `CLAUDE.md`'s "Search surface" paragraph for mentions when doing so.
+
 **Stale "PHEV/REEV SUV" wording (not yet cleaned up)**: the workshop research code
 was written before pass 3 excluded REEV/EREV, so it still says "PHEV/REEV SUV" and
 treats REEV as part of PHEV — `scripts/research-phev-suv-workshop.ts`,
@@ -1120,6 +1125,32 @@ parts/tooling/diagnostic commonality. Ownership grouping stays the homepage's ax
   J7) are not in the DB at all: the Lepas models carry no `notable_facts`.
 - **Not built yet (next, each behind review)**: the manual export/import path (`platform-manual-v1`, import-only, no provider
   call), the apply route, and any `/platforms` grouping page or model-page badge.
+
+### Dealership-ops import (`dealership-ops-manual-v1`) + tiered warranty (2026-09-21)
+
+ONE brand-level export prompt / paste-back (`lib/dealershipOpsResearch.ts`, routes `app/api/brands/[id]/manual-dealership-ops/{export,validate}`,
+UI `app/DealershipOpsPanel.tsx`) routed on import into three destinations, each applied separately through its OWN route so a bad section never
+blocks the others: `warranty_terms` -> `Brand.warranty_terms` (`apply-warranty`), `workshop_profile` -> `BrandPhevSuvWorkshopProfile`
+(`apply-workshop-profile`), `after_sales_process` -> new `BrandAfterSalesProcess` (`apply-after-sales-process`; types/keys in
+`types/afterSalesProcess.ts`, the one table the schema/prompt/validator derive from). Read-only unified view: `app/DealershipOpsSection.tsx`.
+- **Recall DATA is deliberately NOT importable here** (model-level `Model.recalls[]` behind the exact-model identity guard); the brand page only
+  AGGREGATES existing recalls read-only. Known-failure patterns also stay per-model (`known_issues`). `campaign_notification` is the brand's PROCESS only.
+- **Sources**: `source_url` may be an http(s) URL or `"ATTACHED: <title>"` (a document handed to the researcher — not independently checkable).
+  `app/SourceRef.tsx` renders the two differently everywhere (link vs amber badge). The workshop validator accepts ATTACHED too (was http-only).
+- **`parts_logistics` rejects China-domestic facts in code**: every non-null fact needs `market` in morocco/mena/other_export (no china value).
+  The Chery letter's "within 3 days under 500 km" delivery tiers and "95% dealer stock rate" are China-network facts and must come back NOT FOUND there.
+- **`apply-after-sales-process` is a fact-level MERGE** (dotted `$set`; NOT FOUND never erases; overwritten paths are returned/flagged);
+  `_confidence` stays confirmed only if both paste and stored doc were. Workshop keeps its REPLACE semantics.
+- **Workshop additions**: `diagnostic_interface.tool_cost`/`subscription_terms`, audit category `parts`.
+- **Tiered warranty is ADDITIVE**: `warranty_terms.tiers[]` (`types/warrantyTiers.ts`: kind, vehicle_use, powertrain, duration_months/km, is_lifetime,
+  limit_rule, covered_parts[], conditions, clause_ref) beside the legacy 6 flat fields + ONE brand-level `source`. No auto-conversion: the flat fields
+  are MISLABELLED for some brands (Chery's "ice_component 3yr/100,000km" is really the clause-9.1 whole-vehicle tier; Lepas's 6-yr is a Thai-market
+  whole-vehicle figure). Tiers win on display (`app/WarrantyTiers.tsx`); flat figures show as "legacy" until a human clears them after reviewing the
+  tiered result. A tier without `clause_ref` forces the block to "unconfirmed". `apply-warranty` is now a FIELD-LEVEL merge (was whole-block replace)
+  so a tiered paste can't wipe legacy flat fields; `tiers` is replaced as a unit. BEV tiers are stored (brand-level warranty facts, not Powertrain records).
+- Chery's full commitment letter (clauses 9.1-9.7) maps to 10-11 tiers; 9.1's "household/commercial" wording is ambiguous in translation (household+
+  official 3 yr vs commercial/operating 1 yr) — the prompt tells the researcher to pick a side and say so in `conditions`.
+- **Restart needed** after these schema changes (`Brand.warranty_terms.tiers`, `BrandPhevSuvWorkshopProfile`, new `BrandAfterSalesProcess`).
 
 ## Write safety
 

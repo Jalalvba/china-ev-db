@@ -1,6 +1,7 @@
 import { Schema, model, models } from "mongoose";
 import type { IBrand } from "@/types";
 import { checkParentGroup, parentGroupFromUpdate, parentGroupOverrideActive, InvalidParentGroupError } from "@/lib/brandParentGroup";
+import { WARRANTY_TIER_KINDS, WARRANTY_VEHICLE_USES, WARRANTY_POWERTRAINS, WARRANTY_LIMIT_RULES } from "@/types/warrantyTiers";
 
 // See CLAUDE.md (Data model conventions) before changing any field's meaning or adding new
 // ownership/grouping fields — it's the frozen reference for what parent_group,
@@ -51,6 +52,24 @@ const BrandSchema = new Schema<IBrand>(
     warranty_terms: {
       type: new Schema(
         {
+          tiers: [
+            new Schema(
+              {
+                tier_name: { type: String, trim: true, required: true },
+                kind: { type: String, enum: WARRANTY_TIER_KINDS, required: true },
+                vehicle_use: { type: String, enum: WARRANTY_VEHICLE_USES, required: true },
+                powertrain: { type: String, enum: WARRANTY_POWERTRAINS, required: true },
+                duration_months: Number,
+                duration_km: Number,
+                is_lifetime: Boolean,
+                limit_rule: { type: String, enum: WARRANTY_LIMIT_RULES },
+                covered_parts: [{ type: String, trim: true }],
+                conditions: { type: String, trim: true },
+                clause_ref: { type: String, trim: true },
+              },
+              { _id: false }
+            ),
+          ],
           ice_component_years: Number,
           ice_component_km: Number,
           battery_years: Number,
